@@ -46,14 +46,14 @@ export default function LoginPage() {
         .from("profiles")
         .select("role, quiz_completed, verification_submitted")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         setError(profileError.message);
         return;
       }
 
-      const role = (profile?.role as Role) ?? "user";
+      const role = (profile?.role as Role | undefined) ?? "user";
 
       if (role === "admin" || role === "moderator") {
         router.replace("/admin/dashboard");
