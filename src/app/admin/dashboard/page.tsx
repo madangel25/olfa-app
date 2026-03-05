@@ -70,6 +70,41 @@ type AdminLogEntry = {
   created_at: string;
 };
 
+/** Supabase can return FK relations as a single object or array; normalize to one object. */
+function singleRelation<T extends Record<string, unknown>>(
+  value: T | T[] | null | undefined
+): T | null {
+  if (value == null) return null;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
+/** Row shape from messages select with sender/recipient joins (relation may be array). */
+type MessageSummaryRow = {
+  chat_id: string;
+  sender_id: string;
+  recipient_id: string;
+  status: string;
+  body: string;
+  created_at: string;
+  sender?: { full_name: string | null } | { full_name: string | null }[] | null;
+  recipient?: { full_name: string | null } | { full_name: string | null }[] | null;
+};
+
+/** Row shape from messages select with sender (full_name + behavior_score) and recipient. */
+type MessageDetailRow = {
+  id: number;
+  chat_id: string;
+  body: string;
+  status: string;
+  created_at: string;
+  sender_id: string;
+  sender?:
+    | { full_name: string | null; behavior_score: number | null }
+    | { full_name: string | null; behavior_score: number | null }[]
+    | null;
+  recipient?: { full_name: string | null } | { full_name: string | null }[] | null;
+};
+
 function Badge({
   children,
   tone = "neutral",
@@ -236,20 +271,21 @@ export default function AdminDashboardPage() {
 
         if (error) throw error;
 
+        const rows = (data ?? []) as MessageSummaryRow[];
         const byChat = new Map<string, ChatSummary>();
 
-        for (const msg of data ?? []) {
-          const chatId = msg.chat_id as string;
-          const participants = `${
-            msg.sender?.full_name ?? "Unknown"
-          } ↔ ${msg.recipient?.full_name ?? "Unknown"}`;
+        for (const msg of rows) {
+          const sender = singleRelation(msg.sender);
+          const recipient = singleRelation(msg.recipient);
+          const chatId = msg.chat_id;
+          const participants = `${sender?.full_name ?? "Unknown"} ↔ ${recipient?.full_name ?? "Unknown"}`;
           const flagged = msg.status === "flagged";
 
           if (!byChat.has(chatId)) {
             byChat.set(chatId, {
               chat_id: chatId,
-              last_message_at: msg.created_at as string,
-              last_message_preview: (msg.body as string).slice(0, 80),
+              last_message_at: msg.created_at,
+              last_message_preview: msg.body.slice(0, 80),
               participants,
               flagged,
             });
@@ -335,13 +371,15 @@ export default function AdminDashboardPage() {
         if (flaggedRes.error) throw flaggedRes.error;
         if (fpRes.error) throw fpRes.error;
 
-        const verifiedUsers = verifiedRes.count ?? 0;
-        const pendingReviews = pendingRes.count ?? 0;
-        const flaggedMessages = flaggedRes.count ?? 0;
+        const verifiedUsers: number = verifiedRes.count ?? 0;
+        const pendingReviews: number = pendingRes.count ?? 0;
+        const flaggedMessages: number = flaggedRes.count ?? 0;
 
+        type FingerprintRow = { device_fingerprint: string | null };
+        const fpRows: FingerprintRow[] = (fpRes.data ?? []) as FingerprintRow[];
         const freq = new Map<string, number>();
-        for (const row of fpRes.data ?? []) {
-          const fp = row.device_fingerprint as string | null;
+        for (const row of fpRows) {
+          const fp = row.device_fingerprint;
           if (!fp) continue;
           const prev = freq.get(fp) ?? 0;
           freq.set(fp, prev + 1);
@@ -508,21 +546,26 @@ export default function AdminDashboardPage() {
 
       if (error) throw error;
 
+      const rows = (data ?? []) as MessageDetailRow[];
       setChatMessages(
-        (data ?? []).map((msg) => ({
-          id: msg.id as number,
-          chat_id: msg.chat_id as string,
-          sender_id: msg.sender_id as string,
-          sender_name: msg.sender?.full_name ?? "Unknown",
-          recipient_name: msg.recipient?.full_name ?? "Unknown",
-          body: msg.body as string,
-          status: msg.status as string,
-          created_at: msg.created_at as string,
-          sender_behavior_score:
-            msg.sender?.behavior_score === null
-              ? null
-              : Number(msg.sender.behavior_score),
-        }))
+        rows.map((msg) => {
+          const sender = singleRelation(msg.sender);
+          const recipient = singleRelation(msg.recipient);
+          return {
+            id: msg.id,
+            chat_id: msg.chat_id,
+            sender_id: msg.sender_id,
+            sender_name: sender?.full_name ?? "Unknown",
+            recipient_name: recipient?.full_name ?? "Unknown",
+            body: msg.body,
+            status: msg.status,
+            created_at: msg.created_at,
+            sender_behavior_score:
+              sender?.behavior_score === null || sender?.behavior_score === undefined
+                ? null
+                : Number(sender.behavior_score),
+          };
+        })
       );
     } catch (err) {
       setGlobalError(
@@ -536,7 +579,7 @@ export default function AdminDashboardPage() {
   };
 
   const handleChangeUserRole = async (userId: string, nextRole: Role) => {
-    if (!isAdmin) return;
+    if (!isAdmin || !currentUserId) return;
     if (userId === currentUserId && nextRole !== "admin") {
       setGlobalError(
         "You cannot remove your own admin rights from within the dashboard."
@@ -573,7 +616,7 @@ export default function AdminDashboardPage() {
   };
 
   const handleAdjustBehaviorScore = async (userId: string, delta: number) => {
-    if (!isAdmin && !isModerator) return;
+    if ((!isAdmin && !isModerator) || !currentUserId) return;
 
     const target = users.find((u) => u.id === userId);
     if (!target) {
