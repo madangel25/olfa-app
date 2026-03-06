@@ -543,37 +543,27 @@ export default function ProfilePage() {
           ? `Write a short bio for a person who is ${age} years old and works as ${job}.`
           : `Write a short description of an ideal partner for someone who is ${age} years old and works as ${job}.`;
 
+      console.log("Gemini prompt (before send):", prompt);
+
       const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      const modelsToTry = ["gemini-pro", "gemini-1.0-pro"] as const;
-      const payload = {
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          maxOutputTokens: 512,
-          temperature: 0.7,
-        },
-      };
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      const payload = { contents: [{ parts: [{ text: prompt }] }] };
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       let text = "";
-      for (const modelId of modelsToTry) {
-        const url = `https://generativelanguage.googleapis.com/v1/models/${modelId}:generateContent?key=${apiKey}`;
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        if (res.ok) {
-          const data = (await res.json()) as {
-            candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-          };
-          text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
-          if (text) {
-            console.log("AI Response:", text);
-            break;
-          }
-        } else {
-          console.warn(`Gemini (${modelId}) failed:`, res.status, await res.text());
-        }
+      if (res.ok) {
+        const data = (await res.json()) as {
+          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        };
+        text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
+        if (text) console.log("AI Response:", text);
+      } else {
+        console.warn("Gemini request failed:", res.status, await res.text());
       }
 
       if (text) updateField(field, text);
