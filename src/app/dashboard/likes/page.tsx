@@ -59,23 +59,23 @@ export default function LikesPage() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-sm text-slate-400">جاري التحميل…</p>
+        <p className="text-sm text-zinc-700">جاري التحميل…</p>
       </div>
     );
   }
 
   if (rows.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-amber-500/20 bg-amber-500/5 px-6 py-16 text-center">
-        <p className="text-lg font-medium text-amber-200/90">
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-zinc-100 bg-white px-6 py-16 text-center shadow-sm">
+        <p className="text-lg font-medium text-zinc-900">
           لم تبدأ رحلة الإعجاب بعد..
         </p>
-        <p className="mt-2 text-slate-400">
+        <p className="mt-2 text-zinc-700">
           ابحث عن شريك حياتك الآن!
         </p>
         <Link
           href="/dashboard/discovery"
-          className="mt-6 rounded-xl border border-amber-500/50 bg-amber-500/20 px-6 py-3 text-sm font-medium text-amber-200 hover:bg-amber-500/30"
+          className="mt-6 rounded-xl border border-sky-300 bg-sky-50 px-6 py-3 text-sm font-medium text-sky-700 shadow-sm transition hover:bg-sky-100"
         >
           الذهاب إلى البحث
         </Link>
@@ -85,34 +85,34 @@ export default function LikesPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold">الإعجابات</h1>
-      <p className="mt-1 text-sm text-slate-400">من أعجب بك — يمكنك الإعجاب بهم للتوافق.</p>
+      <h1 className="text-xl font-semibold text-zinc-900">الإعجابات</h1>
+      <p className="mt-1 text-sm text-zinc-700">من أعجب بك — يمكنك الإعجاب بهم للتوافق.</p>
       <ul className="mt-6 space-y-3">
         {rows.map((u) => (
           <li
             key={u.id}
-            className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+            className="flex items-center justify-between rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-sm"
           >
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-700 text-sm font-medium text-slate-300">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-200 text-sm font-medium text-zinc-700">
                 {(u.full_name ?? "?").slice(0, 1)}
               </div>
               <div>
-                <p className="font-medium text-slate-100">{u.full_name ?? "Unknown"}</p>
-                <p className="text-xs text-slate-500">{u.gender ?? ""}</p>
+                <p className="font-medium text-zinc-900">{u.full_name ?? "Unknown"}</p>
+                <p className="text-xs text-zinc-600">{u.gender ?? ""}</p>
               </div>
             </div>
             {u.is_match ? (
               <Link
                 href={`/dashboard/messages?with=${u.id}`}
-                className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-amber-400"
+                className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-600"
               >
                 Chat
               </Link>
             ) : (
               <Link
                 href="/dashboard/discovery"
-                className="rounded-xl border border-amber-500/50 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-200 hover:bg-amber-500/20"
+                className="rounded-xl border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700 shadow-sm hover:bg-sky-100"
               >
                 اعجب به
               </Link>

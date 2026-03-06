@@ -114,7 +114,7 @@ export default function DiscoveryPage() {
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-sm text-slate-400">Loading discovery…</p>
+        <p className="text-sm text-zinc-700">Loading discovery…</p>
       </div>
     );
   }
@@ -122,17 +122,17 @@ export default function DiscoveryPage() {
   return (
     <div>
         <div className="mb-4 flex items-center justify-between">
-          <Link href="/dashboard" className="text-sm text-amber-400/90 hover:text-amber-300">
+          <Link href="/dashboard" className="text-sm text-sky-600 hover:text-sky-700">
             ← الرئيسية
           </Link>
-          <h1 className="text-xl font-semibold">Discovery</h1>
+          <h1 className="text-xl font-semibold text-zinc-900">Discovery</h1>
           <span />
         </div>
-        <p className="mb-6 text-sm text-slate-400">Online and verified members. Like to connect; when they like back, it’s a match.</p>
+        <p className="mb-6 text-sm text-zinc-700">Online and verified members. Like to connect; when they like back, it’s a match.</p>
 
         {matchToast && (
           <div
-            className="mb-4 rounded-xl border border-amber-500/50 bg-amber-500/20 px-4 py-3 text-sm text-amber-100"
+            className="mb-4 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800 shadow-sm"
             role="alert"
           >
             It’s a match with {matchToast}! You can chat now.
@@ -143,17 +143,17 @@ export default function DiscoveryPage() {
           {users.map((u) => (
             <li
               key={u.id}
-              className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm px-4 py-3"
+              className="flex items-center justify-between rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-sm"
             >
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-slate-700 flex items-center justify-center text-slate-300 text-sm font-medium">
+                <div className="h-10 w-10 rounded-full bg-zinc-200 flex items-center justify-center text-zinc-700 text-sm font-medium">
                   {(u.full_name ?? "?").slice(0, 1)}
                 </div>
                 <div>
-                  <p className="font-medium text-slate-100">{u.full_name ?? "Unknown"}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="font-medium text-zinc-900">{u.full_name ?? "Unknown"}</p>
+                  <p className="text-xs text-zinc-600">
                     {u.is_online ? (
-                      <span className="text-emerald-400">Online</span>
+                      <span className="text-emerald-600">Online</span>
                     ) : (
                       "Offline"
                     )}
@@ -164,18 +164,18 @@ export default function DiscoveryPage() {
                 {u.is_match ? (
                   <Link
                     href={`/dashboard/messages?with=${u.id}`}
-                    className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-medium text-slate-950 hover:bg-amber-400"
+                    className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-600"
                   >
                     Chat
                   </Link>
                 ) : u.i_liked ? (
-                  <span className="text-sm text-slate-500">Liked</span>
+                  <span className="text-sm text-zinc-600">Liked</span>
                 ) : (
                   <button
                     type="button"
                     onClick={() => handleLike(u.id)}
                     disabled={likingId === u.id}
-                    className="rounded-xl border border-amber-500/50 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-200 hover:bg-amber-500/20 disabled:opacity-60"
+                    className="rounded-xl border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700 shadow-sm hover:bg-sky-100 disabled:opacity-60"
                   >
                     {likingId === u.id ? "…" : "Like"}
                   </button>
@@ -185,7 +185,7 @@ export default function DiscoveryPage() {
           ))}
         </ul>
         {users.length === 0 && (
-          <p className="py-8 text-center text-sm text-slate-500">No other verified users right now.</p>
+          <p className="py-8 text-center text-sm text-zinc-700">No other verified users right now.</p>
         )}
     </div>
   );

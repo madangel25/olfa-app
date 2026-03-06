@@ -64,7 +64,7 @@ export function Navbar() {
 
   return (
     <nav
-      className="sticky top-0 z-50 border-b border-zinc-200 bg-white/95 shadow-sm backdrop-blur-sm"
+      className="sticky top-0 z-50 border-b border-zinc-200 bg-white/95 shadow-sm backdrop-blur-sm font-[family-name:var(--font-cairo)]"
       role="navigation"
       aria-label="Main"
     >
@@ -136,24 +136,24 @@ export function Navbar() {
                       aria-orientation="vertical"
                       aria-labelledby="user-menu-button"
                     >
-                      <div className="border-b border-zinc-100 px-4 py-3">
-                        <p className="truncate text-sm font-medium text-zinc-800">
-                          {userName ?? "User"}
+                      <div className={`border-b border-zinc-100 px-4 py-3 ${dir === "rtl" ? "text-right" : "text-left"}`}>
+                        <p className="truncate text-sm font-medium text-zinc-900">
+                          {userName ?? t("nav.profile")}
                         </p>
                       </div>
                       <Link
                         href="/dashboard/profile"
-                        className="flex items-center gap-3 px-4 py-3 text-sm text-zinc-700 transition hover:bg-zinc-50"
+                        className={`flex items-center gap-3 px-4 py-3 text-sm text-zinc-700 transition hover:bg-zinc-50 ${dir === "rtl" ? "flex-row-reverse text-right" : "text-left"}`}
                         role="menuitem"
                         onClick={() => setDropdownOpen(false)}
                       >
                         <UserIcon className="h-4 w-4 shrink-0 text-zinc-500" />
-                        Profile
+                        {t("nav.profile")}
                       </Link>
-                      <div className="border-t border-zinc-100 px-4 py-2">
-                        <p className="mb-2 flex items-center gap-3 px-2 py-1 text-xs font-medium uppercase tracking-wide text-zinc-400">
+                      <div className={`border-t border-zinc-100 px-4 py-2 ${dir === "rtl" ? "text-right" : "text-left"}`}>
+                        <p className="mb-2 flex items-center gap-3 px-2 py-1 text-xs font-medium uppercase tracking-wide text-zinc-700">
                           <Globe className="h-4 w-4 shrink-0" />
-                          Language
+                          {t("nav.language")}
                         </p>
                         <div className="flex gap-1 rounded-lg bg-zinc-100 p-1">
                           <button
@@ -162,7 +162,7 @@ export function Navbar() {
                             className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition ${
                               locale === "en"
                                 ? "bg-white text-sky-600 shadow-sm"
-                                : "text-zinc-600 hover:text-zinc-900"
+                                : "text-zinc-700 hover:text-zinc-900"
                             }`}
                             aria-pressed={locale === "en"}
                             aria-label="English"
@@ -175,7 +175,7 @@ export function Navbar() {
                             className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition ${
                               locale === "ar"
                                 ? "bg-white text-sky-600 shadow-sm"
-                                : "text-zinc-600 hover:text-zinc-900"
+                                : "text-zinc-700 hover:text-zinc-900"
                             }`}
                             aria-pressed={locale === "ar"}
                             aria-label="العربية"
@@ -187,11 +187,11 @@ export function Navbar() {
                       <button
                         type="button"
                         onClick={handleLogout}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-zinc-700 transition hover:bg-red-50 hover:text-red-600"
+                        className={`flex w-full items-center gap-3 px-4 py-3 text-sm text-zinc-700 transition hover:bg-red-50 hover:text-red-600 ${dir === "rtl" ? "flex-row-reverse text-right" : "text-left"}`}
                         role="menuitem"
                       >
                         <LogOut className="h-4 w-4 shrink-0 text-zinc-500" />
-                        Logout
+                        {t("nav.logout")}
                       </button>
                     </div>
                   </>

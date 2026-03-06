@@ -9,8 +9,8 @@ export default function DashboardHomePage() {
     router.replace("/dashboard");
   }, [router]);
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center">
-      <p className="text-sm text-slate-400">Redirecting…</p>
+    <div className="flex min-h-[40vh] w-full items-center justify-center bg-[#f8f9fa]">
+      <p className="text-sm text-zinc-700">Redirecting…</p>
     </div>
   );
 }

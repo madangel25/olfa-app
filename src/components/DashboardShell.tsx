@@ -10,12 +10,12 @@ import {
   PROFILE_UPDATED_EVENT,
   type ProfileForCompleteness,
 } from "@/lib/profileCompleteness";
-import { Home, User, MessageCircle, Settings } from "lucide-react";
+import { Home, User, MessageCircle, Heart } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "الرئيسية", labelEn: "Home", icon: Home },
   { href: "/dashboard/discovery", label: "البحث", labelEn: "Discovery", icon: User },
-  { href: "/dashboard/likes", label: "الإعجابات", labelEn: "Likes", icon: Settings },
+  { href: "/dashboard/likes", label: "الإعجابات", labelEn: "Likes", icon: Heart },
   { href: "/dashboard/messages", label: "الرسائل", labelEn: "Messages", icon: MessageCircle },
 ];
 
@@ -25,7 +25,7 @@ const PROFILE_SELECT_FULL =
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { dir } = useLanguage();
+  const { dir, locale } = useLanguage();
   const [profileComplete, setProfileComplete] = useState<number | null>(null);
   const [userGender, setUserGender] = useState<string | null>(null);
 
@@ -94,17 +94,20 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               pathname === item.href ||
               (item.href !== "/dashboard" && pathname.startsWith(item.href));
             const Icon = item.icon;
+            const label = locale === "ar" ? item.label : item.labelEn;
+            const textAlign = locale === "ar" ? "text-right" : "text-left";
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
-                  isActive ? linkActiveClass : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
-                }`}
+                  isActive ? linkActiveClass : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
+                } ${isRtl ? "flex-row-reverse" : ""}`}
               >
                 <Icon className="h-5 w-5 shrink-0" />
-                <span className="mr-2" aria-hidden>{item.labelEn}</span>
-                <span lang="ar">{item.label}</span>
+                <span className={`flex-1 ${textAlign}`} lang={locale === "ar" ? "ar" : "en"}>
+                  {label}
+                </span>
               </Link>
             );
           })}
@@ -114,13 +117,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <main className={`flex-1 ${mainPadding}`}>
         {showProgress && (
           <div className="mx-auto max-w-4xl px-4 pt-4">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-              <p className="mb-3 text-sm text-zinc-600">
-                أكمل ملفك الشخصي بنسبة{" "}
-                <span className={`font-semibold ${themeProgressText}`}>{profileComplete}%</span>{" "}
-                ليراك الآخرون بشكل أفضل.
+            <div className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm">
+              <p className="mb-3 text-sm text-zinc-700">
+                {locale === "ar" ? (
+                  <>أكمل ملفك الشخصي بنسبة <span className={`font-semibold ${themeProgressText}`}>{profileComplete}%</span> ليراك الآخرون بشكل أفضل.</>
+                ) : (
+                  <>Complete your profile by <span className={`font-semibold ${themeProgressText}`}>{profileComplete}%</span> so others can see you better.</>
+                )}
               </p>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200">
                 <div
                   className={`h-full rounded-full ${themeProgress} transition-all duration-500`}
                   style={{ width: `${profileComplete}%` }}

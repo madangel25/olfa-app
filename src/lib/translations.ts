@@ -231,6 +231,9 @@ type TranslationMap = {
     home: string;
     login: string;
     register: string;
+    profile: string;
+    logout: string;
+    language: string;
   };
 };
 
@@ -538,6 +541,9 @@ const translations: Record<Locale, TranslationMap> = {
       home: "Home",
       login: "Login",
       register: "Register",
+      profile: "Profile",
+      logout: "Logout",
+      language: "Language",
     },
   },
   ar: {
@@ -832,6 +838,9 @@ const translations: Record<Locale, TranslationMap> = {
       home: "الرئيسية",
       login: "تسجيل الدخول",
       register: "إنشاء حساب",
+      profile: "الملف الشخصي",
+      logout: "تسجيل الخروج",
+      language: "اللغة",
     },
   },
 };
