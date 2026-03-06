@@ -141,7 +141,7 @@ export default function OnboardingQuizPage() {
               </p>
               <div className="mt-3 space-y-2">
                 {question.options.map((option) => {
-                  const checked = answers[question.id] === option.value;
+                  const checked = answers[question.id as keyof typeof answers] === option.value;
                   return (
                     <label
                       key={option.value}

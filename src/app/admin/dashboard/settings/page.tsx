@@ -72,13 +72,12 @@ export default function SiteSettingsPage() {
     setUploadingLogo(true);
     setMessage(null);
     const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-    const path = `logo.${ext}`;
-    const result = await uploadSiteAsset(path, file);
+    const result = await uploadSiteAsset(`logo.${ext}`, file);
     if ("error" in result) {
       setMessage({ type: "error", text: result.error });
     } else {
       setForm((prev) => ({ ...prev, logo_url: result.url }));
-      setMessage({ type: "success", text: "Logo uploaded." });
+      setMessage({ type: "success", text: "Logo uploaded. Click Save to persist." });
     }
     setUploadingLogo(false);
     e.target.value = "";
@@ -90,13 +89,12 @@ export default function SiteSettingsPage() {
     setUploadingBg(true);
     setMessage(null);
     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `home-bg.${ext}`;
-    const result = await uploadSiteAsset(path, file);
+    const result = await uploadSiteAsset(`home-bg.${ext}`, file);
     if ("error" in result) {
       setMessage({ type: "error", text: result.error });
     } else {
       setForm((prev) => ({ ...prev, home_background_url: result.url }));
-      setMessage({ type: "success", text: "Home background uploaded." });
+      setMessage({ type: "success", text: "Home background uploaded. Click Save to persist." });
     }
     setUploadingBg(false);
     e.target.value = "";
@@ -136,17 +134,25 @@ export default function SiteSettingsPage() {
 
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50">
-      <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-8">
+      <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6">
         <header className="flex flex-col gap-2 border-b border-slate-800 pb-4">
-          <Link
-            href="/admin/dashboard"
-            className="text-xs font-medium text-slate-400 transition hover:text-amber-400"
-          >
-            ← Back to dashboard
-          </Link>
-          <h1 className="text-2xl font-semibold tracking-tight">Site Settings</h1>
-          <p className="text-sm text-slate-300/80">
-            Logo, home background image, and hero section text (English &amp; Arabic). Stored in Supabase.
+          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-slate-400">
+            Olfa · Command Center
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/admin/dashboard"
+              className="text-xs font-medium text-amber-400/90 transition hover:text-amber-300"
+            >
+              ← Dashboard
+            </Link>
+            <span className="text-slate-600">/</span>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-50">
+              Site Settings
+            </h1>
+          </div>
+          <p className="text-xs text-slate-300/80">
+            Edit hero titles and subheadings (EN/AR), upload logo and home background. Stored in <code className="rounded bg-slate-800 px-1 text-[10px]">site_settings</code> and <code className="rounded bg-slate-800 px-1 text-[10px]">site-assets</code>.
           </p>
         </header>
 
@@ -154,7 +160,7 @@ export default function SiteSettingsPage() {
           <div
             className={`rounded-xl border px-3 py-2 text-sm ${
               message.type === "success"
-                ? "border-emerald-500/60 bg-emerald-950/60 text-emerald-100"
+                ? "border-amber-500/50 bg-amber-950/40 text-amber-100"
                 : "border-red-500/60 bg-red-950/60 text-red-100"
             }`}
           >
@@ -162,19 +168,89 @@ export default function SiteSettingsPage() {
           </div>
         )}
 
-        <form onSubmit={handleSave} className="flex flex-col gap-8">
+        <form onSubmit={handleSave} className="flex flex-col gap-6">
+          {/* Hero section text */}
+          <section className="rounded-3xl border border-slate-800 bg-black/40 px-4 py-4">
+            <h2 className="text-sm font-semibold text-slate-50">
+              Hero section text
+            </h2>
+            <p className="mt-1 text-[11px] text-slate-400">
+              Main heading and subheading for the home page (English &amp; Arabic). Empty = use defaults.
+            </p>
+            <div className="mt-4 grid gap-6 sm:grid-cols-2">
+              <div className="space-y-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-400/90">
+                  English
+                </p>
+                <div>
+                  <label className="block text-[11px] text-slate-400">Main heading</label>
+                  <input
+                    type="text"
+                    value={form.hero_heading_en}
+                    onChange={(e) => setForm((prev) => ({ ...prev, hero_heading_en: e.target.value }))}
+                    placeholder="e.g. Olfa"
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-slate-400">Subheading</label>
+                  <input
+                    type="text"
+                    value={form.hero_subheading_en}
+                    onChange={(e) => setForm((prev) => ({ ...prev, hero_subheading_en: e.target.value }))}
+                    placeholder="e.g. Intentional Islamic Marriage"
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                  />
+                </div>
+              </div>
+              <div className="space-y-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-400/90">
+                  العربية
+                </p>
+                <div>
+                  <label className="block text-[11px] text-slate-400">العنوان الرئيسي</label>
+                  <input
+                    type="text"
+                    value={form.hero_heading_ar}
+                    onChange={(e) => setForm((prev) => ({ ...prev, hero_heading_ar: e.target.value }))}
+                    placeholder="مثال: أولفا"
+                    dir="rtl"
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] text-slate-400">العنوان الفرعي</label>
+                  <input
+                    type="text"
+                    value={form.hero_subheading_ar}
+                    onChange={(e) => setForm((prev) => ({ ...prev, hero_subheading_ar: e.target.value }))}
+                    placeholder="مثال: زواج إسلامي هادف"
+                    dir="rtl"
+                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
           {/* Logo */}
           <section className="rounded-3xl border border-slate-800 bg-black/40 px-4 py-4">
             <h2 className="text-sm font-semibold text-slate-50">Logo</h2>
-            <p className="mt-1 text-xs text-slate-400">Shown in the navbar and elsewhere. Upload to replace.</p>
+            <p className="mt-1 text-[11px] text-slate-400">
+              Shown in navbar and home hero. Upload to <code className="rounded bg-slate-800 px-1">site-assets</code>.
+            </p>
             <div className="mt-3 flex flex-wrap items-end gap-4">
               {form.logo_url ? (
-                <div className="flex h-16 w-40 items-center justify-center overflow-hidden rounded-xl border border-slate-700 bg-slate-900/80">
-                  <img src={form.logo_url} alt="Site logo" className="max-h-full max-w-full object-contain" />
+                <div className="flex h-20 w-44 items-center justify-center overflow-hidden rounded-2xl border border-slate-700 bg-slate-900/80">
+                  <img src={form.logo_url} alt="Site logo preview" className="max-h-full max-w-full object-contain" />
                 </div>
-              ) : null}
+              ) : (
+                <div className="flex h-20 w-44 items-center justify-center rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 text-[11px] text-slate-500">
+                  No logo
+                </div>
+              )}
               <label className="cursor-pointer">
-                <span className="inline-flex items-center justify-center rounded-2xl border border-slate-600 bg-slate-900/50 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-amber-500/60 hover:bg-slate-800/70">
+                <span className="inline-flex items-center justify-center rounded-2xl border border-slate-600 bg-slate-900/50 px-4 py-2.5 text-xs font-medium text-slate-200 transition hover:border-amber-500/60 hover:bg-slate-800/70">
                   {uploadingLogo ? "Uploading…" : form.logo_url ? "Replace logo" : "Upload logo"}
                 </span>
                 <input
@@ -191,19 +267,25 @@ export default function SiteSettingsPage() {
           {/* Home background */}
           <section className="rounded-3xl border border-slate-800 bg-black/40 px-4 py-4">
             <h2 className="text-sm font-semibold text-slate-50">Home background image</h2>
-            <p className="mt-1 text-xs text-slate-400">Full-width background for the home page hero.</p>
+            <p className="mt-1 text-[11px] text-slate-400">
+              Full-width hero background on the home page. Upload to <code className="rounded bg-slate-800 px-1">site-assets</code>.
+            </p>
             <div className="mt-3 flex flex-wrap items-end gap-4">
               {form.home_background_url ? (
-                <div className="h-24 w-40 overflow-hidden rounded-xl border border-slate-700 bg-slate-900/80">
+                <div className="h-28 w-48 overflow-hidden rounded-2xl border border-slate-700 bg-slate-900/80">
                   <img
                     src={form.home_background_url}
-                    alt="Home background"
+                    alt="Home background preview"
                     className="h-full w-full object-cover"
                   />
                 </div>
-              ) : null}
+              ) : (
+                <div className="flex h-28 w-48 items-center justify-center rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 text-[11px] text-slate-500">
+                  No image
+                </div>
+              )}
               <label className="cursor-pointer">
-                <span className="inline-flex items-center justify-center rounded-2xl border border-slate-600 bg-slate-900/50 px-4 py-2 text-xs font-medium text-slate-200 transition hover:border-amber-500/60 hover:bg-slate-800/70">
+                <span className="inline-flex items-center justify-center rounded-2xl border border-slate-600 bg-slate-900/50 px-4 py-2.5 text-xs font-medium text-slate-200 transition hover:border-amber-500/60 hover:bg-slate-800/70">
                   {uploadingBg ? "Uploading…" : form.home_background_url ? "Replace background" : "Upload background"}
                 </span>
                 <input
@@ -217,75 +299,17 @@ export default function SiteSettingsPage() {
             </div>
           </section>
 
-          {/* Hero text EN / AR */}
-          <section className="rounded-3xl border border-slate-800 bg-black/40 px-4 py-4">
-            <h2 className="text-sm font-semibold text-slate-50">Hero section text</h2>
-            <p className="mt-1 text-xs text-slate-400">
-              Main heading and subheading for the home page. Leave empty to use default translations.
-            </p>
-            <div className="mt-4 grid gap-6 sm:grid-cols-2">
-              <div className="space-y-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-400/90">English</p>
-                <div>
-                  <label className="block text-[11px] text-slate-400">Main heading</label>
-                  <input
-                    type="text"
-                    value={form.hero_heading_en}
-                    onChange={(e) => setForm((prev) => ({ ...prev, hero_heading_en: e.target.value }))}
-                    placeholder="e.g. Olfa"
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-slate-400">Subheading</label>
-                  <input
-                    type="text"
-                    value={form.hero_subheading_en}
-                    onChange={(e) => setForm((prev) => ({ ...prev, hero_subheading_en: e.target.value }))}
-                    placeholder="e.g. Intentional Islamic Marriage"
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none"
-                  />
-                </div>
-              </div>
-              <div className="space-y-3">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-amber-400/90">العربية</p>
-                <div>
-                  <label className="block text-[11px] text-slate-400">العنوان الرئيسي</label>
-                  <input
-                    type="text"
-                    value={form.hero_heading_ar}
-                    onChange={(e) => setForm((prev) => ({ ...prev, hero_heading_ar: e.target.value }))}
-                    placeholder="مثال: أولفا"
-                    dir="rtl"
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-slate-400">العنوان الفرعي</label>
-                  <input
-                    type="text"
-                    value={form.hero_subheading_ar}
-                    onChange={(e) => setForm((prev) => ({ ...prev, hero_subheading_ar: e.target.value }))}
-                    placeholder="مثال: زواج إسلامي هادف"
-                    dir="rtl"
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-center gap-3 border-t border-slate-800 pt-4">
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center justify-center rounded-2xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-400 disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-2xl bg-amber-500 px-6 py-3 text-sm font-semibold text-slate-950 shadow-md shadow-amber-900/30 transition hover:bg-amber-400 disabled:opacity-60"
             >
-              {saving ? "Saving…" : "Save site settings"}
+              {saving ? "Saving…" : "Save"}
             </button>
             <Link
               href="/admin/dashboard"
-              className="inline-flex items-center justify-center rounded-2xl border border-slate-600 bg-slate-900/50 px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-slate-800/70"
+              className="inline-flex items-center justify-center rounded-2xl border border-slate-600 bg-slate-900/50 px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800/70"
             >
               Cancel
             </Link>
