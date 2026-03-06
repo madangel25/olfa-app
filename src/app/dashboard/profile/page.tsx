@@ -325,6 +325,14 @@ export default function ProfilePage() {
     setProfile((p) => ({ ...p, [key]: value }));
   }, []);
 
+  const handleCopyBio = useCallback(
+    (text: string) => {
+      if (!text.trim()) return;
+      void navigator.clipboard.writeText(text.trim()).then(() => showToast("success", t("profile.copied")));
+    },
+    [showToast, t]
+  );
+
   const handleSave = async () => {
     if (!userId) return;
     setSaving(true);
@@ -603,11 +611,6 @@ export default function ProfilePage() {
     "min-h-[2.75rem] w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 shadow-sm outline-none transition-all focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500";
   const buttonClass =
     "inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-blue-500 disabled:opacity-60";
-
-  const handleCopyBio = useCallback((text: string) => {
-    if (!text.trim()) return;
-    void navigator.clipboard.writeText(text.trim()).then(() => showToast("success", t("profile.copied")));
-  }, [showToast, t]);
 
   return (
     <div className="space-y-6 pb-8 font-[family-name:var(--font-cairo)]" dir={dir}>
