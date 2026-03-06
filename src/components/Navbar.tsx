@@ -28,7 +28,7 @@ function ChevronDownIcon(props: React.SVGProps<SVGSVGElement>) {
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { locale, setLocale, t } = useLanguage();
+  const { locale, setLocale, t, dir } = useLanguage();
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
@@ -85,15 +85,15 @@ export function Navbar() {
 
   return (
     <nav
-      className={`fixed left-0 right-0 top-0 z-50 border-b border-slate-800/80 transition-all duration-300 ${
-        scrolled
-          ? "bg-slate-950/90 shadow-lg shadow-black/20 backdrop-blur-xl"
-          : "bg-slate-950/75 backdrop-blur-md"
+      className={`sticky top-0 z-50 border-b border-slate-800/80 bg-[#0a0a0b]/80 shadow-sm transition-all duration-300 backdrop-blur-xl ${
+        scrolled ? "shadow-black/10" : ""
       }`}
       role="navigation"
       aria-label="Main"
     >
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+      <div
+        className={`mx-auto flex max-w-6xl items-center justify-between px-4 py-3 ${dir === "rtl" ? "" : "flex-row-reverse"}`}
+      >
         <Link
           href="/"
           className="flex items-center gap-2 text-lg font-semibold text-slate-50 transition hover:text-amber-200"
@@ -130,7 +130,7 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setDropdownOpen((o) => !o)}
-                  className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm font-medium text-amber-200 transition hover:bg-amber-500/20 focus:outline-none focus:ring-2 focus:ring-amber-400/50"
+                  className="flex items-center gap-2 rounded-xl border border-slate-600/80 bg-[#161618] px-4 py-2.5 text-sm font-medium text-slate-200 shadow-md transition hover:bg-slate-700/50 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
                   aria-expanded={dropdownOpen}
                   aria-haspopup="true"
                   id="user-menu-button"
@@ -148,19 +148,19 @@ export function Navbar() {
                       onClick={() => setDropdownOpen(false)}
                     />
                     <div
-                      className="absolute right-0 top-full z-20 mt-2 w-56 rounded-xl border border-slate-700/80 bg-slate-900/95 py-2 shadow-xl backdrop-blur-xl"
+                      className={`absolute top-full z-20 mt-2 w-56 rounded-xl border border-slate-700/80 bg-[#161618] py-2 shadow-xl shadow-black/30 backdrop-blur-xl ${dir === "rtl" ? "left-0" : "right-0"}`}
                       role="menu"
                       aria-orientation="vertical"
                       aria-labelledby="user-menu-button"
                     >
-                      <div className="border-b border-slate-700/80 px-4 py-2">
+                      <div className="border-b border-slate-700/80 px-4 py-3">
                         <p className="truncate text-sm font-medium text-slate-200">
                           {userName ?? "User"}
                         </p>
                       </div>
                       <Link
                         href="/dashboard/profile"
-                        className="block px-4 py-2.5 text-sm text-slate-300 transition hover:bg-white/10 hover:text-amber-400"
+                        className="block px-4 py-3 text-sm text-slate-300 transition hover:bg-white/10 hover:text-sky-400"
                         role="menuitem"
                         onClick={() => setDropdownOpen(false)}
                       >
@@ -185,7 +185,7 @@ export function Navbar() {
                 href="/login"
                 className={`text-sm font-medium transition ${
                   pathname === "/login"
-                    ? "text-amber-400"
+                    ? "text-sky-400"
                     : "text-slate-300 hover:text-slate-50"
                 }`}
               >
@@ -195,7 +195,7 @@ export function Navbar() {
                 href="/register"
                 className={`text-sm font-medium transition ${
                   pathname === "/register"
-                    ? "text-amber-400"
+                    ? "text-sky-400"
                     : "text-slate-300 hover:text-slate-50"
                 }`}
               >
@@ -205,17 +205,17 @@ export function Navbar() {
           )}
 
           <div
-            className="ml-2 flex rounded-xl border border-slate-700 bg-slate-900/80 p-0.5"
+            className="flex rounded-xl border border-slate-600/80 bg-[#161618] p-1 shadow-md"
             role="group"
             aria-label="Language"
           >
             <button
               type="button"
               onClick={() => switchLocale("en")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+              className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${
                 locale === "en"
-                  ? "bg-amber-500/90 text-slate-950"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-slate-50"
+                  ? "bg-sky-500/90 text-white shadow-sm"
+                  : "text-slate-400 hover:bg-slate-700/50 hover:text-slate-50"
               }`}
               aria-pressed={locale === "en"}
               aria-label="English"
@@ -225,10 +225,10 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => switchLocale("ar")}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+              className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${
                 locale === "ar"
-                  ? "bg-amber-500/90 text-slate-950"
-                  : "text-slate-300 hover:bg-slate-800 hover:text-slate-50"
+                  ? "bg-sky-500/90 text-white shadow-sm"
+                  : "text-slate-400 hover:bg-slate-700/50 hover:text-slate-50"
               }`}
               aria-pressed={locale === "ar"}
               aria-label="العربية"
