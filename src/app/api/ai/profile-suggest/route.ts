@@ -17,14 +17,15 @@ type SuggestBody = {
 };
 
 export async function POST(request: Request) {
-  const apiKey =
-    process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
-    process.env.GEMINI_API_KEY;
+  // Check both env vars (Vercel: set in Project Settings > Environment Variables)
+  const publicKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY?.trim() || "";
+  const serverKey = process.env.GEMINI_API_KEY?.trim() || "";
+  const apiKey = serverKey || publicKey;
   if (!apiKey) {
     return NextResponse.json(
       {
         error:
-          "AI suggestions are not available. Add NEXT_PUBLIC_GEMINI_API_KEY or GEMINI_API_KEY to your .env.local file.",
+          "AI suggestions are not available. Add GEMINI_API_KEY or NEXT_PUBLIC_GEMINI_API_KEY in Vercel Environment Variables (or .env.local for local dev).",
       },
       { status: 503 }
     );

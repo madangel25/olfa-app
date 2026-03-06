@@ -494,19 +494,19 @@ export default function ProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           type: field,
-          locale,
+          locale: locale ?? "en",
           context: {
-            full_name: profile.full_name,
-            age: profile.age,
-            job_title: profile.job_title,
-            country: profile.country,
-            city: profile.city,
-            about_me: profile.about_me,
-            ideal_partner: profile.ideal_partner,
+            full_name: profile.full_name || undefined,
+            age: profile.age || undefined,
+            job_title: profile.job_title || undefined,
+            country: profile.country || undefined,
+            city: profile.city || undefined,
+            about_me: profile.about_me || undefined,
+            ideal_partner: profile.ideal_partner || undefined,
           },
         }),
       });
-      const data = await res.json();
+      const data = (await res.json()) as { error?: string; text?: string };
       if (!res.ok) {
         const message = res.status === 503 ? t("profile.aiKeyMissing") : (data.error || "Failed");
         throw new Error(message);
