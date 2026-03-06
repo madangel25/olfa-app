@@ -10,8 +10,22 @@ export type SiteSettingsRow = {
   hero_subheading_ar: string | null;
   pledge_text_en: string | null;
   pledge_text_ar: string | null;
+  theme_male: string | null;
+  theme_female: string | null;
   updated_at: string;
 };
+
+export const THEME_OPTIONS_MALE = [
+  { value: "blue", label: "Light Blue", labelAr: "أزرق فاتح" },
+  { value: "slate", label: "Slate / Navy", labelAr: "رمادي غامق" },
+  { value: "emerald", label: "Emerald", labelAr: "زمردي" },
+] as const;
+
+export const THEME_OPTIONS_FEMALE = [
+  { value: "pink-gold", label: "Soft Pink / Gold", labelAr: "وردي ذهبي" },
+  { value: "rose", label: "Rose", labelAr: "وردي" },
+  { value: "violet", label: "Violet", labelAr: "بنفسجي" },
+] as const;
 
 const SITE_ASSETS_BUCKET = "site-assets";
 

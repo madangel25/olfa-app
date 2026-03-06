@@ -74,12 +74,17 @@ export default function LoginPage() {
         return;
       }
 
+      if (pledgeAccepted && profile.quiz_completed) {
+        router.replace("/dashboard/home");
+        return;
+      }
+
       if (!profile.verification_submitted) {
         router.replace("/onboarding/verify");
         return;
       }
 
-      router.replace("/dashboard");
+      router.replace("/dashboard/home");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t("login.somethingWrong")

@@ -39,10 +39,14 @@ export default function OnboardingQuizPage() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("pledge_accepted")
+        .select("pledge_accepted, quiz_completed")
         .eq("id", user.id)
         .maybeSingle();
 
+      if (profile?.pledge_accepted && profile?.quiz_completed) {
+        router.replace("/dashboard/home");
+        return;
+      }
       if (!profile?.pledge_accepted) {
         router.replace("/onboarding/pledge");
         return;

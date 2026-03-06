@@ -7,7 +7,11 @@ import {
   uploadSiteAsset,
   updateSiteSettings,
   type SiteSettingsRow,
+  THEME_OPTIONS_MALE,
+  THEME_OPTIONS_FEMALE,
 } from "@/lib/siteSettings";
+
+type TabId = "identity" | "content" | "theme";
 
 type FormState = {
   logo_url: string;
@@ -18,6 +22,8 @@ type FormState = {
   hero_subheading_ar: string;
   pledge_text_en: string;
   pledge_text_ar: string;
+  theme_male: string;
+  theme_female: string;
 };
 
 const emptyForm: FormState = {
@@ -29,6 +35,8 @@ const emptyForm: FormState = {
   hero_subheading_ar: "",
   pledge_text_en: "",
   pledge_text_ar: "",
+  theme_male: "blue",
+  theme_female: "pink-gold",
 };
 
 const DEFAULT_PLEDGE_EN = `By using Olfa, I commit to a serious, respectful search for marriage. I understand and accept the following:
@@ -54,10 +62,16 @@ function fromRow(row: SiteSettingsRow | null): FormState {
     hero_subheading_ar: row.hero_subheading_ar ?? "",
     pledge_text_en: row.pledge_text_en ?? "",
     pledge_text_ar: row.pledge_text_ar ?? "",
+    theme_male: row.theme_male ?? "blue",
+    theme_female: row.theme_female ?? "pink-gold",
   };
 }
 
+const glass = "rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-xl";
+const inputGlass = "rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm focus:border-amber-400/50 focus:ring-1 focus:ring-amber-400/30";
+
 export default function SiteSettingsPage() {
+  const [activeTab, setActiveTab] = useState<TabId>("identity");
   const [form, setForm] = useState<FormState>(emptyForm);
   const [settingsId, setSettingsId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -135,6 +149,8 @@ export default function SiteSettingsPage() {
       hero_subheading_ar: form.hero_subheading_ar || null,
       pledge_text_en: form.pledge_text_en || null,
       pledge_text_ar: form.pledge_text_ar || null,
+      theme_male: form.theme_male || null,
+      theme_female: form.theme_female || null,
     });
     if (error) {
       setMessage({ type: "error", text: error });
@@ -152,215 +168,218 @@ export default function SiteSettingsPage() {
     );
   }
 
+  const tabs: { id: TabId; label: string; labelAr: string }[] = [
+    { id: "identity", label: "Site Identity", labelAr: "هوية الموقع" },
+    { id: "content", label: "Content", labelAr: "المحتوى" },
+    { id: "theme", label: "Theme Settings", labelAr: "المظهر" },
+  ];
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50">
-      <div className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6">
-        <header className="flex flex-col gap-2 border-b border-slate-800 pb-4">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-slate-400">
-            Olfa · Command Center
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/admin/dashboard"
-              className="text-xs font-medium text-amber-400/90 transition hover:text-amber-300"
-            >
-              ← Dashboard
-            </Link>
-            <span className="text-slate-600">/</span>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-50">
-              Site Settings
-            </h1>
+      <div className="mx-auto max-w-4xl px-4 py-6">
+        <header className={`${glass} mb-6 border-amber-500/20 bg-amber-500/5 p-4`}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Link
+                href="/admin/dashboard"
+                className="text-sm font-medium text-amber-400/90 transition hover:text-amber-300"
+              >
+                ← Dashboard
+              </Link>
+              <span className="text-slate-600">/</span>
+              <h1 className="text-xl font-semibold tracking-tight text-slate-50">
+                Site Settings
+              </h1>
+              <span className="text-xs text-slate-500">إعدادات المنصة</span>
+            </div>
           </div>
-          <p className="text-xs text-slate-300/80">
-            Edit hero titles and subheadings (EN/AR), upload logo and home background. Stored in <code className="rounded bg-slate-800 px-1 text-[10px]">site_settings</code> and <code className="rounded bg-slate-800 px-1 text-[10px]">site-assets</code>.
-          </p>
         </header>
 
         {message && (
           <div
-            className={`rounded-xl border px-3 py-2 text-sm ${
+            className={`mb-4 rounded-xl border px-3 py-2 text-sm backdrop-blur-sm ${
               message.type === "success"
-                ? "border-amber-500/50 bg-amber-950/40 text-amber-100"
-                : "border-red-500/60 bg-red-950/60 text-red-100"
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-100"
+                : "border-red-500/50 bg-red-500/10 text-red-100"
             }`}
           >
             {message.text}
           </div>
         )}
 
-        <form onSubmit={handleSave} className="flex flex-col gap-6">
-          {/* Hero section text */}
-          <section className="rounded-3xl border border-slate-800 bg-black/40 px-4 py-4">
-            <h2 className="text-sm font-semibold text-slate-50">
-              Hero section text
-            </h2>
-            <p className="mt-1 text-[11px] text-slate-400">
-              Main heading and subheading for the home page (English &amp; Arabic). Empty = use defaults.
-            </p>
-            <div className="mt-4 grid gap-6 sm:grid-cols-2">
-              <div className="space-y-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-400/90">
-                  English
-                </p>
+        <div className={`mb-4 flex gap-1 rounded-2xl p-1 ${glass} border-amber-500/10`}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition ${
+                activeTab === tab.id
+                  ? "bg-amber-500/20 text-amber-200 shadow-inner"
+                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={handleSave} className="space-y-6">
+          {/* Tab: Site Identity */}
+          {activeTab === "identity" && (
+            <div className={`${glass} border-amber-500/10 p-5 space-y-6`}>
+              <h2 className="text-sm font-semibold text-amber-200/90">Logo & Background</h2>
+              <div className="grid gap-6 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[11px] text-slate-400">Main heading</label>
+                  <p className="mb-2 text-xs text-slate-400">Logo</p>
+                  <div className="flex flex-wrap items-end gap-3">
+                    {form.logo_url ? (
+                      <div className="flex h-20 w-36 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                        <img src={form.logo_url} alt="Logo" className="max-h-full max-w-full object-contain" />
+                      </div>
+                    ) : (
+                      <div className="flex h-20 w-36 items-center justify-center rounded-xl border border-dashed border-white/10 text-xs text-slate-500">No logo</div>
+                    )}
+                    <label className="cursor-pointer">
+                      <span className="inline-flex items-center rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-white/10">
+                        {uploadingLogo ? "Uploading…" : "Upload"}
+                      </span>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploadingLogo} />
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-2 text-xs text-slate-400">Home background</p>
+                  <div className="flex flex-wrap items-end gap-3">
+                    {form.home_background_url ? (
+                      <div className="h-20 w-36 overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                        <img src={form.home_background_url} alt="Bg" className="h-full w-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="flex h-20 w-36 items-center justify-center rounded-xl border border-dashed border-white/10 text-xs text-slate-500">No image</div>
+                    )}
+                    <label className="cursor-pointer">
+                      <span className="inline-flex items-center rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-white/10">
+                        {uploadingBg ? "Uploading…" : "Upload"}
+                      </span>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleBgUpload} disabled={uploadingBg} />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tab: Content */}
+          {activeTab === "content" && (
+            <div className={`${glass} border-amber-500/10 p-5 space-y-6`}>
+              <h2 className="text-sm font-semibold text-amber-200/90">Hero & Pledge</h2>
+              <div>
+                <p className="mb-2 text-xs text-slate-400">Hero (EN/AR)</p>
+                <div className="grid gap-3 sm:grid-cols-2">
                   <input
-                    type="text"
                     value={form.hero_heading_en}
-                    onChange={(e) => setForm((prev) => ({ ...prev, hero_heading_en: e.target.value }))}
-                    placeholder="e.g. Olfa"
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                    onChange={(e) => setForm((p) => ({ ...p, hero_heading_en: e.target.value }))}
+                    placeholder="Heading EN"
+                    className={`w-full px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 ${inputGlass}`}
                   />
-                </div>
-                <div>
-                  <label className="block text-[11px] text-slate-400">Subheading</label>
                   <input
-                    type="text"
-                    value={form.hero_subheading_en}
-                    onChange={(e) => setForm((prev) => ({ ...prev, hero_subheading_en: e.target.value }))}
-                    placeholder="e.g. Intentional Islamic Marriage"
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
-                  />
-                </div>
-              </div>
-              <div className="space-y-3">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-400/90">
-                  العربية
-                </p>
-                <div>
-                  <label className="block text-[11px] text-slate-400">العنوان الرئيسي</label>
-                  <input
-                    type="text"
                     value={form.hero_heading_ar}
-                    onChange={(e) => setForm((prev) => ({ ...prev, hero_heading_ar: e.target.value }))}
-                    placeholder="مثال: أولفا"
+                    onChange={(e) => setForm((p) => ({ ...p, hero_heading_ar: e.target.value }))}
+                    placeholder="العنوان AR"
                     dir="rtl"
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                    className={`w-full px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 ${inputGlass}`}
+                  />
+                  <input
+                    value={form.hero_subheading_en}
+                    onChange={(e) => setForm((p) => ({ ...p, hero_subheading_en: e.target.value }))}
+                    placeholder="Subheading EN"
+                    className={`w-full px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 ${inputGlass}`}
+                  />
+                  <input
+                    value={form.hero_subheading_ar}
+                    onChange={(e) => setForm((p) => ({ ...p, hero_subheading_ar: e.target.value }))}
+                    placeholder="العنوان الفرعي AR"
+                    dir="rtl"
+                    className={`w-full px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 ${inputGlass}`}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs text-amber-400/90">Pledge (English)</label>
+                  <textarea
+                    value={form.pledge_text_en}
+                    onChange={(e) => setForm((p) => ({ ...p, pledge_text_en: e.target.value }))}
+                    placeholder={DEFAULT_PLEDGE_EN}
+                    rows={10}
+                    className={`w-full px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 ${inputGlass}`}
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-400">العنوان الفرعي</label>
-                  <input
-                    type="text"
-                    value={form.hero_subheading_ar}
-                    onChange={(e) => setForm((prev) => ({ ...prev, hero_subheading_ar: e.target.value }))}
-                    placeholder="مثال: زواج إسلامي هادف"
+                  <label className="mb-1 block text-xs text-amber-400/90">تعهد الجدية (عربي)</label>
+                  <textarea
+                    value={form.pledge_text_ar}
+                    onChange={(e) => setForm((p) => ({ ...p, pledge_text_ar: e.target.value }))}
+                    placeholder={DEFAULT_PLEDGE_AR}
+                    rows={10}
                     dir="rtl"
-                    className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                    className={`w-full px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 ${inputGlass}`}
                   />
                 </div>
               </div>
             </div>
-          </section>
+          )}
 
-          {/* Pledge document */}
-          <section className="rounded-3xl border border-slate-800 bg-black/40 px-4 py-4">
-            <h2 className="text-sm font-semibold text-slate-50">Pledge document (Ethical Pledge / تعهد الجدية)</h2>
-            <p className="mt-1 text-[11px] text-slate-400">
-              Shown on the onboarding pledge page. Use plain text; line breaks are preserved. Empty = use default text.
-            </p>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-[11px] font-medium text-amber-400/90">Pledge Document (English)</label>
-                <textarea
-                  value={form.pledge_text_en}
-                  onChange={(e) => setForm((prev) => ({ ...prev, pledge_text_en: e.target.value }))}
-                  placeholder={DEFAULT_PLEDGE_EN}
-                  rows={12}
-                  className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
-                />
+          {/* Tab: Theme Settings */}
+          {activeTab === "theme" && (
+            <div className={`${glass} border-amber-500/10 p-5 space-y-6`}>
+              <h2 className="text-sm font-semibold text-amber-200/90">Preferred theme by profile type</h2>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-slate-300">Male profiles</label>
+                  <select
+                    value={form.theme_male}
+                    onChange={(e) => setForm((p) => ({ ...p, theme_male: e.target.value }))}
+                    className={`w-full px-3 py-2.5 text-sm text-slate-100 ${inputGlass}`}
+                  >
+                    {THEME_OPTIONS_MALE.map((o) => (
+                      <option key={o.value} value={o.value} className="bg-slate-900">
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-slate-300">Female profiles</label>
+                  <select
+                    value={form.theme_female}
+                    onChange={(e) => setForm((p) => ({ ...p, theme_female: e.target.value }))}
+                    className={`w-full px-3 py-2.5 text-sm text-slate-100 ${inputGlass}`}
+                  >
+                    {THEME_OPTIONS_FEMALE.map((o) => (
+                      <option key={o.value} value={o.value} className="bg-slate-900">
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div>
-                <label className="block text-[11px] font-medium text-amber-400/90">Pledge Document (Arabic) — تعهد الجدية</label>
-                <textarea
-                  value={form.pledge_text_ar}
-                  onChange={(e) => setForm((prev) => ({ ...prev, pledge_text_ar: e.target.value }))}
-                  placeholder={DEFAULT_PLEDGE_AR}
-                  rows={12}
-                  dir="rtl"
-                  className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
-                />
-              </div>
+              <p className="text-xs text-slate-500">Light Blue for men, Soft Pink/Gold for women by default. Used across profile and dashboard UI.</p>
             </div>
-          </section>
+          )}
 
-          {/* Logo */}
-          <section className="rounded-3xl border border-slate-800 bg-black/40 px-4 py-4">
-            <h2 className="text-sm font-semibold text-slate-50">Logo</h2>
-            <p className="mt-1 text-[11px] text-slate-400">
-              Shown in navbar and home hero. Upload to <code className="rounded bg-slate-800 px-1">site-assets</code>.
-            </p>
-            <div className="mt-3 flex flex-wrap items-end gap-4">
-              {form.logo_url ? (
-                <div className="flex h-20 w-44 items-center justify-center overflow-hidden rounded-2xl border border-slate-700 bg-slate-900/80">
-                  <img src={form.logo_url} alt="Site logo preview" className="max-h-full max-w-full object-contain" />
-                </div>
-              ) : (
-                <div className="flex h-20 w-44 items-center justify-center rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 text-[11px] text-slate-500">
-                  No logo
-                </div>
-              )}
-              <label className="cursor-pointer">
-                <span className="inline-flex items-center justify-center rounded-2xl border border-slate-600 bg-slate-900/50 px-4 py-2.5 text-xs font-medium text-slate-200 transition hover:border-amber-500/60 hover:bg-slate-800/70">
-                  {uploadingLogo ? "Uploading…" : form.logo_url ? "Replace logo" : "Upload logo"}
-                </span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/svg+xml"
-                  className="hidden"
-                  onChange={handleLogoUpload}
-                  disabled={uploadingLogo}
-                />
-              </label>
-            </div>
-          </section>
-
-          {/* Home background */}
-          <section className="rounded-3xl border border-slate-800 bg-black/40 px-4 py-4">
-            <h2 className="text-sm font-semibold text-slate-50">Home background image</h2>
-            <p className="mt-1 text-[11px] text-slate-400">
-              Full-width hero background on the home page. Upload to <code className="rounded bg-slate-800 px-1">site-assets</code>.
-            </p>
-            <div className="mt-3 flex flex-wrap items-end gap-4">
-              {form.home_background_url ? (
-                <div className="h-28 w-48 overflow-hidden rounded-2xl border border-slate-700 bg-slate-900/80">
-                  <img
-                    src={form.home_background_url}
-                    alt="Home background preview"
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="flex h-28 w-48 items-center justify-center rounded-2xl border border-dashed border-slate-700 bg-slate-900/40 text-[11px] text-slate-500">
-                  No image
-                </div>
-              )}
-              <label className="cursor-pointer">
-                <span className="inline-flex items-center justify-center rounded-2xl border border-slate-600 bg-slate-900/50 px-4 py-2.5 text-xs font-medium text-slate-200 transition hover:border-amber-500/60 hover:bg-slate-800/70">
-                  {uploadingBg ? "Uploading…" : form.home_background_url ? "Replace background" : "Upload background"}
-                </span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={handleBgUpload}
-                  disabled={uploadingBg}
-                />
-              </label>
-            </div>
-          </section>
-
-          <div className="flex flex-wrap items-center gap-3 border-t border-slate-800 pt-4">
+          <div className={`flex flex-wrap gap-3 pt-2 ${glass} border-amber-500/10 px-4 py-3`}>
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center justify-center rounded-2xl bg-amber-500 px-6 py-3 text-sm font-semibold text-slate-950 shadow-md shadow-amber-900/30 transition hover:bg-amber-400 disabled:opacity-60"
+              className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-lg shadow-amber-900/20 hover:bg-amber-400 disabled:opacity-60"
             >
               {saving ? "Saving…" : "Save"}
             </button>
             <Link
               href="/admin/dashboard"
-              className="inline-flex items-center justify-center rounded-2xl border border-slate-600 bg-slate-900/50 px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800/70"
+              className="rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-medium text-slate-200 hover:bg-white/10"
             >
               Cancel
             </Link>
