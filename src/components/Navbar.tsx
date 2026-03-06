@@ -8,7 +8,7 @@ import { getSiteSettings } from "@/lib/siteSettings";
 import { supabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 import type { Locale } from "@/lib/translations";
-import { Bell, ChevronDown, User, Globe, LogOut } from "lucide-react";
+import { Bell, ChevronDown, User as UserIcon, Globe, LogOut } from "lucide-react";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -147,7 +147,7 @@ export function Navbar() {
                         role="menuitem"
                         onClick={() => setDropdownOpen(false)}
                       >
-                        <User className="h-4 w-4 shrink-0 text-zinc-500" />
+                        <UserIcon className="h-4 w-4 shrink-0 text-zinc-500" />
                         Profile
                       </Link>
                       <div className="border-t border-zinc-100 px-4 py-2">
