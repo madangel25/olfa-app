@@ -546,7 +546,7 @@ export default function ProfilePage() {
 
       const apiKey = "AIzaSyDBL4SLwdNUixl7aViHZTIrXGAsNCgNsCQ";
       const genAI = new GoogleGenerativeAI(apiKey);
-      const modelsToTry = ["gemini-1.5-flash-latest", "gemini-1.5-pro-latest"] as const;
+      const modelsToTry = ["gemini-1.5-flash", "gemini-pro"] as const;
       let text = "";
       for (const modelId of modelsToTry) {
         try {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
 
 type SuggestBody = {
   type: "about_me" | "ideal_partner";
