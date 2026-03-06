@@ -4,6 +4,19 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getSiteSettings } from "@/lib/siteSettings";
+
+const DEFAULT_PLEDGE_EN = `By using Olfa, I commit to a serious, respectful search for marriage. I understand and accept the following:
+
+• I will not use offensive language, harassment, or manipulation in any conversation or profile.
+• I will not attempt to deceive other members or the platform (fake profiles, misrepresentation, or abuse).
+• I understand that breaking these rules will result in the permanent banning of my account, with no right to appeal.`;
+
+const DEFAULT_PLEDGE_AR = `باستخدام أولفا، ألتزم ببحث جاد ومحترم عن الزواج. أفهم وأقبل ما يلي:
+
+• لن أستخدم لغة مسيئة أو مضايقة أو تلاعباً في أي محادثة أو ملف.
+• لن أحاول خداع الأعضاء أو المنصة (ملفات مزيفة، تحريف، أو إساءة استخدام).
+• أفهم أن مخالفة هذه القواعد ستؤدي إلى حظر حسابي نهائياً، دون حق في الاستئناف.`;
 
 export default function OnboardingPledgePage() {
   const router = useRouter();
@@ -11,6 +24,8 @@ export default function OnboardingPledgePage() {
   const [checking, setChecking] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pledgeEn, setPledgeEn] = useState(DEFAULT_PLEDGE_EN);
+  const [pledgeAr, setPledgeAr] = useState(DEFAULT_PLEDGE_AR);
 
   useEffect(() => {
     const run = async () => {
@@ -33,6 +48,10 @@ export default function OnboardingPledgePage() {
         router.replace("/onboarding/social");
         return;
       }
+
+      const settings = await getSiteSettings();
+      if (settings?.pledge_text_en?.trim()) setPledgeEn(settings.pledge_text_en);
+      if (settings?.pledge_text_ar?.trim()) setPledgeAr(settings.pledge_text_ar);
 
       setChecking(false);
     };
@@ -82,6 +101,9 @@ export default function OnboardingPledgePage() {
     );
   }
 
+  const showEn = locale === "en" || true;
+  const showAr = locale === "ar" || true;
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-50">
       <div className="mx-auto max-w-2xl px-4 py-10">
@@ -93,31 +115,26 @@ export default function OnboardingPledgePage() {
         </p>
 
         <div className="mt-8 space-y-8 rounded-2xl border border-slate-700/80 bg-slate-900/50 px-5 py-6 backdrop-blur">
-          {/* English */}
-          <section className="space-y-3" lang="en">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-amber-400/90">English</h2>
-            <p className="text-sm leading-relaxed text-slate-200/90">
-              By using Olfa, I commit to a serious, respectful search for marriage. I understand and accept the following:
-            </p>
-            <ul className="list-inside list-disc space-y-2 text-sm leading-relaxed text-slate-300/90">
-              <li>I will not use offensive language, harassment, or manipulation in any conversation or profile.</li>
-              <li>I will not attempt to deceive other members or the platform (fake profiles, misrepresentation, or abuse).</li>
-              <li>I understand that breaking these rules will result in the permanent banning of my account, with no right to appeal.</li>
-            </ul>
-          </section>
-
-          {/* Arabic */}
-          <section className="space-y-3 border-t border-slate-700/60 pt-6" dir="rtl" lang="ar">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-amber-400/90">العربية</h2>
-            <p className="text-sm leading-relaxed text-slate-200/90">
-              باستخدام أولفا، ألتزم ببحث جاد ومحترم عن الزواج. أفهم وأقبل ما يلي:
-            </p>
-            <ul className="list-inside list-disc space-y-2 text-sm leading-relaxed text-slate-300/90">
-              <li>لن أستخدم لغة مسيئة أو مضايقة أو تلاعباً في أي محادثة أو ملف.</li>
-              <li>لن أحاول خداع الأعضاء أو المنصة (ملفات مزيفة، تحريف، أو إساءة استخدام).</li>
-              <li>أفهم أن مخالفة هذه القواعد ستؤدي إلى حظر حسابي نهائياً، دون حق في الاستئناف.</li>
-            </ul>
-          </section>
+          {showEn && (
+            <section className="space-y-3" lang="en">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-amber-400/90">English</h2>
+              <div className="whitespace-pre-line text-sm leading-relaxed text-slate-200/90">
+                {pledgeEn}
+              </div>
+            </section>
+          )}
+          {showAr && (
+            <section
+              className={`space-y-3 ${showEn ? "border-t border-slate-700/60 pt-6" : ""}`}
+              dir="rtl"
+              lang="ar"
+            >
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-amber-400/90">العربية</h2>
+              <div className="whitespace-pre-line text-sm leading-relaxed text-slate-200/90">
+                {pledgeAr}
+              </div>
+            </section>
+          )}
         </div>
 
         {error && (

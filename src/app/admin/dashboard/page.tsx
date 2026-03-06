@@ -754,31 +754,55 @@ export default function AdminDashboardPage() {
             <h1 className="mt-1 text-2xl font-semibold tracking-tight">
               Admin &amp; Moderator Dashboard
             </h1>
-            <p className="mt-1 flex items-center gap-2 text-xs text-slate-300/80">
+            <p className="mt-1 text-xs text-slate-300/80">
               Real-time view over identity verification, chat safety, and member
               behavior.
-              <a
-                href="/admin/dashboard/settings"
-                className="font-medium text-amber-400/90 transition hover:text-amber-300"
-              >
-                Site Settings
-              </a>
             </p>
           </div>
-          <div className="flex flex-col items-start gap-2 text-xs text-slate-300 sm:items-end">
-            <p>
-              Signed in as{" "}
-              <span className="font-semibold">
-                {currentRole ? currentRole.toUpperCase() : "…"}
-              </span>
-            </p>
-            <div className="flex flex-wrap gap-1">
-              <Badge tone="warning">Pending</Badge>
-              <Badge tone="success">Verified</Badge>
-              <Badge tone="danger">Flagged</Badge>
+          <div className="flex flex-col items-start gap-3 text-xs text-slate-300 sm:items-end">
+            <a
+              href="/admin/dashboard/settings"
+              className="inline-flex items-center gap-2 rounded-2xl border-2 border-amber-500/70 bg-amber-500/10 px-4 py-2.5 font-semibold text-amber-200 transition hover:border-amber-400 hover:bg-amber-500/20"
+            >
+              <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span>Site Settings</span>
+              <span className="text-amber-400/80">/ إعدادات المنصة</span>
+            </a>
+            <div className="flex flex-col items-start gap-2 text-xs text-slate-300 sm:items-end">
+              <p>
+                Signed in as{" "}
+                <span className="font-semibold">
+                  {currentRole ? currentRole.toUpperCase() : "…"}
+                </span>
+              </p>
+              <div className="flex flex-wrap gap-1">
+                <Badge tone="warning">Pending</Badge>
+                <Badge tone="success">Verified</Badge>
+                <Badge tone="danger">Flagged</Badge>
+              </div>
             </div>
           </div>
         </header>
+
+        <a
+          href="/admin/dashboard/settings"
+          className="flex items-center gap-4 rounded-3xl border-2 border-amber-500/60 bg-amber-500/5 px-5 py-4 transition hover:border-amber-400/80 hover:bg-amber-500/15"
+        >
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-amber-500/20 text-amber-400">
+            <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-semibold text-amber-200">Site Settings</p>
+            <p className="text-xs text-amber-400/80">إعدادات المنصة — Logo, hero text, pledge document</p>
+          </div>
+          <span className="ml-auto text-amber-400/80" aria-hidden>→</span>
+        </a>
 
         <section className="grid gap-3 rounded-3xl border border-slate-800 bg-black/40 px-4 py-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1">

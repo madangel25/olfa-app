@@ -16,6 +16,8 @@ type FormState = {
   hero_heading_ar: string;
   hero_subheading_en: string;
   hero_subheading_ar: string;
+  pledge_text_en: string;
+  pledge_text_ar: string;
 };
 
 const emptyForm: FormState = {
@@ -25,7 +27,21 @@ const emptyForm: FormState = {
   hero_heading_ar: "",
   hero_subheading_en: "",
   hero_subheading_ar: "",
+  pledge_text_en: "",
+  pledge_text_ar: "",
 };
+
+const DEFAULT_PLEDGE_EN = `By using Olfa, I commit to a serious, respectful search for marriage. I understand and accept the following:
+
+• I will not use offensive language, harassment, or manipulation in any conversation or profile.
+• I will not attempt to deceive other members or the platform (fake profiles, misrepresentation, or abuse).
+• I understand that breaking these rules will result in the permanent banning of my account, with no right to appeal.`;
+
+const DEFAULT_PLEDGE_AR = `باستخدام أولفا، ألتزم ببحث جاد ومحترم عن الزواج. أفهم وأقبل ما يلي:
+
+• لن أستخدم لغة مسيئة أو مضايقة أو تلاعباً في أي محادثة أو ملف.
+• لن أحاول خداع الأعضاء أو المنصة (ملفات مزيفة، تحريف، أو إساءة استخدام).
+• أفهم أن مخالفة هذه القواعد ستؤدي إلى حظر حسابي نهائياً، دون حق في الاستئناف.`;
 
 function fromRow(row: SiteSettingsRow | null): FormState {
   if (!row) return emptyForm;
@@ -36,6 +52,8 @@ function fromRow(row: SiteSettingsRow | null): FormState {
     hero_heading_ar: row.hero_heading_ar ?? "",
     hero_subheading_en: row.hero_subheading_en ?? "",
     hero_subheading_ar: row.hero_subheading_ar ?? "",
+    pledge_text_en: row.pledge_text_en ?? "",
+    pledge_text_ar: row.pledge_text_ar ?? "",
   };
 }
 
@@ -115,6 +133,8 @@ export default function SiteSettingsPage() {
       hero_heading_ar: form.hero_heading_ar || null,
       hero_subheading_en: form.hero_subheading_en || null,
       hero_subheading_ar: form.hero_subheading_ar || null,
+      pledge_text_en: form.pledge_text_en || null,
+      pledge_text_ar: form.pledge_text_ar || null,
     });
     if (error) {
       setMessage({ type: "error", text: error });
@@ -229,6 +249,37 @@ export default function SiteSettingsPage() {
                     className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
                   />
                 </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Pledge document */}
+          <section className="rounded-3xl border border-slate-800 bg-black/40 px-4 py-4">
+            <h2 className="text-sm font-semibold text-slate-50">Pledge document (Ethical Pledge / تعهد الجدية)</h2>
+            <p className="mt-1 text-[11px] text-slate-400">
+              Shown on the onboarding pledge page. Use plain text; line breaks are preserved. Empty = use default text.
+            </p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="block text-[11px] font-medium text-amber-400/90">Pledge Document (English)</label>
+                <textarea
+                  value={form.pledge_text_en}
+                  onChange={(e) => setForm((prev) => ({ ...prev, pledge_text_en: e.target.value }))}
+                  placeholder={DEFAULT_PLEDGE_EN}
+                  rows={12}
+                  className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-medium text-amber-400/90">Pledge Document (Arabic) — تعهد الجدية</label>
+                <textarea
+                  value={form.pledge_text_ar}
+                  onChange={(e) => setForm((prev) => ({ ...prev, pledge_text_ar: e.target.value }))}
+                  placeholder={DEFAULT_PLEDGE_AR}
+                  rows={12}
+                  dir="rtl"
+                  className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
+                />
               </div>
             </div>
           </section>

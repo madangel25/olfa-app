@@ -8,6 +8,8 @@ export type SiteSettingsRow = {
   hero_heading_ar: string | null;
   hero_subheading_en: string | null;
   hero_subheading_ar: string | null;
+  pledge_text_en: string | null;
+  pledge_text_ar: string | null;
   updated_at: string;
 };
 
