@@ -542,8 +542,8 @@ export default function ProfilePage() {
       const job = profile.job_title || "unknown";
       const prompt =
         field === "about_me"
-          ? `Write a professional 2-line bio for a person who is ${age} years old and works as ${job}. Detect the language of the input; if it is Arabic, write the bio in Arabic. If it is English, write it in English. Return ONLY the bio text, no options, no introductions.`
-          : `Write a professional 2-line description of an ideal partner for someone who is ${age} years old and works as ${job}. Detect the language of the input; if it is Arabic, write in Arabic. If it is English, write in English. Return ONLY the text, no options, no introductions.`;
+          ? `Write a professional 2-line bio in Arabic for a person who is ${age} years old and works as ${job}. Return ONLY the Arabic text. No English, no introductions, no "Option 1".`
+          : `Write a professional 2-line description in Arabic of an ideal partner for someone who is ${age} years old and works as ${job}. Return ONLY the Arabic text. No English, no introductions, no "Option 1".`;
 
       console.log("Gemini prompt (before send):", prompt);
 
@@ -552,15 +552,9 @@ export default function ProfilePage() {
         `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            contents: [
-              {
-                parts: [{ text: prompt }],
-              },
-            ],
+            contents: [{ parts: [{ text: prompt }] }],
           }),
         }
       );
