@@ -30,7 +30,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
         .from("profiles")
         .select("role")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         setError(profileError.message);
@@ -38,7 +38,12 @@ export function AdminGuard({ children }: AdminGuardProps) {
         return;
       }
 
-      const role = profile?.role as Role | null;
+      if (!profile) {
+        router.replace("/login");
+        return;
+      }
+
+      const role = profile.role as Role;
 
       if (role !== "admin" && role !== "moderator") {
         router.replace("/");

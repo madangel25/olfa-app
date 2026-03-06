@@ -87,7 +87,7 @@ export default function OnboardingVerifyPage() {
         .from("profiles")
         .select("quiz_completed, verification_submitted")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         setError(profileError.message);
@@ -95,7 +95,12 @@ export default function OnboardingVerifyPage() {
         return;
       }
 
-      if (!profile?.quiz_completed) {
+      if (!profile) {
+        router.replace("/register");
+        return;
+      }
+
+      if (!profile.quiz_completed) {
         router.replace("/onboarding/quiz");
         return;
       }

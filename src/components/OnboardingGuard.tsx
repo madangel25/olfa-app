@@ -28,7 +28,7 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
         .from("profiles")
         .select("quiz_completed, verification_submitted")
         .eq("id", user.id)
-        .single();
+        .maybeSingle();
 
       if (profileError) {
         setError(profileError.message);
@@ -36,12 +36,17 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
         return;
       }
 
-      if (!profile?.quiz_completed) {
+      if (!profile) {
+        router.replace("/register");
+        return;
+      }
+
+      if (!profile.quiz_completed) {
         router.replace("/onboarding/quiz");
         return;
       }
 
-      if (!profile.verification_submitted) {
+      if (!profile?.verification_submitted) {
         router.replace("/onboarding/verify");
         return;
       }

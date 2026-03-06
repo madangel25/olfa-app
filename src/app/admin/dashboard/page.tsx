@@ -431,15 +431,20 @@ export default function AdminDashboardPage() {
           .from("profiles")
           .select("role, email")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
 
         if (profileError) {
           setGlobalError(profileError.message);
           return;
         }
 
-        setCurrentRole(profile?.role as Role);
-        setCurrentUserEmail(profile?.email ?? null);
+        if (!profile) {
+          window.location.href = "/login";
+          return;
+        }
+
+        setCurrentRole(profile.role as Role);
+        setCurrentUserEmail(profile.email ?? null);
 
         await Promise.all([
           loadVerificationQueue(),
