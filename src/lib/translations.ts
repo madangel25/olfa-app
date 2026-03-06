@@ -136,6 +136,91 @@ type TranslationMap = {
     saving: string;
     optional: string;
   };
+  profile: {
+    title: string;
+    subtitle: string;
+    save: string;
+    step1: string;
+    step2: string;
+    step3: string;
+    step4: string;
+    fullName: string;
+    nationality: string;
+    age: string;
+    maritalStatus: string;
+    email: string;
+    phoneVerification: string;
+    phoneVerifySubtitle: string;
+    sendOtp: string;
+    simulateOtp: string;
+    enterCode: string;
+    confirmSimulated: string;
+    confirmRealSms: string;
+    verified: string;
+    markVerified: string;
+    appearance: string;
+    appearanceSub: string;
+    height: string;
+    weight: string;
+    skinTone: string;
+    lifestyle: string;
+    lifestyleSub: string;
+    smoking: string;
+    religiousCommitment: string;
+    desireChildren: string;
+    career: string;
+    careerSub: string;
+    jobTitle: string;
+    education: string;
+    country: string;
+    city: string;
+    photos: string;
+    photosSub: string;
+    blurNonMatches: string;
+    addPhoto: string;
+    primary: string;
+    setPrimary: string;
+    delete: string;
+    personalEssays: string;
+    personalEssaysSub: string;
+    aboutMe: string;
+    idealPartner: string;
+    aboutMePlaceholder: string;
+    idealPartnerPlaceholder: string;
+    magicWand: string;
+    aiGenerating: string;
+    selectOption: string;
+    toastSaved: string;
+    toastError: string;
+    toastUploadFailed: string;
+    toastBucketMissing: string;
+    toastPhotoRemoved: string;
+    toastPrimaryUpdated: string;
+    optSingle: string;
+    optDivorced: string;
+    optWidowed: string;
+    optFair: string;
+    optMedium: string;
+    optOlive: string;
+    optBrown: string;
+    optDark: string;
+    optNever: string;
+    optFormer: string;
+    optOccasionally: string;
+    optYes: string;
+    optNo: string;
+    optOpen: string;
+    optUndecided: string;
+    optPracticing: string;
+    optModerate: string;
+    optRevert: string;
+    optSeeking: string;
+    optHighSchool: string;
+    optBachelors: string;
+    optMasters: string;
+    optDoctorate: string;
+    optOther: string;
+  };
   nav: {
     home: string;
     login: string;
@@ -352,6 +437,91 @@ const translations: Record<Locale, TranslationMap> = {
       saving: "Saving…",
       optional: "Optional",
     },
+    profile: {
+      title: "Profile",
+      subtitle: "Manage your information",
+      save: "Save",
+      step1: "Identity & Phone",
+      step2: "Appearance & Lifestyle",
+      step3: "Photos & Privacy",
+      step4: "Personal Essays",
+      fullName: "Full name",
+      nationality: "Nationality",
+      age: "Age",
+      maritalStatus: "Marital status",
+      email: "Email",
+      phoneVerification: "Phone verification",
+      phoneVerifySubtitle: "Verify your number with OTP",
+      sendOtp: "Send OTP",
+      simulateOtp: "Simulate OTP",
+      enterCode: "Enter 6-digit code",
+      confirmSimulated: "Confirm (simulated)",
+      confirmRealSms: "Confirm (real SMS)",
+      verified: "Verified",
+      markVerified: "Mark as verified",
+      appearance: "Appearance",
+      appearanceSub: "Height, weight, skin tone",
+      height: "Height (cm)",
+      weight: "Weight (kg)",
+      skinTone: "Skin tone",
+      lifestyle: "Lifestyle",
+      lifestyleSub: "Smoking, religious commitment, desire for children",
+      smoking: "Smoking",
+      religiousCommitment: "Religious commitment",
+      desireChildren: "Desire for children",
+      career: "Career",
+      careerSub: "Job, education, location",
+      jobTitle: "Job title",
+      education: "Education level",
+      country: "Country",
+      city: "City",
+      photos: "Photos",
+      photosSub: "Up to 5 photos",
+      blurNonMatches: "Blur for non-matches",
+      addPhoto: "Add photo",
+      primary: "Primary",
+      setPrimary: "Set as primary",
+      delete: "Delete",
+      personalEssays: "Personal narratives",
+      personalEssaysSub: "About you and your ideal partner",
+      aboutMe: "About me",
+      idealPartner: "Ideal partner",
+      aboutMePlaceholder: "Personality, hobbies, what matters to you…",
+      idealPartnerPlaceholder: "Describe the partner you are looking for…",
+      magicWand: "Suggest with AI",
+      aiGenerating: "Generating…",
+      selectOption: "Select…",
+      toastSaved: "Profile saved successfully.",
+      toastError: "Failed to save profile.",
+      toastUploadFailed: "Upload failed.",
+      toastBucketMissing: "Photo storage is not set up. Please contact support.",
+      toastPhotoRemoved: "Photo removed.",
+      toastPrimaryUpdated: "Primary photo updated.",
+      optSingle: "Single",
+      optDivorced: "Divorced",
+      optWidowed: "Widowed",
+      optFair: "Fair",
+      optMedium: "Medium",
+      optOlive: "Olive",
+      optBrown: "Brown",
+      optDark: "Dark",
+      optNever: "Never",
+      optFormer: "Former",
+      optOccasionally: "Occasionally",
+      optYes: "Yes",
+      optNo: "No",
+      optOpen: "Open",
+      optUndecided: "Undecided",
+      optPracticing: "Practicing",
+      optModerate: "Moderate",
+      optRevert: "Revert",
+      optSeeking: "Seeking to strengthen",
+      optHighSchool: "High School",
+      optBachelors: "Bachelor's",
+      optMasters: "Master's",
+      optDoctorate: "Doctorate",
+      optOther: "Other",
+    },
     nav: {
       home: "Home",
       login: "Login",
@@ -554,6 +724,91 @@ const translations: Record<Locale, TranslationMap> = {
       continue: "متابعة",
       saving: "جاري الحفظ…",
       optional: "اختياري",
+    },
+    profile: {
+      title: "الملف الشخصي",
+      subtitle: "إدارة معلوماتك",
+      save: "حفظ",
+      step1: "الهوية والهاتف",
+      step2: "المظهر ونمط الحياة",
+      step3: "الصور والخصوصية",
+      step4: "النصوص الشخصية",
+      fullName: "الاسم الكامل",
+      nationality: "الجنسية",
+      age: "العمر",
+      maritalStatus: "الحالة الاجتماعية",
+      email: "البريد الإلكتروني",
+      phoneVerification: "التحقق من الهاتف",
+      phoneVerifySubtitle: "التحقق من رقمك بالرمز",
+      sendOtp: "إرسال الرمز",
+      simulateOtp: "محاكاة الرمز",
+      enterCode: "أدخل الرمز (٦ أرقام)",
+      confirmSimulated: "تأكيد (محاكاة)",
+      confirmRealSms: "تأكيد (رسالة حقيقية)",
+      verified: "تم التحقق",
+      markVerified: "اعتبارها مُتحققة",
+      appearance: "المظهر",
+      appearanceSub: "الطول، الوزن، لون البشرة",
+      height: "الطول (سم)",
+      weight: "الوزن (كغ)",
+      skinTone: "لون البشرة",
+      lifestyle: "نمط الحياة",
+      lifestyleSub: "التدخين، الالتزام الديني، الرغبة في الأطفال",
+      smoking: "التدخين",
+      religiousCommitment: "الالتزام الديني",
+      desireChildren: "الرغبة في الأطفال",
+      career: "المهنة",
+      careerSub: "العمل، التعليم، الموقع",
+      jobTitle: "المسمى الوظيفي",
+      education: "المستوى التعليمي",
+      country: "البلد",
+      city: "المدينة",
+      photos: "الصور",
+      photosSub: "حتى ٥ صور",
+      blurNonMatches: "طمس الصور لغير المتطابقين",
+      addPhoto: "إضافة صورة",
+      primary: "رئيسية",
+      setPrimary: "تعيين كرئيسية",
+      delete: "حذف",
+      personalEssays: "النصوص الشخصية",
+      personalEssaysSub: "عني وشريكي المنشود",
+      aboutMe: "عني",
+      idealPartner: "شريكي المنشود",
+      aboutMePlaceholder: "الشخصية والهوايات وما يهمك…",
+      idealPartnerPlaceholder: "صف الشريك الذي تبحث عنه…",
+      magicWand: "اقتراح بالذكاء الاصطناعي",
+      aiGenerating: "جاري الاقتراح…",
+      selectOption: "اختر…",
+      toastSaved: "تم حفظ الملف بنجاح.",
+      toastError: "فشل حفظ الملف.",
+      toastUploadFailed: "فشل الرفع.",
+      toastBucketMissing: "تخزين الصور غير مُعد. يرجى التواصل مع الدعم.",
+      toastPhotoRemoved: "تم حذف الصورة.",
+      toastPrimaryUpdated: "تم تحديث الصورة الرئيسية.",
+      optSingle: "أعزب/عزباء",
+      optDivorced: "مطلق/مطلقة",
+      optWidowed: "أرمل/أرملة",
+      optFair: "فاتح",
+      optMedium: "متوسط",
+      optOlive: "زيتوني",
+      optBrown: "بني",
+      optDark: "غامق",
+      optNever: "لا",
+      optFormer: "سابقاً",
+      optOccasionally: "أحياناً",
+      optYes: "نعم",
+      optNo: "لا",
+      optOpen: "مفتوح",
+      optUndecided: "غير محدد",
+      optPracticing: "ملتزم",
+      optModerate: "معتدل",
+      optRevert: "معتنق",
+      optSeeking: "أسعى للتقوية",
+      optHighSchool: "ثانوي",
+      optBachelors: "بكالوريوس",
+      optMasters: "ماجستير",
+      optDoctorate: "دكتوراه",
+      optOther: "أخرى",
     },
     nav: {
       home: "الرئيسية",

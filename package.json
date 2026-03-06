@@ -12,11 +12,13 @@
     "@fingerprintjs/fingerprintjs": "^5.1.0",
     "@supabase/auth-helpers-nextjs": "^0.15.0",
     "@supabase/supabase-js": "^2.98.0",
+    "framer-motion": "^12.35.0",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",
     "next-intl": "^4.8.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-phone-number-input": "^3.4.16",
     "react-webcam": "^7.2.0"
   },
   "devDependencies": {
