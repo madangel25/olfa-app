@@ -234,11 +234,11 @@ export default function ProfilePage() {
         return;
       }
       setUserId(user.id);
-      const extendedSelect =
-        "full_name, gender, email, phone, phone_verified, nationality, age, marital_status, height_cm, weight_kg, skin_tone, smoking_status, religious_commitment, desire_children, job_title, education_level, country, city, about_me, ideal_partner, photo_urls, primary_photo_index, photo_privacy_blur";
       const { data } = await supabase
         .from("profiles")
-        .select(extendedSelect)
+        .select(
+          "full_name, gender, email, phone, phone_verified, nationality, age, marital_status, height_cm, weight_kg, skin_tone, smoking_status, religious_commitment, desire_children, job_title, education_level, country, city, about_me, ideal_partner, photo_urls, primary_photo_index, photo_privacy_blur"
+        )
         .eq("id", user.id)
         .maybeSingle();
 
@@ -310,7 +310,10 @@ export default function ProfilePage() {
         primary_photo_index: profile.primary_photo_index,
         photo_privacy_blur: profile.photo_privacy_blur,
       };
-      const { error } = await supabase.from("profiles").update(payload).eq("id", userId);
+      const { error } = await supabase
+        .from("profiles")
+        .update(payload)
+        .eq("id", userId);
       if (error) throw error;
       showToast("success", t("profile.toastSaved"));
       dispatchProfileUpdated();
@@ -497,12 +500,25 @@ export default function ProfilePage() {
           ? `Write a short bio for a person who is ${age} years old and works as ${job}.`
           : `Write a short description of an ideal partner for someone who is ${age} years old and works as ${job}.`;
 
-      const genAI = new GoogleGenerativeAI("AIzaSyDBL4SLwdNUixl7aViHZTIrXGAsNCgNsCQ");
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const result = await model.generateContent(prompt);
-      const rawText = result.response.text();
-      console.log("AI Response:", rawText);
-      const text = rawText?.trim() ?? "";
+      const apiKey = "AIzaSyDBL4SLwdNUixl7aViHZTIrXGAsNCgNsCQ";
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const GEMINI_MODEL_PRIMARY = "gemini-1.5-flash";
+      const modelsToTry = [GEMINI_MODEL_PRIMARY, "gemini-pro"] as const;
+
+      let text = "";
+      for (const modelId of modelsToTry) {
+        try {
+          const model = genAI.getGenerativeModel({ model: modelId });
+          const result = await model.generateContent(prompt);
+          const rawText = result.response.text();
+          console.log(`AI Response (${modelId}):`, rawText);
+          text = rawText?.trim() ?? "";
+          if (text) break;
+        } catch (modelError) {
+          console.log(`${modelId} failed, trying fallback:`, modelError);
+        }
+      }
+
       if (text) updateField(field, text);
       else showToast("error", t("profile.toastError"));
     } catch (e) {
