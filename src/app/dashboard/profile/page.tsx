@@ -117,7 +117,7 @@ export default function ProfilePage() {
   const [phoneOtpCode, setPhoneOtpCode] = useState("");
   const [phoneOtpConfirming, setPhoneOtpConfirming] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
-  const [aiLoading, setAiLoading] = useState<"about" | "partner" | null>(null);
+  const [aiLoading, setAiLoading] = useState<"about_me" | "ideal_partner" | null>(null);
 
   const showToast = useCallback((type: "success" | "error", message: string) => {
     setToast({ type, message });
@@ -788,7 +788,7 @@ export default function ProfilePage() {
                       disabled={aiLoading !== null}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
                     >
-                      {aiLoading === "partner" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+                      {aiLoading === "ideal_partner" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
                       {t("profile.magicWand")}
                     </button>
                   </div>
