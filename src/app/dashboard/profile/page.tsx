@@ -93,7 +93,7 @@ function SearchableCountrySelect({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`flex w-full min-h-[2.75rem] items-center justify-between gap-2 rounded-xl border border-slate-600/80 bg-[#161618] px-4 py-3 text-left text-slate-100 shadow-sm outline-none transition-all focus:ring-2 focus:ring-sky-500 placeholder:text-slate-500 ${!displayValue ? "text-slate-500" : ""}`}
+        className={`flex w-full min-h-[2.75rem] items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-left text-zinc-900 shadow-sm outline-none transition-all focus:ring-2 focus:ring-sky-500 placeholder:text-zinc-400 ${!displayValue ? "text-zinc-400" : ""}`}
       >
         <span className="flex items-center gap-2 truncate">
           {selectedCountry ? (
@@ -105,7 +105,7 @@ function SearchableCountrySelect({
             placeholder
           )}
         </span>
-        <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-4 w-4 shrink-0 text-zinc-400 transition ${open ? "rotate-180" : ""}`} />
       </button>
       <AnimatePresence>
         {open && (
@@ -113,9 +113,9 @@ function SearchableCountrySelect({
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            className="absolute top-full left-0 z-50 mt-1 max-h-72 w-full overflow-hidden rounded-xl border border-slate-600/80 bg-[#161618] shadow-xl"
+            className="absolute top-full left-0 z-50 mt-1 max-h-72 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl"
           >
-            <div className="border-b border-slate-600/80 p-2">
+            <div className="border-b border-zinc-200 p-2">
               <input
                 type="text"
                 value={search}
@@ -135,7 +135,7 @@ function SearchableCountrySelect({
                       setOpen(false);
                       setSearch("");
                     }}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-slate-200 hover:bg-slate-700/50"
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-zinc-700 hover:bg-zinc-100"
                   >
                     <span className="text-lg leading-none">{getFlagEmoji(c.code)}</span>
                     <span>{getCountryDisplayName(c.code, locale, c.name)}</span>
@@ -143,7 +143,7 @@ function SearchableCountrySelect({
                 </li>
               ))}
               {filtered.length === 0 && (
-                <li className="px-4 py-3 text-sm text-slate-500">No matches</li>
+                <li className="px-4 py-3 text-sm text-zinc-500">No matches</li>
               )}
             </ul>
           </motion.div>
@@ -614,8 +614,8 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center bg-[#0a0a0b]" dir={dir}>
-        <Loader2 className="h-8 w-8 animate-spin text-sky-400" />
+      <div className="flex min-h-[40vh] items-center justify-center bg-[#f8f9fa]" dir={dir}>
+        <Loader2 className="h-8 w-8 animate-spin text-sky-500" />
       </div>
     );
   }
@@ -623,30 +623,30 @@ export default function ProfilePage() {
   const isFemale = (profile.gender || "").toLowerCase() === "female";
   const theme = {
     accent: isFemale ? "pink" : "sky",
-    bg: isFemale ? "bg-pink-500/20" : "bg-sky-500/20",
-    border: isFemale ? "border-pink-500/50" : "border-sky-500/50",
-    text: isFemale ? "text-pink-400" : "text-sky-400",
-    textMuted: isFemale ? "text-pink-300" : "text-sky-300",
+    bg: isFemale ? "bg-pink-100" : "bg-sky-100",
+    border: isFemale ? "border-pink-300" : "border-sky-300",
+    text: isFemale ? "text-pink-600" : "text-sky-600",
+    textMuted: isFemale ? "text-pink-700" : "text-sky-700",
     focusRing: isFemale ? "focus:ring-pink-500" : "focus:ring-sky-500",
-    hoverBorder: isFemale ? "hover:border-pink-500/50" : "hover:border-sky-500/50",
-    hoverBg: isFemale ? "hover:bg-pink-500/20" : "hover:bg-sky-500/20",
-    hoverText: isFemale ? "hover:text-pink-400" : "hover:text-sky-400",
-    fill: isFemale ? "fill-pink-400" : "fill-sky-400",
-    badge: isFemale ? "bg-pink-500/95" : "bg-sky-500/95",
+    hoverBorder: isFemale ? "hover:border-pink-400" : "hover:border-sky-400",
+    hoverBg: isFemale ? "hover:bg-pink-100" : "hover:bg-sky-100",
+    hoverText: isFemale ? "hover:text-pink-600" : "hover:text-sky-600",
+    fill: isFemale ? "fill-pink-600" : "fill-sky-600",
+    badge: isFemale ? "bg-pink-500" : "bg-sky-500",
   };
 
-  const cardClass = "rounded-2xl border border-slate-700/80 bg-[#161618] backdrop-blur-xl p-4 sm:p-6";
+  const cardClass = "rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6";
   const inputClass =
-    `min-h-[2.75rem] w-full rounded-xl border border-slate-600/80 bg-[#161618] px-4 py-3 text-slate-100 shadow-sm outline-none transition-all ${theme.focusRing} focus:ring-2 placeholder:text-slate-500`;
+    `min-h-[2.75rem] w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 shadow-sm outline-none transition-all ${theme.focusRing} focus:ring-2 placeholder:text-zinc-400`;
   const buttonClass =
     `inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium outline-none transition-all ${theme.focusRing} focus:ring-2 disabled:opacity-60`;
 
   return (
-    <div className="min-h-full space-y-6 bg-[#0a0a0b] pb-8 font-[family-name:var(--font-cairo)]" dir={dir}>
+    <div className="min-h-full space-y-6 bg-[#f8f9fa] pb-8 font-[family-name:var(--font-cairo)]" dir={dir}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-50">{t("profile.title")}</h1>
-          <p className="mt-1 text-sm text-slate-400">{t("profile.subtitle")}</p>
+          <h1 className="text-2xl font-semibold text-zinc-900">{t("profile.title")}</h1>
+          <p className="mt-1 text-sm text-zinc-500">{t("profile.subtitle")}</p>
         </div>
         <button
           type="button"
@@ -663,10 +663,10 @@ export default function ProfilePage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md rounded-xl border px-4 py-3 text-sm shadow-lg sm:left-auto ${
+          className={`fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md rounded-xl border px-4 py-3 text-sm shadow-xl sm:left-auto ${
             toast.type === "success"
-              ? "border-emerald-500/50 bg-emerald-500/20 text-emerald-100"
-              : "border-red-500/50 bg-red-500/20 text-red-100"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+              : "border-red-200 bg-red-50 text-red-800"
           }`}
           role="alert"
         >
@@ -676,7 +676,7 @@ export default function ProfilePage() {
 
       {/* Stepper */}
       <nav
-        className="flex flex-wrap gap-2 rounded-2xl border border-slate-700/80 bg-[#161618]/80 p-2 backdrop-blur-sm sm:flex-nowrap"
+        className="flex flex-wrap gap-2 rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm sm:flex-nowrap"
         aria-label="Profile sections"
       >
         {STEP_ORDER.map(({ id, icon: Icon, key }) => (
@@ -687,7 +687,7 @@ export default function ProfilePage() {
             className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition ${
               step === id
                 ? `${theme.bg} ${theme.text} border ${theme.border}`
-                : "text-slate-400 hover:bg-white/10 hover:text-slate-200"
+                : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
             }`}
           >
             <Icon className="h-4 w-4 shrink-0" />
@@ -714,7 +714,7 @@ export default function ProfilePage() {
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.fullName")}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.fullName")}</label>
                     <input
                       type="text"
                       value={profile.full_name}
@@ -723,7 +723,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.gender")}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.gender")}</label>
                     <select
                       value={profile.gender || ""}
                       disabled
@@ -736,7 +736,7 @@ export default function ProfilePage() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.nationality")}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.nationality")}</label>
                     <SearchableCountrySelect
                       value={profile.nationality}
                       onChange={(name) => updateField("nationality", name)}
@@ -746,7 +746,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.age")}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.age")}</label>
                     <input
                       type="number"
                       min={18}
@@ -757,7 +757,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.maritalStatus")}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.maritalStatus")}</label>
                     <select value={profile.marital_status} onChange={(e) => updateField("marital_status", e.target.value)} className={inputClass}>
                       <option value="">{t("profile.selectOption")}</option>
                       {MARITAL_VALUES.slice(1).map((v) => (
@@ -766,19 +766,19 @@ export default function ProfilePage() {
                     </select>
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.email")}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.email")}</label>
                     <input type="email" value={profile.email} readOnly disabled className={inputClass + " opacity-75 cursor-not-allowed"} />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.phoneVerification")}</label>
-                    <p className="mb-2 text-xs text-slate-500">{t("profile.phoneVerifySubtitle")}</p>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.phoneVerification")}</label>
+                    <p className="mb-2 text-xs text-zinc-500">{t("profile.phoneVerifySubtitle")}</p>
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                       <PhoneInput
                         international
                         defaultCountry="EG"
                         value={profile.phone || undefined}
                         onChange={(val) => updateField("phone", val || "")}
-                        className="flex flex-1 rounded-xl border border-slate-600/80 bg-[#161618] [&_.PhoneInputInput]:rounded-r-xl [&_.PhoneInputInput]:bg-transparent [&_.PhoneInputInput]:px-4 [&_.PhoneInputInput]:py-2.5 [&_.PhoneInputInput]:text-slate-100 [&_.PhoneInputCountry]:rounded-l-xl [&_.PhoneInputCountry]:bg-[#161618] [&_.PhoneInputCountry]:pl-3 [&_.PhoneInputCountrySelectArrow]:text-slate-400"
+                        className="flex flex-1 rounded-xl border border-zinc-200 bg-white [&_.PhoneInputInput]:rounded-r-xl [&_.PhoneInputInput]:bg-transparent [&_.PhoneInputInput]:px-4 [&_.PhoneInputInput]:py-2.5 [&_.PhoneInputInput]:text-zinc-900 [&_.PhoneInputCountry]:rounded-l-xl [&_.PhoneInputCountry]:bg-zinc-50 [&_.PhoneInputCountry]:pl-3 [&_.PhoneInputCountrySelectArrow]:text-zinc-500"
                       />
                       <div className="flex flex-wrap gap-2">
                         <button
@@ -794,16 +794,16 @@ export default function ProfilePage() {
                           type="button"
                           onClick={handlePhoneOtpSimulate}
                           disabled={profile.phone_verified || phoneOtpSent}
-                          className="rounded-xl border border-slate-600 bg-slate-800/80 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-slate-700 disabled:opacity-50"
+                          className="rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-200 disabled:opacity-50"
                         >
                           {t("profile.simulateOtp")}
                         </button>
                       </div>
                     </div>
                     {phoneOtpSent && !profile.phone_verified && (
-                      <div className="mt-4 flex flex-col gap-3 rounded-xl border border-slate-700/80 bg-[#161618] p-4 sm:flex-row sm:items-end">
+                      <div className="mt-4 flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end">
                         <div className="flex-1">
-                          <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.enterCode")}</label>
+                          <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.enterCode")}</label>
                           <input
                             type="text"
                             inputMode="numeric"
@@ -818,7 +818,7 @@ export default function ProfilePage() {
                             {phoneOtpConfirming ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                             {t("profile.confirmSimulated")}
                           </button>
-                          <button type="button" onClick={handleConfirmOtp} disabled={phoneOtpCode.length < 6 || phoneOtpConfirming} className="rounded-xl border border-slate-600 bg-slate-700/80 px-4 py-2.5 text-sm font-medium text-slate-200 disabled:opacity-60">
+                          <button type="button" onClick={handleConfirmOtp} disabled={phoneOtpCode.length < 6 || phoneOtpConfirming} className="rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-700 disabled:opacity-60">
                             {t("profile.confirmRealSms")}
                           </button>
                         </div>
@@ -853,15 +853,15 @@ export default function ProfilePage() {
                 <p className="mb-4 text-xs text-slate-500">{t("profile.appearanceSub")}</p>
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.height")}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.height")}</label>
                     <input type="number" min={100} max={250} value={profile.height_cm} onChange={(e) => updateField("height_cm", e.target.value)} className={inputClass} />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.weight")}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.weight")}</label>
                     <input type="number" min={30} max={300} value={profile.weight_kg} onChange={(e) => updateField("weight_kg", e.target.value)} className={inputClass} />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.skinTone")}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.skinTone")}</label>
                     <select value={profile.skin_tone} onChange={(e) => updateField("skin_tone", e.target.value)} className={inputClass}>
                       <option value="">{t("profile.selectOption")}</option>
                       {SKIN_VALUES.slice(1).map((v) => (
@@ -876,10 +876,10 @@ export default function ProfilePage() {
                   <Heart className="h-5 w-5" />
                   {t("profile.lifestyle")}
                 </h2>
-                <p className="mb-4 text-xs text-slate-500">{t("profile.lifestyleSub")}</p>
+                <p className="mb-4 text-xs text-zinc-500">{t("profile.lifestyleSub")}</p>
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.smoking")}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.smoking")}</label>
                     <select value={profile.smoking_status} onChange={(e) => updateField("smoking_status", e.target.value)} className={inputClass}>
                       <option value="">{t("profile.selectOption")}</option>
                       {SMOKING_VALUES.slice(1).map((v) => (
@@ -888,7 +888,7 @@ export default function ProfilePage() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.religiousCommitment")}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.religiousCommitment")}</label>
                     <select value={profile.religious_commitment} onChange={(e) => updateField("religious_commitment", e.target.value)} className={inputClass}>
                       <option value="">{t("profile.selectOption")}</option>
                       {RELIGIOUS_VALUES.slice(1).map((v) => (
@@ -897,7 +897,7 @@ export default function ProfilePage() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.desireChildren")}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.desireChildren")}</label>
                     <select value={profile.desire_children} onChange={(e) => updateField("desire_children", e.target.value)} className={inputClass}>
                       <option value="">{t("profile.selectOption")}</option>
                       {CHILDREN_VALUES.slice(1).map((v) => (
@@ -912,14 +912,14 @@ export default function ProfilePage() {
                   <Briefcase className="h-5 w-5" />
                   {t("profile.career")}
                 </h2>
-                <p className="mb-4 text-xs text-slate-500">{t("profile.careerSub")}</p>
+                <p className="mb-4 text-xs text-zinc-500">{t("profile.careerSub")}</p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.jobTitle")}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.jobTitle")}</label>
                     <input type="text" value={profile.job_title} onChange={(e) => updateField("job_title", e.target.value)} className={inputClass} />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.education")}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.education")}</label>
                     <select value={profile.education_level} onChange={(e) => updateField("education_level", e.target.value)} className={inputClass}>
                       <option value="">{t("profile.selectOption")}</option>
                       <option value="high_school">{t("profile.optHighSchool")}</option>
@@ -930,7 +930,7 @@ export default function ProfilePage() {
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.country")}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.country")}</label>
                     <SearchableCountrySelect
                       value={profile.country}
                       onChange={(name) => updateField("country", name)}
@@ -940,7 +940,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.city")}</label>
+                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.city")}</label>
                     <input type="text" value={profile.city} onChange={(e) => updateField("city", e.target.value)} className={inputClass} />
                   </div>
                 </div>
@@ -956,36 +956,36 @@ export default function ProfilePage() {
                     <Camera className="h-5 w-5" />
                     {t("profile.photos")}
                   </h2>
-                  <p className="mt-1 text-xs text-slate-500">{t("profile.photosSub")}</p>
+                  <p className="mt-1 text-xs text-zinc-500">{t("profile.photosSub")}</p>
                 </div>
-                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-600/80 bg-slate-800/50 px-3 py-2 text-sm text-slate-300 hover:bg-slate-800/80">
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100">
                   <span className="flex items-center gap-1.5">
                     {profile.photo_privacy_blur ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     {t("profile.blurNonMatches")}
                   </span>
-                  <input type="checkbox" checked={profile.photo_privacy_blur} onChange={(e) => updateField("photo_privacy_blur", e.target.checked)} className={`h-4 w-4 rounded border-slate-600 bg-[#161618] ${theme.focusRing} focus:ring-2`} />
+                  <input type="checkbox" checked={profile.photo_privacy_blur} onChange={(e) => updateField("photo_privacy_blur", e.target.checked)} className={`h-4 w-4 rounded border-zinc-300 bg-white ${theme.focusRing} focus:ring-2`} />
                 </label>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
                 {Array.from({ length: MAX_PHOTOS }).map((_, i) => (
-                  <div key={i} className="group relative aspect-[3/4] overflow-hidden rounded-xl border border-slate-700 bg-slate-800/80">
+                  <div key={i} className="group relative aspect-[3/4] overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
                     {profile.photo_urls[i] ? (
                       <>
                         <img src={profile.photo_urls[i]} alt="" className={`h-full w-full object-cover ${profile.photo_privacy_blur ? "blur-md" : ""}`} />
                         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 opacity-0 transition group-hover:opacity-100">
-                          <button type="button" onClick={() => setPrimaryPhoto(i)} className={`rounded-lg bg-slate-800/95 p-2.5 ${theme.text} shadow-lg hover:bg-slate-700`} title={t("profile.setPrimary")}>
+                          <button type="button" onClick={() => setPrimaryPhoto(i)} className={`rounded-lg bg-white/95 p-2.5 ${theme.text} shadow-lg hover:bg-zinc-100`} title={t("profile.setPrimary")}>
                             <Star className={`h-5 w-5 ${profile.primary_photo_index === i ? theme.fill : ""}`} />
                           </button>
-                          <button type="button" onClick={() => handleDeletePhoto(i)} className="rounded-lg bg-slate-800/95 p-2.5 text-red-400 shadow-lg hover:bg-slate-700" title={t("profile.delete")}>
+                          <button type="button" onClick={() => handleDeletePhoto(i)} className="rounded-lg bg-white/95 p-2.5 text-red-500 shadow-lg hover:bg-zinc-100" title={t("profile.delete")}>
                             <Trash2 className="h-5 w-5" />
                           </button>
                         </div>
                         {profile.primary_photo_index === i && (
-                          <span className={`absolute left-2 top-2 rounded-md ${theme.badge} px-2 py-1 text-xs font-semibold text-slate-950 shadow`}>{t("profile.primary")}</span>
+                          <span className={`absolute left-2 top-2 rounded-md ${theme.badge} px-2 py-1 text-xs font-semibold text-white shadow`}>{t("profile.primary")}</span>
                         )}
                       </>
                     ) : (
-                      <label className={`flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-600 text-slate-500 ${theme.hoverBorder} hover:bg-slate-800/50 ${theme.hoverText}`}>
+                      <label className={`flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-300 text-zinc-500 ${theme.hoverBorder} hover:bg-zinc-100 ${theme.hoverText}`}>
                         {uploadingIndex === i ? <Loader2 className="h-8 w-8 animate-spin" /> : <><ImagePlus className="h-10 w-10" /><span className="text-xs font-medium">{t("profile.addPhoto")}</span></>}
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(e, i)} disabled={uploadingIndex !== null} />
                       </label>
@@ -1002,16 +1002,16 @@ export default function ProfilePage() {
                 <FileText className="h-5 w-5" />
                 {t("profile.personalEssays")}
               </h2>
-              <p className="mb-4 text-xs text-slate-500">{t("profile.personalEssaysSub")}</p>
+              <p className="mb-4 text-xs text-zinc-500">{t("profile.personalEssaysSub")}</p>
               <div className="space-y-4">
                 <div>
                   <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-                    <label className="text-xs font-medium text-slate-400">{t("profile.aboutMe")}</label>
+                    <label className="text-xs font-medium text-zinc-500">{t("profile.aboutMe")}</label>
                     <div className="flex items-center gap-2">
                       <select
                         value={tone}
                         onChange={(e) => setTone(e.target.value as "friendly" | "romantic" | "professional")}
-                        className={`rounded-xl border border-slate-600/80 bg-[#161618] px-3 py-1.5 text-xs font-medium text-slate-200 shadow-sm outline-none ${theme.focusRing} focus:ring-2`}
+                        className={`rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm outline-none ${theme.focusRing} focus:ring-2`}
                       >
                         <option value="friendly">رايق</option>
                         <option value="romantic">رومانسي</option>
@@ -1028,13 +1028,13 @@ export default function ProfilePage() {
                       </button>
                     </div>
                   </div>
-                  <div className="overflow-hidden rounded-xl border border-slate-600/80 shadow-sm bg-[#161618]">
-                    <div className="flex justify-end border-b border-slate-600/80 bg-[#0a0a0b]/50 px-3 py-2">
+                  <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+                    <div className="flex justify-end border-b border-zinc-200 bg-zinc-50 px-3 py-2">
                       <button
                         type="button"
                         onClick={() => handleCopyBio(profile.about_me)}
                         disabled={!profile.about_me.trim()}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600/80 bg-[#161618] px-2.5 py-1.5 text-xs font-medium text-slate-300 shadow-sm transition hover:bg-slate-700/50 disabled:opacity-40"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-100 disabled:opacity-40"
                       >
                         <Copy className="h-3.5 w-3.5" />
                         Copy
@@ -1057,7 +1057,7 @@ export default function ProfilePage() {
                       <select
                         value={tone}
                         onChange={(e) => setTone(e.target.value as "friendly" | "romantic" | "professional")}
-                        className={`rounded-xl border border-slate-600/80 bg-[#161618] px-3 py-1.5 text-xs font-medium text-slate-200 shadow-sm outline-none ${theme.focusRing} focus:ring-2`}
+                        className={`rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm outline-none ${theme.focusRing} focus:ring-2`}
                       >
                         <option value="friendly">رايق</option>
                         <option value="romantic">رومانسي</option>
@@ -1074,13 +1074,13 @@ export default function ProfilePage() {
                       </button>
                     </div>
                   </div>
-                  <div className="overflow-hidden rounded-xl border border-slate-600/80 shadow-sm bg-[#161618]">
-                    <div className="flex justify-end border-b border-slate-600/80 bg-[#0a0a0b]/50 px-3 py-2">
+                  <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+                    <div className="flex justify-end border-b border-zinc-200 bg-zinc-50 px-3 py-2">
                       <button
                         type="button"
                         onClick={() => handleCopyBio(profile.ideal_partner)}
                         disabled={!profile.ideal_partner.trim()}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600/80 bg-[#161618] px-2.5 py-1.5 text-xs font-medium text-slate-300 shadow-sm transition hover:bg-slate-700/50 disabled:opacity-40"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-100 disabled:opacity-40"
                       >
                         <Copy className="h-3.5 w-3.5" />
                         Copy

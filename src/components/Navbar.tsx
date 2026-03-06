@@ -8,22 +8,7 @@ import { getSiteSettings } from "@/lib/siteSettings";
 import { supabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 import type { Locale } from "@/lib/translations";
-
-function BellIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
-      <path fillRule="evenodd" d="M5.25 9a6.75 6.75 0 0 1 13.5 0v.75c0 2.123.8 4.057 2.118 5.52a.75.75 0 0 1-.297 1.206c-1.544.57-2.6 1.94-2.6 3.46V19a.75.75 0 0 1-1.5 0v-.75c0-1.52-1.056-2.89-2.6-3.46a.75.75 0 0 1-.298-1.206A6.75 6.75 0 0 0 5.25 9.75V9Zm4.502 8.9a2.25 2.25 0 0 0 4.496 0 25.2 25.2 0 0 1-4.496 0Z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-function ChevronDownIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden {...props}>
-      <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clipRule="evenodd" />
-    </svg>
-  );
-}
+import { Bell, ChevronDown, User, Globe, LogOut } from "lucide-react";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -33,7 +18,7 @@ export function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [hasNewNotifications, setHasNewNotifications] = useState(false);
 
   useEffect(() => {
     getSiteSettings().then((row) => {
@@ -64,12 +49,6 @@ export function Navbar() {
     return () => subscription.unsubscribe();
   }, []);
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   const switchLocale = (next: Locale) => {
     if (next === locale) return;
     setLocale(next);
@@ -85,18 +64,16 @@ export function Navbar() {
 
   return (
     <nav
-      className={`sticky top-0 z-50 border-b border-slate-800/80 bg-[#0a0a0b]/80 shadow-sm transition-all duration-300 backdrop-blur-xl ${
-        scrolled ? "shadow-black/10" : ""
-      }`}
+      className="sticky top-0 z-50 border-b border-zinc-200 bg-white/95 shadow-sm backdrop-blur-sm"
       role="navigation"
       aria-label="Main"
     >
       <div
-        className={`mx-auto flex max-w-6xl items-center justify-between px-4 py-3 ${dir === "rtl" ? "" : "flex-row-reverse"}`}
+        className={`mx-auto flex max-w-6xl items-center justify-between px-4 py-3 font-[family-name:var(--font-cairo)] ${dir === "rtl" ? "" : "flex-row-reverse"}`}
       >
         <Link
           href="/"
-          className="flex items-center gap-2 text-lg font-semibold text-slate-50 transition hover:text-amber-200"
+          className="flex items-center gap-2 text-lg font-semibold text-zinc-900 transition hover:text-sky-600"
         >
           {logoUrl ? (
             <img src={logoUrl} alt="Olfa" className="h-8 w-auto object-contain" />
@@ -105,13 +82,13 @@ export function Navbar() {
           )}
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <Link
             href="/"
             className={`text-sm font-medium transition ${
               pathname === "/"
-                ? "text-amber-400"
-                : "text-slate-300 hover:text-slate-50"
+                ? "text-sky-600"
+                : "text-zinc-600 hover:text-zinc-900"
             }`}
           >
             {t("nav.home")}
@@ -121,16 +98,22 @@ export function Navbar() {
             <>
               <Link
                 href="/dashboard/notifications"
-                className="rounded-lg p-2 text-slate-300 transition hover:bg-white/10 hover:text-amber-400"
+                className="relative rounded-lg p-2 text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
                 aria-label="Notifications"
               >
-                <BellIcon className="h-5 w-5" />
+                <Bell className="h-5 w-5" />
+                {hasNewNotifications && (
+                  <span
+                    className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500"
+                    aria-hidden
+                  />
+                )}
               </Link>
               <div className="relative">
                 <button
                   type="button"
                   onClick={() => setDropdownOpen((o) => !o)}
-                  className="flex items-center gap-2 rounded-xl border border-slate-600/80 bg-[#161618] px-4 py-2.5 text-sm font-medium text-slate-200 shadow-md transition hover:bg-slate-700/50 focus:outline-none focus:ring-2 focus:ring-sky-500/50"
+                  className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
                   aria-expanded={dropdownOpen}
                   aria-haspopup="true"
                   id="user-menu-button"
@@ -138,7 +121,7 @@ export function Navbar() {
                   <span className="max-w-[120px] truncate">
                     {userName ?? "Profile"}
                   </span>
-                  <ChevronDownIcon className={`h-4 w-4 transition ${dropdownOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown className={`h-4 w-4 transition ${dropdownOpen ? "rotate-180" : ""}`} />
                 </button>
                 {dropdownOpen && (
                   <>
@@ -148,30 +131,66 @@ export function Navbar() {
                       onClick={() => setDropdownOpen(false)}
                     />
                     <div
-                      className={`absolute top-full z-20 mt-2 w-56 rounded-xl border border-slate-700/80 bg-[#161618] py-2 shadow-xl shadow-black/30 backdrop-blur-xl ${dir === "rtl" ? "left-0" : "right-0"}`}
+                      className={`absolute top-full z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-zinc-200 bg-white py-2 shadow-xl ${dir === "rtl" ? "left-0" : "right-0"}`}
                       role="menu"
                       aria-orientation="vertical"
                       aria-labelledby="user-menu-button"
                     >
-                      <div className="border-b border-slate-700/80 px-4 py-3">
-                        <p className="truncate text-sm font-medium text-slate-200">
+                      <div className="border-b border-zinc-100 px-4 py-3">
+                        <p className="truncate text-sm font-medium text-zinc-800">
                           {userName ?? "User"}
                         </p>
                       </div>
                       <Link
                         href="/dashboard/profile"
-                        className="block px-4 py-3 text-sm text-slate-300 transition hover:bg-white/10 hover:text-sky-400"
+                        className="flex items-center gap-3 px-4 py-3 text-sm text-zinc-700 transition hover:bg-zinc-50"
                         role="menuitem"
                         onClick={() => setDropdownOpen(false)}
                       >
+                        <User className="h-4 w-4 shrink-0 text-zinc-500" />
                         Profile
                       </Link>
+                      <div className="border-t border-zinc-100 px-4 py-2">
+                        <p className="mb-2 flex items-center gap-3 px-2 py-1 text-xs font-medium uppercase tracking-wide text-zinc-400">
+                          <Globe className="h-4 w-4 shrink-0" />
+                          Language
+                        </p>
+                        <div className="flex gap-1 rounded-lg bg-zinc-100 p-1">
+                          <button
+                            type="button"
+                            onClick={() => switchLocale("en")}
+                            className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition ${
+                              locale === "en"
+                                ? "bg-white text-sky-600 shadow-sm"
+                                : "text-zinc-600 hover:text-zinc-900"
+                            }`}
+                            aria-pressed={locale === "en"}
+                            aria-label="English"
+                          >
+                            EN
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => switchLocale("ar")}
+                            className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition ${
+                              locale === "ar"
+                                ? "bg-white text-sky-600 shadow-sm"
+                                : "text-zinc-600 hover:text-zinc-900"
+                            }`}
+                            aria-pressed={locale === "ar"}
+                            aria-label="العربية"
+                          >
+                            AR
+                          </button>
+                        </div>
+                      </div>
                       <button
                         type="button"
                         onClick={handleLogout}
-                        className="w-full px-4 py-2.5 text-left text-sm text-slate-300 transition hover:bg-red-500/20 hover:text-red-300"
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm text-zinc-700 transition hover:bg-red-50 hover:text-red-600"
                         role="menuitem"
                       >
+                        <LogOut className="h-4 w-4 shrink-0 text-zinc-500" />
                         Logout
                       </button>
                     </div>
@@ -185,8 +204,8 @@ export function Navbar() {
                 href="/login"
                 className={`text-sm font-medium transition ${
                   pathname === "/login"
-                    ? "text-sky-400"
-                    : "text-slate-300 hover:text-slate-50"
+                    ? "text-sky-600"
+                    : "text-zinc-600 hover:text-zinc-900"
                 }`}
               >
                 {t("nav.login")}
@@ -195,47 +214,14 @@ export function Navbar() {
                 href="/register"
                 className={`text-sm font-medium transition ${
                   pathname === "/register"
-                    ? "text-sky-400"
-                    : "text-slate-300 hover:text-slate-50"
+                    ? "text-sky-600"
+                    : "text-zinc-600 hover:text-zinc-900"
                 }`}
               >
                 {t("nav.register")}
               </Link>
             </>
           )}
-
-          <div
-            className="flex rounded-xl border border-slate-600/80 bg-[#161618] p-1 shadow-md"
-            role="group"
-            aria-label="Language"
-          >
-            <button
-              type="button"
-              onClick={() => switchLocale("en")}
-              className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${
-                locale === "en"
-                  ? "bg-sky-500/90 text-white shadow-sm"
-                  : "text-slate-400 hover:bg-slate-700/50 hover:text-slate-50"
-              }`}
-              aria-pressed={locale === "en"}
-              aria-label="English"
-            >
-              EN
-            </button>
-            <button
-              type="button"
-              onClick={() => switchLocale("ar")}
-              className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${
-                locale === "ar"
-                  ? "bg-sky-500/90 text-white shadow-sm"
-                  : "text-slate-400 hover:bg-slate-700/50 hover:text-slate-50"
-              }`}
-              aria-pressed={locale === "ar"}
-              aria-label="العربية"
-            >
-              AR
-            </button>
-          </div>
         </div>
       </div>
     </nav>

@@ -14,10 +14,10 @@ export default function NotificationsPage() {
   }, [router]);
 
   return (
-    <div>
-      <h1 className="text-xl font-semibold">Notifications</h1>
-      <p className="mt-1 text-sm text-slate-400">الإشعارات — Coming soon.</p>
-      <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-slate-400">
+    <div className="font-[family-name:var(--font-cairo)]">
+      <h1 className="text-xl font-semibold text-zinc-900">Notifications</h1>
+      <p className="mt-1 text-sm text-zinc-500">الإشعارات — Coming soon.</p>
+      <div className="mt-6 rounded-2xl border border-zinc-200 bg-white p-6 text-center text-zinc-500 shadow-sm">
         No new notifications.
       </div>
     </div>
