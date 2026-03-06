@@ -488,11 +488,6 @@ export default function ProfilePage() {
   };
 
   const handleAiSuggest = async (field: "about_me" | "ideal_partner") => {
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY?.trim();
-    if (!apiKey) {
-      showToast("error", t("profile.aiKeyMissing"));
-      return;
-    }
     setAiLoading(field);
     try {
       const context = {
@@ -510,14 +505,14 @@ export default function ProfilePage() {
         ? `You are helping write a short, professional "About Me" bio for an Islamic marriage profile. The user's basic info: Name: ${context.full_name ?? "not given"}, Age: ${context.age ?? "not given"}, Job: ${context.job_title ?? "not given"}, Location: ${context.country ?? ""} ${context.city ?? ""}. Write a warm, sincere paragraph (2-4 sentences) that would appeal to someone seeking a serious marriage. Keep it respectful and avoid clichés. Output ONLY the bio text, no quotes or labels. Write in ${lang}.`
         : `You are helping write a short "Ideal Partner" description for an Islamic marriage profile. The user's context: ${context.about_me ? `Their about me: ${context.about_me}. ` : ""}Age: ${context.age ?? "not given"}, Job: ${context.job_title ?? "not given"}. Write a concise paragraph (2-4 sentences) describing the kind of partner they might be looking for—values, lifestyle, character—in a respectful way. Output ONLY the description text, no quotes or labels. Write in ${lang}.`;
 
-      const genAI = new GoogleGenerativeAI(apiKey);
+      const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyDBL4SLwdNUixl7aViHZTIrXGAsNCgNsCQ");
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       const result = await model.generateContent(prompt);
       const text = result.response.text()?.trim() ?? "";
       if (text) updateField(field, text);
       else showToast("error", t("profile.toastError"));
     } catch (e) {
-      showToast("error", e instanceof Error ? e.message : t("profile.toastError"));
+      console.log(e);
     } finally {
       setAiLoading(null);
     }
