@@ -1013,24 +1013,26 @@ export default function ProfilePage() {
                       </button>
                     </div>
                   </div>
-                  <div className="relative rounded-xl bg-zinc-50 p-1 shadow-sm dark:bg-zinc-900/50">
+                  <div className="overflow-hidden rounded-xl border border-zinc-200 shadow-sm dark:border-zinc-800">
+                    <div className="flex justify-end bg-zinc-50 px-3 py-2 dark:bg-zinc-800/50">
+                      <button
+                        type="button"
+                        onClick={() => handleCopyBio(profile.about_me)}
+                        disabled={!profile.about_me.trim()}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 shadow-sm transition hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        Copy
+                      </button>
+                    </div>
                     <textarea
                       dir={dir}
                       value={profile.about_me}
                       onChange={(e) => updateField("about_me", e.target.value)}
                       rows={5}
                       placeholder={t("profile.aboutMePlaceholder")}
-                      className={inputClass + " min-h-0 resize-y bg-transparent text-lg leading-relaxed"}
+                      className={inputClass + " min-h-0 resize-y rounded-t-none rounded-b-xl border-t-0 bg-transparent text-lg leading-relaxed"}
                     />
-                    <button
-                      type="button"
-                      onClick={() => handleCopyBio(profile.about_me)}
-                      disabled={!profile.about_me.trim()}
-                      className="absolute right-2 top-2 inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 shadow-sm transition hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                      Copy
-                    </button>
                   </div>
                 </div>
                 <div>
@@ -1057,24 +1059,26 @@ export default function ProfilePage() {
                       </button>
                     </div>
                   </div>
-                  <div className="relative rounded-xl bg-zinc-50 p-1 shadow-sm dark:bg-zinc-900/50">
+                  <div className="overflow-hidden rounded-xl border border-zinc-200 shadow-sm dark:border-zinc-800">
+                    <div className="flex justify-end bg-zinc-50 px-3 py-2 dark:bg-zinc-800/50">
+                      <button
+                        type="button"
+                        onClick={() => handleCopyBio(profile.ideal_partner)}
+                        disabled={!profile.ideal_partner.trim()}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 shadow-sm transition hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        Copy
+                      </button>
+                    </div>
                     <textarea
                       dir={dir}
                       value={profile.ideal_partner}
                       onChange={(e) => updateField("ideal_partner", e.target.value)}
                       rows={5}
                       placeholder={t("profile.idealPartnerPlaceholder")}
-                      className={inputClass + " min-h-0 resize-y bg-transparent text-lg leading-relaxed"}
+                      className={inputClass + " min-h-0 resize-y rounded-t-none rounded-b-xl border-t-0 bg-transparent text-lg leading-relaxed"}
                     />
-                    <button
-                      type="button"
-                      onClick={() => handleCopyBio(profile.ideal_partner)}
-                      disabled={!profile.ideal_partner.trim()}
-                      className="absolute right-2 top-2 inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 shadow-sm transition hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                      Copy
-                    </button>
                   </div>
                 </div>
               </div>
