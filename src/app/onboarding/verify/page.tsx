@@ -4,37 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Webcam from "react-webcam";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type Pose = "front" | "right" | "left";
 
-const POSE_STEPS: {
-  id: Pose;
-  title: string;
-  instruction: string;
-  hint: string;
-}[] = [
-  {
-    id: "front",
-    title: "Front-facing",
-    instruction: "Look straight at the camera with a neutral expression.",
-    hint: "Make sure your full face is visible and well lit.",
-  },
-  {
-    id: "right",
-    title: "Right profile",
-    instruction:
-      "Turn your head slightly to your right so your right profile is visible.",
-    hint: "Keep your face in the frame, showing your right side clearly.",
-  },
-  {
-    id: "left",
-    title: "Left profile",
-    instruction:
-      "Turn your head slightly to your left so your left profile is visible.",
-    hint: "Keep your face in the frame, showing your left side clearly.",
-  },
-];
+function getPoseSteps(t: (path: string) => string): { id: Pose; title: string; instruction: string; hint: string }[] {
+  return [
+    { id: "front", title: t("verify.front"), instruction: t("verify.frontInstruction"), hint: t("verify.frontHint") },
+    { id: "right", title: t("verify.right"), instruction: t("verify.rightInstruction"), hint: t("verify.rightHint") },
+    { id: "left", title: t("verify.left"), instruction: t("verify.leftInstruction"), hint: t("verify.leftHint") },
+  ];
+}
 
 type CaptureMap = Record<Pose, string | null>;
 
@@ -59,6 +40,8 @@ const dataURLToBlob = (dataUrl: string): Blob => {
 
 export default function OnboardingVerifyPage() {
   const router = useRouter();
+  const { t } = useLanguage();
+  const POSE_STEPS = getPoseSteps(t);
   const webcamRef = useRef<Webcam | null>(null);
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -83,20 +66,15 @@ export default function OnboardingVerifyPage() {
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("quiz_completed, verification_submitted")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        setError(profileError.message);
-        setCheckingSession(false);
-        return;
-      }
+      const profile = await ensureUserProfile(supabase, {
+        id: user.id,
+        email: user.email,
+        user_metadata: user.user_metadata,
+      });
 
       if (!profile) {
-        router.replace("/register");
+        setError(t("verify.couldNotLoadProfile"));
+        setCheckingSession(false);
         return;
       }
 
@@ -146,12 +124,12 @@ export default function OnboardingVerifyPage() {
   const handleCapture = () => {
     setError(null);
     if (!webcamRef.current) {
-      setError("Camera is not ready. Please allow camera access and try again.");
+      setError(t("verify.cameraNotReady"));
       return;
     }
     const screenshot = webcamRef.current.getScreenshot();
     if (!screenshot) {
-      setError("Unable to capture image. Please try again.");
+      setError(t("verify.unableToCapture"));
       return;
     }
     setCaptures((prev) => ({
@@ -171,7 +149,7 @@ export default function OnboardingVerifyPage() {
   const handleNextStep = () => {
     setError(null);
     if (!captures[currentPose.id]) {
-      setError("Please capture a photo before continuing.");
+      setError(t("verify.captureBeforeContinue"));
       return;
     }
     if (currentStepIndex < POSE_STEPS.length - 1) {
@@ -183,14 +161,14 @@ export default function OnboardingVerifyPage() {
     setError(null);
 
     if (!userId) {
-      setError("Your session has expired. Please sign in again.");
+      setError(t("verify.sessionExpired"));
       router.replace("/register");
       return;
     }
 
     const missing = POSE_STEPS.filter((step) => !captures[step.id]);
     if (missing.length > 0) {
-      setError("Please complete all three photos before submitting.");
+      setError(t("verify.completeAllPhotos"));
       return;
     }
 
@@ -240,7 +218,7 @@ export default function OnboardingVerifyPage() {
       setError(
         err instanceof Error
           ? err.message
-          : "Unexpected error while submitting verification. Please try again."
+          : t("verify.submitError")
       );
     } finally {
       setSubmitting(false);
@@ -251,7 +229,7 @@ export default function OnboardingVerifyPage() {
     return (
       <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-purple-900 text-slate-50 flex items-center justify-center">
         <p className="text-sm text-slate-200/80">
-          Preparing your verification step...
+          {t("verify.preparing")}
         </p>
       </div>
     );
@@ -266,15 +244,13 @@ export default function OnboardingVerifyPage() {
         <section className="md:w-2/3">
           <header className="mb-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-300/80">
-              Onboarding · Step 2 of 2
+              {t("verify.stepLabel")}
             </p>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-              Three-angle photo verification
+              {t("verify.title")}
             </h1>
             <p className="mt-2 text-sm text-slate-200/80">
-              Help us confirm that each profile on Olfa is real and serious.
-              These photos are private and only visible to the moderation team
-              for safety and fraud prevention.
+              {t("verify.description")}
             </p>
           </header>
 
@@ -327,7 +303,7 @@ export default function OnboardingVerifyPage() {
               onClick={handleCapture}
               className="inline-flex items-center justify-center rounded-2xl bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-950 shadow-md shadow-black/40 transition hover:bg-white"
             >
-              Capture this angle
+              {t("verify.capture")}
             </button>
 
             {captures[currentPose.id] && (
@@ -337,7 +313,7 @@ export default function OnboardingVerifyPage() {
                   onClick={handleRetake}
                   className="inline-flex items-center justify-center rounded-2xl border border-slate-600 bg-black/30 px-3 py-2 text-[11px] font-medium text-slate-100 transition hover:border-slate-500 hover:bg-black/60"
                 >
-                  Retake
+                  {t("verify.retake")}
                 </button>
                 {currentStepIndex < POSE_STEPS.length - 1 && (
                   <button
@@ -345,7 +321,7 @@ export default function OnboardingVerifyPage() {
                     onClick={handleNextStep}
                     className="inline-flex items-center justify-center rounded-2xl border border-emerald-500/80 bg-emerald-500/10 px-3 py-2 text-[11px] font-semibold text-emerald-100 transition hover:bg-emerald-500/20"
                   >
-                    Continue to next angle
+                    {t("verify.nextAngle")}
                   </button>
                 )}
               </>
@@ -362,12 +338,10 @@ export default function OnboardingVerifyPage() {
         <section className="flex flex-1 flex-col justify-between gap-4 rounded-3xl border border-slate-800 bg-black/30 px-4 py-4">
           <div>
             <h2 className="text-sm font-semibold text-slate-50">
-              Preview & security
+              {t("verify.previewTitle")}
             </h2>
             <p className="mt-1 text-[11px] text-slate-300/80">
-              Only the Olfa team can see these photos. They are used for
-              identity checks and fraud prevention, never for public display or
-              advertising.
+              {t("verify.previewDesc")}
             </p>
 
             <div className="mt-3 grid grid-cols-3 gap-2">
@@ -393,7 +367,7 @@ export default function OnboardingVerifyPage() {
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-[10px] text-slate-500">
-                        Pending
+                        {t("verify.pending")}
                       </div>
                     )}
                   </div>
@@ -405,21 +379,18 @@ export default function OnboardingVerifyPage() {
           <div className="space-y-3">
             <div className="rounded-2xl border border-slate-700/80 bg-black/30 px-3 py-2">
               <p className="text-[11px] font-semibold text-slate-50">
-                Device protection
+                {t("verify.deviceProtection")}
               </p>
               <p className="mt-1 text-[11px] text-slate-300/80">
-                We securely record a{" "}
-                <span className="font-semibold">device fingerprint</span> to
-                reduce fake accounts and repeated abuse. It&apos;s not used for
-                cross-site tracking or advertising.
+                {t("verify.deviceNote")}
               </p>
               <p className="mt-1 text-[10px] text-slate-400/80">
-                Status:{" "}
+                {t("verify.deviceStatus")}{" "}
                 {loadingFingerprint
-                  ? "capturing device fingerprint..."
+                  ? t("verify.capturingFingerprint")
                   : deviceFingerprint
-                  ? "device fingerprint captured"
-                  : "could not capture fingerprint, but you can still continue"}
+                  ? t("verify.deviceCaptured")
+                  : t("verify.deviceFailed")}
               </p>
             </div>
 
@@ -430,14 +401,12 @@ export default function OnboardingVerifyPage() {
               className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-950 shadow-md shadow-black/40 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting
-                ? "Submitting photos securely..."
-                : "Submit photos for review"}
+                ? t("verify.submitting")
+                : t("verify.submitPhotos")}
             </button>
 
             <p className="text-[10px] text-slate-400/80">
-              After submission, your profile will be reviewed by an Olfa
-              moderator. You will not be visible or able to fully use Olfa
-              until basic checks are complete.
+              {t("verify.reviewNote")}
             </p>
           </div>
         </section>

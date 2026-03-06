@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
 
 type Role = "admin" | "moderator" | "user";
 
@@ -26,20 +26,15 @@ export function AdminGuard({ children }: AdminGuardProps) {
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        setError(profileError.message);
-        setChecking(false);
-        return;
-      }
+      const profile = await ensureUserProfile(supabase, {
+        id: user.id,
+        email: user.email,
+        user_metadata: user.user_metadata,
+      });
 
       if (!profile) {
-        router.replace("/login");
+        setError("Could not load or create your profile.");
+        setChecking(false);
         return;
       }
 

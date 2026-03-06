@@ -3,12 +3,14 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type Role = "admin" | "moderator" | "user";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -21,7 +23,7 @@ export default function LoginPage() {
     const password = String(formData.get("password") || "");
 
     if (!email || !password) {
-      setError("Please enter your email and password.");
+      setError(t("login.enterEmailPassword"));
       return;
     }
 
@@ -38,34 +40,34 @@ export default function LoginPage() {
 
       const user = signInData.user;
       if (!user) {
-        setError("Login failed. Please try again.");
+        setError(t("login.failed"));
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role, quiz_completed, verification_submitted")
-        .eq("id", user.id)
-        .maybeSingle();
+      const profile = await ensureUserProfile(supabase, {
+        id: user.id,
+        email: user.email,
+        user_metadata: user.user_metadata,
+      });
 
-      if (profileError) {
-        setError(profileError.message);
+      if (!profile) {
+        setError(t("login.noProfile"));
         return;
       }
 
-      const role = (profile?.role as Role | undefined) ?? "user";
+      const role = (profile.role as Role) || "user";
 
       if (role === "admin" || role === "moderator") {
         router.replace("/admin/dashboard");
         return;
       }
 
-      if (!profile?.quiz_completed) {
+      if (!profile.quiz_completed) {
         router.replace("/onboarding/quiz");
         return;
       }
 
-      if (!profile?.verification_submitted) {
+      if (!profile.verification_submitted) {
         router.replace("/onboarding/verify");
         return;
       }
@@ -73,9 +75,7 @@ export default function LoginPage() {
       router.replace("/dashboard");
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong. Please try again."
+        err instanceof Error ? err.message : t("login.somethingWrong")
       );
     } finally {
       setLoading(false);
@@ -99,7 +99,7 @@ export default function LoginPage() {
               htmlFor="email"
               className="block text-sm font-medium text-slate-100"
             >
-              Email
+              {t("common.email")}
             </label>
             <input
               id="email"
@@ -117,7 +117,7 @@ export default function LoginPage() {
               htmlFor="password"
               className="block text-sm font-medium text-slate-100"
             >
-              Password
+              {t("common.password")}
             </label>
             <input
               id="password"
@@ -141,17 +141,16 @@ export default function LoginPage() {
             disabled={loading}
             className="mt-2 inline-flex w-full items-center justify-center rounded-2xl bg-amber-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-md shadow-amber-900/40 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {loading ? "Signing in…" : "Login"}
+            {loading ? t("login.signingIn") : t("common.login")}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-slate-300/80">
-          New to Olfa?{" "}
           <Link
             href="/register"
             className="font-semibold text-amber-400 hover:text-amber-300 focus:outline-none focus:underline"
           >
-            Create an account
+            {t("common.createAccount")}
           </Link>
         </p>
 
@@ -160,7 +159,7 @@ export default function LoginPage() {
             href="/"
             className="text-xs text-slate-500 hover:text-slate-400"
           >
-            ← Back to home
+            {t("common.backToHome")}
           </Link>
         </p>
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
 import { logAdminAction } from "@/lib/adminLog";
 
 type Role = "admin" | "moderator" | "user";
@@ -427,19 +427,14 @@ export default function AdminDashboardPage() {
 
         setCurrentUserId(user.id);
 
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("role, email")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        if (profileError) {
-          setGlobalError(profileError.message);
-          return;
-        }
+        const profile = await ensureUserProfile(supabase, {
+          id: user.id,
+          email: user.email,
+          user_metadata: user.user_metadata,
+        });
 
         if (!profile) {
-          window.location.href = "/login";
+          setGlobalError("Could not load or create your profile.");
           return;
         }
 
@@ -759,9 +754,15 @@ export default function AdminDashboardPage() {
             <h1 className="mt-1 text-2xl font-semibold tracking-tight">
               Admin &amp; Moderator Dashboard
             </h1>
-            <p className="mt-1 text-xs text-slate-300/80">
+            <p className="mt-1 flex items-center gap-2 text-xs text-slate-300/80">
               Real-time view over identity verification, chat safety, and member
               behavior.
+              <a
+                href="/admin/dashboard/settings"
+                className="font-medium text-amber-400/90 transition hover:text-amber-300"
+              >
+                Site Settings
+              </a>
             </p>
           </div>
           <div className="flex flex-col items-start gap-2 text-xs text-slate-300 sm:items-end">

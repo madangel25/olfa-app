@@ -3,11 +3,13 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type Gender = "male" | "female";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [gender, setGender] = useState<Gender | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export default function RegisterPage() {
     const formGender = String(formData.get("gender") || "") as Gender | "";
 
     if (!fullName || !email || !password || !formGender) {
-      setError("Please fill in all required fields, including gender.");
+      setError(t("register.fillRequired"));
       return;
     }
 
@@ -58,7 +60,7 @@ export default function RegisterPage() {
       const user = signUpData.user;
 
       if (!user) {
-        setError("Registration failed. Please try again.");
+        setError(t("register.failed"));
         return;
       }
 
@@ -76,13 +78,11 @@ export default function RegisterPage() {
         return;
       }
 
-      setMessage("Registration successful. Let’s begin your onboarding.");
+      setMessage(t("register.successMessage"));
       router.push("/onboarding/quiz");
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Unexpected error while registering. Please try again."
+        err instanceof Error ? err.message : t("register.unexpectedError")
       );
     } finally {
       setLoading(false);
@@ -114,12 +114,12 @@ export default function RegisterPage() {
         className={`w-full max-w-xl rounded-3xl border px-8 py-10 shadow-2xl backdrop-blur ${cardClasses}`}
       >
         <h1 className="text-3xl font-semibold tracking-tight mb-2">
-          Olfa Registration
+          {t("register.title")}
         </h1>
         <p className="text-sm text-slate-200/80 mb-6">
-          A focused, intentional Islamic marriage platform.{" "}
+          {t("register.subtitle")}{" "}
           <span className={accentTextClasses}>
-            Your gender shapes a tailored experience.
+            {t("register.subtitleTail")}
           </span>
         </p>
 
@@ -129,7 +129,7 @@ export default function RegisterPage() {
               htmlFor="fullName"
               className="block text-sm font-medium text-slate-100"
             >
-              Full Name
+              {t("common.fullName")}
             </label>
             <input
               id="fullName"
@@ -146,7 +146,7 @@ export default function RegisterPage() {
               htmlFor="email"
               className="block text-sm font-medium text-slate-100"
             >
-              Email
+              {t("common.email")}
             </label>
             <input
               id="email"
@@ -163,7 +163,7 @@ export default function RegisterPage() {
               htmlFor="password"
               className="block text-sm font-medium text-slate-100"
             >
-              Password
+              {t("common.password")}
             </label>
             <input
               id="password"
@@ -178,11 +178,10 @@ export default function RegisterPage() {
 
           <fieldset className="space-y-3">
             <legend className="text-sm font-medium text-slate-100">
-              Gender
+              {t("common.gender")}
             </legend>
             <p className="text-xs text-slate-300/80">
-              This only controls your experience and UI styling. It is never
-              shown publicly without your consent.
+              {t("register.genderHint")}
             </p>
             <div className="mt-2 grid grid-cols-2 gap-3">
               <button
@@ -194,7 +193,7 @@ export default function RegisterPage() {
                     : "border-slate-700 bg-black/20 text-slate-100 hover:border-sky-400/60 hover:bg-sky-500/10"
                 }`}
               >
-                I am Male
+                {t("common.male")}
               </button>
               <button
                 type="button"
@@ -205,7 +204,7 @@ export default function RegisterPage() {
                     : "border-slate-700 bg-black/20 text-slate-100 hover:border-pink-300/70 hover:bg-pink-500/15"
                 }`}
               >
-                I am Female
+                {t("common.female")}
               </button>
             </div>
             <input
@@ -216,15 +215,8 @@ export default function RegisterPage() {
           </fieldset>
 
           <div className="rounded-2xl border border-dashed border-slate-700/80 bg-black/20 px-4 py-3 text-xs text-slate-200/80">
-            <p className="font-semibold mb-1">Initial Role</p>
-            <p>
-              You will start as a <span className="font-semibold">member</span>{" "}
-              (<code className="text-xs">role = &quot;user&quot;</code>). Only
-              the platform admin can grant{" "}
-              <code className="text-xs">moderator</code> or{" "}
-              <code className="text-xs">admin</code> roles from the protected
-              dashboard.
-            </p>
+            <p className="font-semibold mb-1">{t("register.initialRoleTitle")}</p>
+            <p>{t("register.roleNotice")}</p>
           </div>
 
           {error && (
@@ -244,14 +236,11 @@ export default function RegisterPage() {
             disabled={loading}
             className="mt-2 inline-flex w-full items-center justify-center rounded-2xl bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-md shadow-black/40 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {loading ? "Creating your account..." : "Create account"}
+            {loading ? t("register.creating") : t("register.createAccount")}
           </button>
 
           <p className="pt-2 text-[11px] leading-relaxed text-slate-300/80">
-            By continuing, you agree to Olfa&apos;s ad-free, nikah-oriented
-            environment. We will later ask you to complete a short psychological
-            compatibility quiz and a three-angle photo verification to keep the
-            platform safe and intentional.
+            {t("register.agreeNotice")}
           </p>
         </form>
       </div>

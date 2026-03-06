@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
 
 interface OnboardingGuardProps {
   children: React.ReactNode;
@@ -24,20 +24,15 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
         return;
       }
 
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("quiz_completed, verification_submitted")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (profileError) {
-        setError(profileError.message);
-        setChecking(false);
-        return;
-      }
+      const profile = await ensureUserProfile(supabase, {
+        id: user.id,
+        email: user.email,
+        user_metadata: user.user_metadata,
+      });
 
       if (!profile) {
-        router.replace("/register");
+        setError("Could not load or create your profile.");
+        setChecking(false);
         return;
       }
 
@@ -46,7 +41,7 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
         return;
       }
 
-      if (!profile?.verification_submitted) {
+      if (!profile.verification_submitted) {
         router.replace("/onboarding/verify");
         return;
       }
