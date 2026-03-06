@@ -27,6 +27,7 @@ import {
   Camera,
   Wand2,
   ChevronDown,
+  Copy,
 } from "lucide-react";
 
 const BUCKET = "user-assets";
@@ -92,7 +93,7 @@ function SearchableCountrySelect({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`flex w-full items-center justify-between gap-2 rounded-xl border border-slate-600 bg-slate-800/80 px-4 py-2.5 text-left text-slate-100 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/50 ${!displayValue ? "text-slate-500" : ""}`}
+        className={`flex w-full min-h-[2.75rem] items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-left text-zinc-900 shadow-sm outline-none transition-all focus:ring-2 focus:ring-blue-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 ${!displayValue ? "text-zinc-500 dark:text-zinc-400" : ""}`}
       >
         <span className="flex items-center gap-2 truncate">
           {selectedCountry ? (
@@ -104,7 +105,7 @@ function SearchableCountrySelect({
             placeholder
           )}
         </span>
-        <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`h-4 w-4 shrink-0 text-zinc-400 transition ${open ? "rotate-180" : ""}`} />
       </button>
       <AnimatePresence>
         {open && (
@@ -112,9 +113,9 @@ function SearchableCountrySelect({
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            className="absolute top-full left-0 z-50 mt-1 max-h-72 w-full overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-xl"
+            className="absolute top-full left-0 z-50 mt-1 max-h-72 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900"
           >
-            <div className="border-b border-slate-700 p-2">
+            <div className="border-b border-zinc-200 p-2 dark:border-zinc-800">
               <input
                 type="text"
                 value={search}
@@ -134,7 +135,7 @@ function SearchableCountrySelect({
                       setOpen(false);
                       setSearch("");
                     }}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-slate-200 hover:bg-white/10"
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
                   >
                     <span className="text-lg leading-none">{getFlagEmoji(c.code)}</span>
                     <span>{getCountryDisplayName(c.code, locale, c.name)}</span>
@@ -142,7 +143,7 @@ function SearchableCountrySelect({
                 </li>
               ))}
               {filtered.length === 0 && (
-                <li className="px-4 py-3 text-sm text-slate-500">No matches</li>
+                <li className="px-4 py-3 text-sm text-zinc-500">No matches</li>
               )}
             </ul>
           </motion.div>
@@ -590,10 +591,17 @@ export default function ProfilePage() {
 
   const cardClass = "rounded-2xl border border-slate-700/80 bg-slate-900/60 backdrop-blur-xl p-4 sm:p-6";
   const inputClass =
-    "w-full rounded-xl border border-slate-600 bg-slate-800/80 px-4 py-2.5 text-slate-100 placeholder:text-slate-500 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/50";
+    "min-h-[2.75rem] w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 shadow-sm outline-none transition-all focus:ring-2 focus:ring-blue-500 placeholder:text-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500";
+  const buttonClass =
+    "inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium outline-none transition-all focus:ring-2 focus:ring-blue-500 disabled:opacity-60";
+
+  const handleCopyBio = useCallback((text: string) => {
+    if (!text.trim()) return;
+    void navigator.clipboard.writeText(text.trim()).then(() => showToast("success", t("profile.copied")));
+  }, [showToast, t]);
 
   return (
-    <div className="space-y-6 pb-8" dir={dir}>
+    <div className="space-y-6 pb-8 font-[family-name:var(--font-cairo)]" dir={dir}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-50">{t("profile.title")}</h1>
@@ -603,7 +611,7 @@ export default function ProfilePage() {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center gap-2 rounded-xl border border-amber-500/50 bg-amber-500/20 px-5 py-2.5 text-sm font-medium text-amber-200 transition hover:bg-amber-500/30 disabled:opacity-60"
+          className={buttonClass + " border border-amber-500/50 bg-amber-500/20 text-amber-200 hover:bg-amber-500/30"}
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {t("profile.save")}
@@ -949,20 +957,31 @@ export default function ProfilePage() {
                       type="button"
                       onClick={() => handleAiSuggest("about_me")}
                       disabled={isLoading}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
                     >
                       {aiLoading === "about_me" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
                       {t("profile.magicWand")}
                     </button>
                   </div>
-                  <textarea
-                    dir={dir}
-                    value={profile.about_me}
-                    onChange={(e) => updateField("about_me", e.target.value)}
-                    rows={5}
-                    placeholder={t("profile.aboutMePlaceholder")}
-                    className={inputClass + " resize-y"}
-                  />
+                  <div className="relative rounded-xl bg-zinc-50 p-1 shadow-sm dark:bg-zinc-900/50">
+                    <textarea
+                      dir={dir}
+                      value={profile.about_me}
+                      onChange={(e) => updateField("about_me", e.target.value)}
+                      rows={5}
+                      placeholder={t("profile.aboutMePlaceholder")}
+                      className={inputClass + " min-h-0 resize-y bg-transparent"}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleCopyBio(profile.about_me)}
+                      disabled={!profile.about_me.trim()}
+                      className="absolute right-2 top-2 inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 shadow-sm transition hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      Copy
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <div className="mb-1.5 flex items-center justify-between gap-2">
@@ -971,20 +990,31 @@ export default function ProfilePage() {
                       type="button"
                       onClick={() => handleAiSuggest("ideal_partner")}
                       disabled={isLoading}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
                     >
                       {aiLoading === "ideal_partner" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
                       {t("profile.magicWand")}
                     </button>
                   </div>
-                  <textarea
-                    dir={dir}
-                    value={profile.ideal_partner}
-                    onChange={(e) => updateField("ideal_partner", e.target.value)}
-                    rows={5}
-                    placeholder={t("profile.idealPartnerPlaceholder")}
-                    className={inputClass + " resize-y"}
-                  />
+                  <div className="relative rounded-xl bg-zinc-50 p-1 shadow-sm dark:bg-zinc-900/50">
+                    <textarea
+                      dir={dir}
+                      value={profile.ideal_partner}
+                      onChange={(e) => updateField("ideal_partner", e.target.value)}
+                      rows={5}
+                      placeholder={t("profile.idealPartnerPlaceholder")}
+                      className={inputClass + " min-h-0 resize-y bg-transparent"}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleCopyBio(profile.ideal_partner)}
+                      disabled={!profile.ideal_partner.trim()}
+                      className="absolute right-2 top-2 inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 shadow-sm transition hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      Copy
+                    </button>
+                  </div>
                 </div>
               </div>
             </section>
@@ -997,7 +1027,7 @@ export default function ProfilePage() {
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="inline-flex items-center gap-2 rounded-xl border border-amber-500/50 bg-amber-500/20 px-6 py-3 text-sm font-medium text-amber-200 transition hover:bg-amber-500/30 disabled:opacity-60"
+          className={buttonClass + " border border-amber-500/50 bg-amber-500/20 text-amber-200 hover:bg-amber-500/30"}
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {t("profile.save")}

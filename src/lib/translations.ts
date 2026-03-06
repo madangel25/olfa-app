@@ -191,6 +191,7 @@ type TranslationMap = {
     aiGenerating: string;
     selectOption: string;
     toastSaved: string;
+    copied: string;
     toastError: string;
     toastUploadFailed: string;
     toastBucketMissing: string;
@@ -494,6 +495,7 @@ const translations: Record<Locale, TranslationMap> = {
       aiGenerating: "Generating…",
       selectOption: "Select…",
       toastSaved: "Profile saved successfully.",
+      copied: "Copied!",
       toastError: "Failed to save profile.",
       toastUploadFailed: "Upload failed.",
       toastBucketMissing: "Photo storage is not set up. Please contact support.",
@@ -784,6 +786,7 @@ const translations: Record<Locale, TranslationMap> = {
       aiGenerating: "جاري الاقتراح…",
       selectOption: "اختر…",
       toastSaved: "تم حفظ الملف بنجاح.",
+      copied: "تم النسخ!",
       toastError: "فشل حفظ الملف.",
       toastUploadFailed: "فشل الرفع.",
       toastBucketMissing: "تخزين الصور غير مُعد. يرجى التواصل مع الدعم.",
