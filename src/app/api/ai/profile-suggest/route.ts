@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
+// Exact variable names as set in Vercel Environment Variables (no typos)
+const ENV_GEMINI_API_KEY = "GEMINI_API_KEY";
+const ENV_NEXT_PUBLIC_GEMINI_API_KEY = "NEXT_PUBLIC_GEMINI_API_KEY";
+
 type SuggestBody = {
   type: "about_me" | "ideal_partner";
   context: {
@@ -17,15 +21,16 @@ type SuggestBody = {
 };
 
 export async function POST(request: Request) {
-  // Check both env vars (Vercel: set in Project Settings > Environment Variables)
-  const publicKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY?.trim() || "";
-  const serverKey = process.env.GEMINI_API_KEY?.trim() || "";
+  // Read from server env (Vercel: name must be exactly GEMINI_API_KEY or NEXT_PUBLIC_GEMINI_API_KEY)
+  const serverKey = (process.env[ENV_GEMINI_API_KEY] ?? "").trim();
+  const publicKey = (process.env[ENV_NEXT_PUBLIC_GEMINI_API_KEY] ?? "").trim();
   const apiKey = serverKey || publicKey;
+
   if (!apiKey) {
     return NextResponse.json(
       {
         error:
-          "AI suggestions are not available. Add GEMINI_API_KEY or NEXT_PUBLIC_GEMINI_API_KEY in Vercel Environment Variables (or .env.local for local dev).",
+          "AI suggestions are not available. Set GEMINI_API_KEY (or NEXT_PUBLIC_GEMINI_API_KEY) in Vercel → Project Settings → Environment Variables, then redeploy.",
       },
       { status: 503 }
     );

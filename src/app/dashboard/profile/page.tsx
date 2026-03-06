@@ -489,6 +489,7 @@ export default function ProfilePage() {
   const handleAiSuggest = async (field: "about_me" | "ideal_partner") => {
     setAiLoading(field);
     try {
+      // Always call API; key is read server-side only (no client env check)
       const res = await fetch("/api/ai/profile-suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -508,7 +509,7 @@ export default function ProfilePage() {
       });
       const data = (await res.json()) as { error?: string; text?: string };
       if (!res.ok) {
-        const message = res.status === 503 ? t("profile.aiKeyMissing") : (data.error || "Failed");
+        const message = (data.error as string) || t("profile.toastError");
         throw new Error(message);
       }
       if (data.text) updateField(field, data.text);
