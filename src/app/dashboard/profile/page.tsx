@@ -228,51 +228,72 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const run = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.replace("/register");
-        return;
-      }
-      setUserId(user.id);
-      const { data } = await supabase
-        .from("profiles")
-        .select(
-          "full_name, gender, email, phone, phone_verified, nationality, age, marital_status, height_cm, weight_kg, skin_tone, smoking_status, religious_commitment, desire_children, job_title, education_level, country, city, about_me, ideal_partner, photo_urls, primary_photo_index, photo_privacy_blur"
-        )
-        .eq("id", user.id)
-        .maybeSingle();
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          router.replace("/register");
+          return;
+        }
+        setUserId(user.id);
+        const { data, error } = await supabase
+          .from("profiles")
+          .select(
+            "full_name, gender, email, phone, phone_verified, nationality, age, marital_status, height_cm, weight_kg, skin_tone, smoking_status, religious_commitment, desire_children, job_title, education_level, country, city, about_me, ideal_partner, photo_urls, primary_photo_index, photo_privacy_blur"
+          )
+          .eq("id", user.id)
+          .maybeSingle();
 
-      if (data) {
-        const urls = Array.isArray(data.photo_urls) ? (data.photo_urls as string[]) : [];
-        setProfile({
-          full_name: (data.full_name as string) ?? "",
-          gender: (data.gender as string) ?? "",
-          email: (data.email as string) ?? "",
-          phone: (data.phone as string) ?? "",
-          phone_verified: !!(data as { phone_verified?: boolean }).phone_verified,
-          nationality: (data.nationality as string) ?? "",
-          age: data.age != null ? String(data.age) : "",
-          marital_status: (data.marital_status as string) ?? "",
-          height_cm: data.height_cm != null ? String(data.height_cm) : "",
-          weight_kg: data.weight_kg != null ? String(data.weight_kg) : "",
-          skin_tone: (data.skin_tone as string) ?? "",
-          smoking_status: (data.smoking_status as string) ?? "",
-          religious_commitment: (data.religious_commitment as string) ?? "",
-          desire_children: (data.desire_children as string) ?? "",
-          job_title: (data.job_title as string) ?? "",
-          education_level: (data.education_level as string) ?? "",
-          country: (data.country as string) ?? "",
-          city: (data.city as string) ?? "",
-          about_me: (data.about_me as string) ?? "",
-          ideal_partner: (data.ideal_partner as string) ?? "",
-          photo_urls: urls,
-          primary_photo_index: typeof (data as { primary_photo_index?: number }).primary_photo_index === "number"
-            ? (data as { primary_photo_index?: number }).primary_photo_index!
-            : 0,
-          photo_privacy_blur: !!(data as { photo_privacy_blur?: boolean }).photo_privacy_blur,
-        });
+        if (error) {
+          console.warn("Profile fetch error:", error);
+          setLoading(false);
+          return;
+        }
+
+        if (data && typeof data === "object") {
+          const raw = data as Record<string, unknown>;
+          const safeStr = (v: unknown) => (v != null && typeof v === "string" ? v : v != null ? String(v) : "");
+          const safeNum = (v: unknown, def: number) =>
+            typeof v === "number" && Number.isFinite(v) ? v : def;
+          let photo_urls: string[] = [];
+          try {
+            if (Array.isArray(raw.photo_urls)) {
+              photo_urls = raw.photo_urls.filter((u): u is string => typeof u === "string");
+            }
+          } catch {
+            photo_urls = [];
+          }
+
+          setProfile({
+            full_name: safeStr(raw.full_name),
+            gender: safeStr(raw.gender),
+            email: safeStr(raw.email),
+            phone: safeStr(raw.phone),
+            phone_verified: raw.phone_verified === true,
+            nationality: safeStr(raw.nationality),
+            age: raw.age != null ? String(raw.age) : "",
+            marital_status: safeStr(raw.marital_status),
+            height_cm: raw.height_cm != null ? String(raw.height_cm) : "",
+            weight_kg: raw.weight_kg != null ? String(raw.weight_kg) : "",
+            skin_tone: safeStr(raw.skin_tone),
+            smoking_status: safeStr(raw.smoking_status),
+            religious_commitment: safeStr(raw.religious_commitment),
+            desire_children: safeStr(raw.desire_children),
+            job_title: safeStr(raw.job_title),
+            education_level: safeStr(raw.education_level),
+            country: safeStr(raw.country),
+            city: safeStr(raw.city),
+            about_me: safeStr(raw.about_me),
+            ideal_partner: safeStr(raw.ideal_partner),
+            photo_urls,
+            primary_photo_index: safeNum(raw.primary_photo_index, 0),
+            photo_privacy_blur: raw.photo_privacy_blur === true,
+          });
+        }
+      } catch (err) {
+        console.warn("Profile load failed:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     run();
   }, [router]);
@@ -286,29 +307,29 @@ export default function ProfilePage() {
     setSaving(true);
     try {
       const payload: Record<string, unknown> = {
-        full_name: profile.full_name || null,
-        gender: profile.gender || null,
-        email: profile.email || null,
-        phone: profile.phone || null,
+        full_name: profile.full_name?.trim() || null,
+        gender: profile.gender?.trim() || null,
+        email: profile.email?.trim() || null,
+        phone: profile.phone?.trim() || null,
         phone_verified: profile.phone_verified,
-        nationality: profile.nationality || null,
+        nationality: profile.nationality?.trim() || null,
         age: toNum(profile.age),
-        marital_status: profile.marital_status || null,
+        marital_status: profile.marital_status?.trim() || null,
         height_cm: toNum(profile.height_cm),
         weight_kg: toNum(profile.weight_kg),
-        skin_tone: profile.skin_tone || null,
-        smoking_status: profile.smoking_status || null,
-        religious_commitment: profile.religious_commitment || null,
-        desire_children: profile.desire_children || null,
-        job_title: profile.job_title || null,
-        education_level: profile.education_level || null,
-        country: profile.country || null,
-        city: profile.city || null,
-        about_me: profile.about_me || null,
-        ideal_partner: profile.ideal_partner || null,
-        photo_urls: profile.photo_urls,
-        primary_photo_index: profile.primary_photo_index,
-        photo_privacy_blur: profile.photo_privacy_blur,
+        skin_tone: profile.skin_tone?.trim() || null,
+        smoking_status: profile.smoking_status?.trim() || null,
+        religious_commitment: profile.religious_commitment?.trim() || null,
+        desire_children: profile.desire_children?.trim() || null,
+        job_title: profile.job_title?.trim() || null,
+        education_level: profile.education_level?.trim() || null,
+        country: profile.country?.trim() || null,
+        city: profile.city?.trim() || null,
+        about_me: profile.about_me?.trim() || null,
+        ideal_partner: profile.ideal_partner?.trim() || null,
+        photo_urls: Array.isArray(profile.photo_urls) ? profile.photo_urls : [],
+        primary_photo_index: typeof profile.primary_photo_index === "number" ? profile.primary_photo_index : 0,
+        photo_privacy_blur: profile.photo_privacy_blur === true,
       };
       const { error } = await supabase
         .from("profiles")
@@ -318,6 +339,7 @@ export default function ProfilePage() {
       showToast("success", t("profile.toastSaved"));
       dispatchProfileUpdated();
     } catch (e) {
+      console.warn("Profile save failed:", e);
       showToast("error", e instanceof Error ? e.message : t("profile.toastError"));
     } finally {
       setSaving(false);
@@ -502,21 +524,19 @@ export default function ProfilePage() {
 
       const apiKey = "AIzaSyDBL4SLwdNUixl7aViHZTIrXGAsNCgNsCQ";
       const genAI = new GoogleGenerativeAI(apiKey);
-      const GEMINI_MODEL_PRIMARY = "gemini-1.5-flash";
-      const modelsToTry = [GEMINI_MODEL_PRIMARY, "gemini-pro"] as const;
-
+      const modelId = "gemini-1.5-flash";
       let text = "";
-      for (const modelId of modelsToTry) {
-        try {
-          const model = genAI.getGenerativeModel({ model: modelId });
-          const result = await model.generateContent(prompt);
-          const rawText = result.response.text();
-          console.log(`AI Response (${modelId}):`, rawText);
-          text = rawText?.trim() ?? "";
-          if (text) break;
-        } catch (modelError) {
-          console.log(`${modelId} failed, trying fallback:`, modelError);
-        }
+      try {
+        const model = genAI.getGenerativeModel({ model: modelId });
+        const result = await model.generateContent(prompt);
+        const rawText = result.response.text();
+        console.log("AI Response:", rawText);
+        text = rawText?.trim() ?? "";
+      } catch (modelError) {
+        console.warn(
+          "Gemini request failed (404 = wrong model or enable 'Generative Language API' in Google Cloud Console):",
+          modelError
+        );
       }
 
       if (text) updateField(field, text);
