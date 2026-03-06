@@ -45,7 +45,7 @@ export default function DiscoveryPage() {
         .eq("id", user.id);
 
       const now = new Date();
-      const cutoff = new Date(now.getTime() - ONLINE_MINUTES * 60 * 1000).toISOString();
+      const cutoff = new Date(now.getTime() - ONLINE_MINUTES * 60 * 1000);
 
       const { data: profiles } = await supabase
         .from("profiles")
