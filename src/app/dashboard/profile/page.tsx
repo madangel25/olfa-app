@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { supabase } from "@/lib/supabaseClient";
 import { dispatchProfileUpdated } from "@/lib/profileCompleteness";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -545,20 +544,29 @@ export default function ProfilePage() {
           : `Write a short description of an ideal partner for someone who is ${age} years old and works as ${job}.`;
 
       const apiKey = "AIzaSyDBL4SLwdNUixl7aViHZTIrXGAsNCgNsCQ";
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const modelsToTry = ["gemini-1.5-flash", "gemini-pro"] as const;
+      const v1Url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+      const res = await fetch(v1Url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig: {
+            maxOutputTokens: 512,
+            temperature: 0.7,
+          },
+        }),
+      });
+
       let text = "";
-      for (const modelId of modelsToTry) {
-        try {
-          const model = genAI.getGenerativeModel({ model: modelId });
-          const result = await model.generateContent(prompt);
-          const rawText = result.response.text();
-          console.log("AI Response:", rawText);
-          text = rawText?.trim() ?? "";
-          if (text) break;
-        } catch (modelError) {
-          console.warn(`Gemini (${modelId}) failed, trying fallback:`, modelError);
-        }
+      if (res.ok) {
+        const data = (await res.json()) as {
+          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        };
+        text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
+        if (text) console.log("AI Response:", text);
+      } else {
+        console.warn("Gemini v1 request failed:", res.status, await res.text());
       }
 
       if (text) updateField(field, text);
