@@ -142,8 +142,9 @@ export default function ProfilePage() {
   const [toast, setToast] = useState<Toast>(null);
   const [phoneOtpSent, setPhoneOtpSent] = useState(false);
   const [phoneOtpLoading, setPhoneOtpLoading] = useState(false);
+  const [phoneOtpCode, setPhoneOtpCode] = useState("");
+  const [phoneOtpConfirming, setPhoneOtpConfirming] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
-  const [extendedProfileAvailable, setExtendedProfileAvailable] = useState(true);
 
   const showToast = useCallback((type: "success" | "error", message: string) => {
     setToast({ type, message });
@@ -160,31 +161,12 @@ export default function ProfilePage() {
       setUserId(user.id);
       const extendedSelect =
         "full_name, gender, email, phone, phone_verified, nationality, age, marital_status, height_cm, weight_kg, skin_tone, smoking_status, religious_commitment, desire_children, job_title, education_level, country, city, about_me, ideal_partner, photo_urls, primary_photo_index, photo_privacy_blur";
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("profiles")
         .select(extendedSelect)
         .eq("id", user.id)
         .maybeSingle();
 
-      if (error) {
-        setExtendedProfileAvailable(false);
-        const { data: minimal } = await supabase
-          .from("profiles")
-          .select("full_name, gender, email")
-          .eq("id", user.id)
-          .maybeSingle();
-        if (minimal) {
-          setProfile((p) => ({
-            ...p,
-            full_name: (minimal.full_name as string) ?? "",
-            gender: (minimal.gender as string) ?? "",
-            email: (minimal.email as string) ?? "",
-          }));
-        }
-        setLoading(false);
-        return;
-      }
-      setExtendedProfileAvailable(true);
       if (data) {
         const urls = Array.isArray(data.photo_urls) ? (data.photo_urls as string[]) : [];
         setProfile({
@@ -232,31 +214,27 @@ export default function ProfilePage() {
         full_name: profile.full_name || null,
         gender: profile.gender || null,
         email: profile.email || null,
+        phone: profile.phone || null,
+        phone_verified: profile.phone_verified,
+        nationality: profile.nationality || null,
+        age: toNum(profile.age),
+        marital_status: profile.marital_status || null,
+        height_cm: toNum(profile.height_cm),
+        weight_kg: toNum(profile.weight_kg),
+        skin_tone: profile.skin_tone || null,
+        smoking_status: profile.smoking_status || null,
+        religious_commitment: profile.religious_commitment || null,
+        desire_children: profile.desire_children || null,
+        job_title: profile.job_title || null,
+        education_level: profile.education_level || null,
+        country: profile.country || null,
+        city: profile.city || null,
+        about_me: profile.about_me || null,
+        ideal_partner: profile.ideal_partner || null,
+        photo_urls: profile.photo_urls,
+        primary_photo_index: profile.primary_photo_index,
+        photo_privacy_blur: profile.photo_privacy_blur,
       };
-      if (extendedProfileAvailable) {
-        Object.assign(payload, {
-          phone: profile.phone || null,
-          phone_verified: profile.phone_verified,
-          nationality: profile.nationality || null,
-          age: toNum(profile.age),
-          marital_status: profile.marital_status || null,
-          height_cm: toNum(profile.height_cm),
-          weight_kg: toNum(profile.weight_kg),
-          skin_tone: profile.skin_tone || null,
-          smoking_status: profile.smoking_status || null,
-          religious_commitment: profile.religious_commitment || null,
-          desire_children: profile.desire_children || null,
-          job_title: profile.job_title || null,
-          education_level: profile.education_level || null,
-          country: profile.country || null,
-          city: profile.city || null,
-          about_me: profile.about_me || null,
-          ideal_partner: profile.ideal_partner || null,
-          photo_urls: profile.photo_urls,
-          primary_photo_index: profile.primary_photo_index,
-          photo_privacy_blur: profile.photo_privacy_blur,
-        });
-      }
       const { error } = await supabase.from("profiles").update(payload).eq("id", userId);
       if (error) throw error;
       showToast("success", "Profile saved successfully.");
@@ -275,6 +253,7 @@ export default function ProfilePage() {
       return;
     }
     setPhoneOtpLoading(true);
+    setPhoneOtpCode("");
     try {
       const { error } = await supabase.auth.signInWithOtp({
         phone: phone.startsWith("+") ? phone : `+${phone}`,
@@ -283,15 +262,72 @@ export default function ProfilePage() {
       if (error) {
         setPhoneOtpSent(false);
         showToast("error", error.message);
+        setPhoneOtpLoading(false);
         return;
       }
       setPhoneOtpSent(true);
-      showToast("success", "Verification code sent. Enter it in the next step (or mark verified for demo).");
+      showToast("success", "Verification code sent. Enter the 6-digit code below.");
     } catch {
       showToast("error", "Phone verification failed.");
     } finally {
       setPhoneOtpLoading(false);
     }
+  };
+
+  const handlePhoneOtpSimulate = () => {
+    setPhoneOtpSent(true);
+    setPhoneOtpCode("123456");
+    showToast("success", "Simulated: Enter 123456 and click Confirm to verify.");
+  };
+
+  const handleConfirmOtp = async () => {
+    if (!userId) return;
+    const code = phoneOtpCode.replace(/\D/g, "").slice(0, 6);
+    if (code.length < 6) {
+      showToast("error", "Enter a 6-digit code.");
+      return;
+    }
+    setPhoneOtpConfirming(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        phone: profile.phone.startsWith("+") ? profile.phone : `+${profile.phone}`,
+        token: code,
+        type: "sms",
+      });
+      if (error) {
+        showToast("error", error.message);
+        setPhoneOtpConfirming(false);
+        return;
+      }
+      await supabase.from("profiles").update({ phone_verified: true }).eq("id", userId);
+      updateField("phone_verified", true);
+      setPhoneOtpSent(false);
+      setPhoneOtpCode("");
+      showToast("success", "Phone verified successfully.");
+      dispatchProfileUpdated();
+    } catch {
+      showToast("error", "Verification failed.");
+    } finally {
+      setPhoneOtpConfirming(false);
+    }
+  };
+
+  const handleConfirmOtpSimulated = async () => {
+    if (!userId) return;
+    const code = phoneOtpCode.replace(/\D/g, "").slice(0, 6);
+    if (code.length < 6) {
+      showToast("error", "Enter a 6-digit code (simulation: use 123456).");
+      return;
+    }
+    setPhoneOtpConfirming(true);
+    await new Promise((r) => setTimeout(r, 600));
+    await supabase.from("profiles").update({ phone_verified: true }).eq("id", userId);
+    updateField("phone_verified", true);
+    setPhoneOtpSent(false);
+    setPhoneOtpCode("");
+    showToast("success", "Phone verified (simulated).");
+    dispatchProfileUpdated();
+    setPhoneOtpConfirming(false);
   };
 
   const handleMarkPhoneVerified = async () => {
@@ -370,12 +406,6 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6 pb-8">
-      {!extendedProfileAvailable && (
-        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-          Run the migration <code className="rounded bg-slate-800 px-1">20250305600000_profiles_extended_profile.sql</code> in Supabase to unlock full profile management.
-        </div>
-      )}
-
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-slate-50">Profile</h1>
@@ -407,17 +437,19 @@ export default function ProfilePage() {
       )}
 
       {/* 1. Photo Management */}
-      {extendedProfileAvailable && (
       <section className={cardClass}>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-amber-400">
-            <Camera className="h-5 w-5" />
-            Photos
-          </h2>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-300">
-            <span className="flex items-center gap-1">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-semibold text-amber-400">
+              <Camera className="h-5 w-5" />
+              Photos
+            </h2>
+            <p className="mt-1 text-xs text-slate-500">Up to 5 photos · الصور</p>
+          </div>
+          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-600/80 bg-slate-800/50 px-3 py-2 text-sm text-slate-300 transition hover:bg-slate-800/80">
+            <span className="flex items-center gap-1.5">
               {profile.photo_privacy_blur ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              Blur my photos for non-matches
+              Blur for non-matches
             </span>
             <input
               type="checkbox"
@@ -427,24 +459,24 @@ export default function ProfilePage() {
             />
           </label>
         </div>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
           {Array.from({ length: MAX_PHOTOS }).map((_, i) => (
             <div
               key={i}
-              className="relative aspect-[3/4] overflow-hidden rounded-xl border border-slate-700 bg-slate-800/80"
+              className="group relative aspect-[3/4] overflow-hidden rounded-xl border border-slate-700 bg-slate-800/80 shadow-inner"
             >
               {profile.photo_urls[i] ? (
                 <>
                   <img
                     src={profile.photo_urls[i]}
                     alt=""
-                    className={`h-full w-full object-cover ${profile.photo_privacy_blur ? "blur-md" : ""}`}
+                    className={`h-full w-full object-cover transition ${profile.photo_privacy_blur ? "blur-md" : ""}`}
                   />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/50 opacity-0 transition hover:opacity-100">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 opacity-0 transition group-hover:opacity-100">
                     <button
                       type="button"
                       onClick={() => setPrimaryPhoto(i)}
-                      className="rounded-lg bg-slate-800/90 p-2 text-amber-400 hover:bg-slate-700"
+                      className="rounded-lg bg-slate-800/95 p-2.5 text-amber-400 shadow-lg hover:bg-slate-700"
                       title="Set as primary"
                     >
                       <Star className={`h-5 w-5 ${profile.primary_photo_index === i ? "fill-amber-400" : ""}`} />
@@ -452,26 +484,26 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => handleDeletePhoto(i)}
-                      className="rounded-lg bg-slate-800/90 p-2 text-red-400 hover:bg-slate-700"
+                      className="rounded-lg bg-slate-800/95 p-2.5 text-red-400 shadow-lg hover:bg-slate-700"
                       title="Delete"
                     >
                       <Trash2 className="h-5 w-5" />
                     </button>
                   </div>
                   {profile.primary_photo_index === i && (
-                    <span className="absolute left-2 top-2 rounded bg-amber-500/90 px-2 py-0.5 text-xs font-medium text-slate-950">
+                    <span className="absolute left-2 top-2 rounded-md bg-amber-500/95 px-2 py-1 text-xs font-semibold text-slate-950 shadow">
                       Primary
                     </span>
                   )}
                 </>
               ) : (
-                <label className="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 text-slate-500 hover:bg-slate-800 hover:text-amber-400">
+                <label className="flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-600 text-slate-500 transition hover:border-amber-500/50 hover:bg-slate-800/50 hover:text-amber-400">
                   {uploadingIndex === i ? (
                     <Loader2 className="h-8 w-8 animate-spin" />
                   ) : (
                     <>
-                      <ImagePlus className="h-8 w-8" />
-                      <span className="text-xs">Add photo</span>
+                      <ImagePlus className="h-10 w-10" />
+                      <span className="text-xs font-medium">Add photo</span>
                     </>
                   )}
                   <input
@@ -487,60 +519,108 @@ export default function ProfilePage() {
           ))}
         </div>
       </section>
-      )}
 
-      {/* 2. Phone Verification */}
-      {extendedProfileAvailable && (
+      {/* 2. Phone Verification (OTP) */}
       <section className={cardClass}>
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-amber-400">
+        <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-amber-400">
           <Phone className="h-5 w-5" />
           Phone verification
         </h2>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <input
-            type="tel"
-            value={profile.phone}
-            onChange={(e) => updateField("phone", e.target.value)}
-            placeholder="+1234567890"
-            className="flex-1 rounded-xl border border-slate-600 bg-slate-800/80 px-4 py-2.5 text-slate-100 placeholder:text-slate-500 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
-          />
-          <button
-            type="button"
-            onClick={handlePhoneVerify}
-            disabled={phoneOtpLoading || profile.phone_verified}
-            className="inline-flex items-center gap-2 rounded-xl border border-amber-500/50 bg-amber-500/20 px-4 py-2.5 text-sm font-medium text-amber-200 disabled:opacity-60"
-          >
-            {phoneOtpLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-            Verify
-          </button>
-          {profile.phone_verified && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-3 py-1.5 text-sm font-medium text-emerald-400">
-              <CheckCircle className="h-4 w-4" />
-              Verified
-            </span>
-          )}
+        <p className="mb-4 text-xs text-slate-500">Verify your number with OTP · التحقق بالرمز</p>
+        <div className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <input
+              type="tel"
+              value={profile.phone}
+              onChange={(e) => updateField("phone", e.target.value)}
+              placeholder="+20 123 456 7890"
+              className="flex-1 rounded-xl border border-slate-600 bg-slate-800/80 px-4 py-2.5 text-slate-100 placeholder:text-slate-500 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handlePhoneVerify}
+                disabled={phoneOtpLoading || profile.phone_verified}
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-500/50 bg-amber-500/20 px-4 py-2.5 text-sm font-medium text-amber-200 transition hover:bg-amber-500/30 disabled:opacity-60"
+              >
+                {phoneOtpLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Send OTP
+              </button>
+              <button
+                type="button"
+                onClick={handlePhoneOtpSimulate}
+                disabled={profile.phone_verified || phoneOtpSent}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-600 bg-slate-800/80 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-700 disabled:opacity-50"
+              >
+                Simulate OTP
+              </button>
+            </div>
+          </div>
           {phoneOtpSent && !profile.phone_verified && (
-            <button
-              type="button"
-              onClick={handleMarkPhoneVerified}
-              className="text-sm text-amber-400 underline"
-            >
-              Mark as verified (demo)
-            </button>
+            <div className="flex flex-col gap-3 rounded-xl border border-slate-700 bg-slate-800/50 p-4 sm:flex-row sm:items-end">
+              <div className="flex-1">
+                <label className="mb-1.5 block text-xs font-medium text-slate-400">Enter 6-digit code</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={phoneOtpCode}
+                  onChange={(e) => setPhoneOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="000000"
+                  className="w-full max-w-[10rem] rounded-xl border border-slate-600 bg-slate-800/80 px-4 py-2.5 text-center text-lg tracking-[0.4em] text-slate-100 placeholder:text-slate-500 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleConfirmOtpSimulated}
+                  disabled={phoneOtpCode.length < 6 || phoneOtpConfirming}
+                  className="inline-flex items-center gap-2 rounded-xl border border-amber-500/50 bg-amber-500/20 px-4 py-2.5 text-sm font-medium text-amber-200 disabled:opacity-60"
+                >
+                  {phoneOtpConfirming ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  Confirm (simulated)
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmOtp}
+                  disabled={phoneOtpCode.length < 6 || phoneOtpConfirming}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-600 bg-slate-700/80 px-4 py-2.5 text-sm font-medium text-slate-200 disabled:opacity-60"
+                >
+                  Confirm (real SMS)
+                </button>
+              </div>
+            </div>
           )}
+          <div className="flex flex-wrap items-center gap-3">
+            {profile.phone_verified && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-3 py-1.5 text-sm font-medium text-emerald-400">
+                <CheckCircle className="h-4 w-4" />
+                Verified
+              </span>
+            )}
+            {phoneOtpSent && !profile.phone_verified && (
+              <button
+                type="button"
+                onClick={handleMarkPhoneVerified}
+                className="text-sm text-amber-400 underline hover:text-amber-300"
+              >
+                Mark as verified (skip)
+              </button>
+            )}
+          </div>
         </div>
       </section>
-      )}
 
       {/* 3. Basic */}
       <section className={cardClass}>
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-amber-400">
+        <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-amber-400">
           <User className="h-5 w-5" />
-          Basic
+          Basic info
         </h2>
+        <p className="mb-4 text-xs text-slate-500">الاسم، الجنسية، العمر، الحالة الاجتماعية</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-400">Full name</label>
+            <label className="mb-1.5 block text-xs font-medium text-slate-400">Full name · الاسم</label>
             <input
               type="text"
               value={profile.full_name}
@@ -549,7 +629,7 @@ export default function ProfilePage() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-400">Nationality</label>
+            <label className="mb-1.5 block text-xs font-medium text-slate-400">Nationality · الجنسية</label>
             <input
               type="text"
               value={profile.nationality}
@@ -559,7 +639,7 @@ export default function ProfilePage() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-400">Age</label>
+            <label className="mb-1.5 block text-xs font-medium text-slate-400">Age · العمر</label>
             <input
               type="number"
               min={18}
@@ -570,7 +650,7 @@ export default function ProfilePage() {
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-400">Marital status</label>
+            <label className="mb-1.5 block text-xs font-medium text-slate-400">Marital status · الحالة الاجتماعية</label>
             <select
               value={profile.marital_status}
               onChange={(e) => updateField("marital_status", e.target.value)}
@@ -585,12 +665,12 @@ export default function ProfilePage() {
       </section>
 
       {/* Appearance */}
-      {extendedProfileAvailable && (
       <section className={cardClass}>
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-amber-400">
+        <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-amber-400">
           <Ruler className="h-5 w-5" />
           Appearance
         </h2>
+        <p className="mb-4 text-xs text-slate-500">الطول، الوزن، لون البشرة</p>
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
             <label className="mb-1.5 block text-xs font-medium text-slate-400">Height (cm)</label>
@@ -628,18 +708,17 @@ export default function ProfilePage() {
           </div>
         </div>
       </section>
-      )}
 
       {/* Lifestyle */}
-      {extendedProfileAvailable && (
       <section className={cardClass}>
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-amber-400">
+        <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-amber-400">
           <Heart className="h-5 w-5" />
           Lifestyle
         </h2>
+        <p className="mb-4 text-xs text-slate-500">التدخين، الالتزام الديني، الرغبة في الأطفال</p>
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-400">Smoking</label>
+            <label className="mb-1.5 block text-xs font-medium text-slate-400">Smoking · التدخين</label>
             <select
               value={profile.smoking_status}
               onChange={(e) => updateField("smoking_status", e.target.value)}
@@ -651,7 +730,7 @@ export default function ProfilePage() {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-400">Religious commitment</label>
+            <label className="mb-1.5 block text-xs font-medium text-slate-400">Religious commitment · الالتزام الديني</label>
             <select
               value={profile.religious_commitment}
               onChange={(e) => updateField("religious_commitment", e.target.value)}
@@ -663,7 +742,7 @@ export default function ProfilePage() {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-slate-400">Desire for children</label>
+            <label className="mb-1.5 block text-xs font-medium text-slate-400">Desire for children · الرغبة في الأطفال</label>
             <select
               value={profile.desire_children}
               onChange={(e) => updateField("desire_children", e.target.value)}
@@ -676,15 +755,14 @@ export default function ProfilePage() {
           </div>
         </div>
       </section>
-      )}
 
       {/* Career */}
-      {extendedProfileAvailable && (
       <section className={cardClass}>
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-amber-400">
+        <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-amber-400">
           <Briefcase className="h-5 w-5" />
           Career
         </h2>
+        <p className="mb-4 text-xs text-slate-500">المهنة، التعليم، البلد والمدينة</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-xs font-medium text-slate-400">Job title</label>
@@ -730,15 +808,14 @@ export default function ProfilePage() {
           </div>
         </div>
       </section>
-      )}
 
       {/* 4. Personal Narratives */}
-      {extendedProfileAvailable && (
       <section className={cardClass}>
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-amber-400">
+        <h2 className="mb-1 flex items-center gap-2 text-lg font-semibold text-amber-400">
           <FileText className="h-5 w-5" />
           Personal narratives
         </h2>
+        <p className="mb-4 text-xs text-slate-500">عني · شريكي المنشود</p>
         <div className="space-y-4">
           <div>
             <label className="mb-1.5 block text-xs font-medium text-slate-400">
@@ -770,7 +847,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </section>
-      )}
 
       <div className="flex justify-end">
         <button
