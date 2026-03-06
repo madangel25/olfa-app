@@ -543,7 +543,7 @@ export default function ProfilePage() {
           ? `Write a short bio for a person who is ${age} years old and works as ${job}.`
           : `Write a short description of an ideal partner for someone who is ${age} years old and works as ${job}.`;
 
-      const apiKey = "AIzaSyDBL4SLwdNUixl7aViHZTIrXGAsNCgNsCQ";
+      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
       const modelsToTry = ["gemini-pro", "gemini-1.0-pro"] as const;
       const payload = {
         contents: [{ role: "user", parts: [{ text: prompt }] }],
