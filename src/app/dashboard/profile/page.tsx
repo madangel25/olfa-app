@@ -33,27 +33,46 @@ import {
 const BUCKET = "user-assets";
 const MAX_COUNTRY_VISIBLE = 50;
 
+function getCountryDisplayName(code: string, locale: string, fallback: string): string {
+  if (locale === "ar") {
+    try {
+      const dn = new Intl.DisplayNames(["ar"], { type: "region" });
+      return dn.of(code.toUpperCase()) ?? fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  return fallback;
+}
+
 function SearchableCountrySelect({
   value,
   onChange,
   placeholder,
   className,
   inputClass,
+  locale = "en",
 }: {
   value: string;
   onChange: (name: string) => void;
   placeholder: string;
   className?: string;
   inputClass: string;
+  locale?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+  const isAr = locale === "ar";
   const searchLower = search.trim().toLowerCase();
   const filtered =
     searchLower.length === 0
       ? COUNTRIES.slice(0, 200)
-      : COUNTRIES.filter((c) => c.name.toLowerCase().includes(searchLower)).slice(0, 100);
+      : COUNTRIES.filter((c) => {
+          const nameEn = c.name.toLowerCase();
+          const nameAr = isAr ? getCountryDisplayName(c.code, "ar", "").toLowerCase() : "";
+          return nameEn.includes(searchLower) || (nameAr && nameAr.includes(searchLower));
+        }).slice(0, 100);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -65,6 +84,9 @@ function SearchableCountrySelect({
 
   const displayValue = value || "";
   const selectedCountry = COUNTRIES.find((c) => c.name === value);
+  const displayLabel = selectedCountry
+    ? getCountryDisplayName(selectedCountry.code, locale, selectedCountry.name)
+    : displayValue || placeholder;
 
   return (
     <div ref={containerRef} className={`relative ${className ?? ""}`}>
@@ -77,10 +99,10 @@ function SearchableCountrySelect({
           {selectedCountry ? (
             <>
               <span className="text-lg leading-none">{getFlagEmoji(selectedCountry.code)}</span>
-              <span>{selectedCountry.name}</span>
+              <span>{displayLabel}</span>
             </>
           ) : (
-            displayValue || placeholder
+            placeholder
           )}
         </span>
         <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition ${open ? "rotate-180" : ""}`} />
@@ -91,7 +113,7 @@ function SearchableCountrySelect({
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            className="absolute top-full left-0 right-0 z-50 mt-1 max-h-72 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-xl"
+            className="absolute top-full left-0 z-50 mt-1 max-h-72 w-full overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-xl"
           >
             <div className="border-b border-slate-700 p-2">
               <input
@@ -116,7 +138,7 @@ function SearchableCountrySelect({
                     className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-slate-200 hover:bg-white/10"
                   >
                     <span className="text-lg leading-none">{getFlagEmoji(c.code)}</span>
-                    <span>{c.name}</span>
+                    <span>{getCountryDisplayName(c.code, locale, c.name)}</span>
                   </button>
                 </li>
               ))}
@@ -238,7 +260,7 @@ export default function ProfilePage() {
         const { data, error } = await supabase
           .from("profiles")
           .select(
-            "full_name, gender, email, phone, phone_verified, nationality, age, marital_status, height_cm, weight_kg, skin_tone, smoking_status, religious_commitment, desire_children, job_title, education_level, country, city, about_me, ideal_partner, photo_urls, primary_photo_index, photo_privacy_blur"
+            "full_name, gender, email, phone_verified, nationality, age, marital_status, height_cm, weight_kg, skin_tone, smoking_status, religious_commitment, desire_children, job_title, education_level, country, city, about_me, ideal_partner, photo_urls, primary_photo_index, photo_privacy_blur"
           )
           .eq("id", user.id)
           .maybeSingle();
@@ -524,19 +546,19 @@ export default function ProfilePage() {
 
       const apiKey = "AIzaSyDBL4SLwdNUixl7aViHZTIrXGAsNCgNsCQ";
       const genAI = new GoogleGenerativeAI(apiKey);
-      const modelId = "gemini-1.5-flash";
+      const modelsToTry = ["gemini-1.5-flash", "gemini-pro"] as const;
       let text = "";
-      try {
-        const model = genAI.getGenerativeModel({ model: modelId });
-        const result = await model.generateContent(prompt);
-        const rawText = result.response.text();
-        console.log("AI Response:", rawText);
-        text = rawText?.trim() ?? "";
-      } catch (modelError) {
-        console.warn(
-          "Gemini request failed (404 = wrong model or enable 'Generative Language API' in Google Cloud Console):",
-          modelError
-        );
+      for (const modelId of modelsToTry) {
+        try {
+          const model = genAI.getGenerativeModel({ model: modelId });
+          const result = await model.generateContent(prompt);
+          const rawText = result.response.text();
+          console.log("AI Response:", rawText);
+          text = rawText?.trim() ?? "";
+          if (text) break;
+        } catch (modelError) {
+          console.warn(`Gemini (${modelId}) failed, trying fallback:`, modelError);
+        }
       }
 
       if (text) updateField(field, text);
@@ -648,6 +670,7 @@ export default function ProfilePage() {
                       onChange={(name) => updateField("nationality", name)}
                       placeholder={t("profile.selectOption")}
                       inputClass={inputClass}
+                      locale={locale ?? "en"}
                     />
                   </div>
                   <div>
@@ -839,6 +862,7 @@ export default function ProfilePage() {
                     <SearchableCountrySelect
                       value={profile.country}
                       onChange={(name) => updateField("country", name)}
+                      locale={locale ?? "en"}
                       placeholder={t("profile.selectOption")}
                       inputClass={inputClass}
                     />
