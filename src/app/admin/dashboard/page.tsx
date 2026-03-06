@@ -462,14 +462,20 @@ export default function AdminDashboardPage() {
 
   const handleApproveVerification = async (userId: string) => {
     setActionMessage(null);
+    setGlobalError(null);
     if (!currentUserId) return;
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .update({ is_verified: true })
-        .eq("id", userId);
+        .eq("id", userId)
+        .select("id")
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) {
+        throw new Error("Update did not affect any row. Check that the user id is correct and you have permission.");
+      }
 
       await logAdminAction(
         currentUserId,
@@ -480,6 +486,9 @@ export default function AdminDashboardPage() {
       );
       setVerificationQueue((prev) =>
         prev.filter((item) => item.id !== userId)
+      );
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, is_verified: true } : u))
       );
       setMetrics((m) => ({ ...m, verifiedUsers: m.verifiedUsers + 1, pendingReviews: Math.max(0, m.pendingReviews - 1) }));
       loadAdminLogs();
@@ -493,6 +502,7 @@ export default function AdminDashboardPage() {
 
   const handleRejectVerification = async (userId: string) => {
     setActionMessage(null);
+    setGlobalError(null);
     if (!currentUserId) return;
     try {
       const bucket = supabase.storage.from("verification-photos");
@@ -504,12 +514,17 @@ export default function AdminDashboardPage() {
         await bucket.remove(paths);
       }
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .update({ verification_submitted: false, is_verified: false })
-        .eq("id", userId);
+        .eq("id", userId)
+        .select("id")
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) {
+        throw new Error("Update did not affect any row. Check that the user id is correct and you have permission.");
+      }
 
       await logAdminAction(
         currentUserId,
@@ -520,6 +535,9 @@ export default function AdminDashboardPage() {
       );
       setVerificationQueue((prev) =>
         prev.filter((item) => item.id !== userId)
+      );
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, is_verified: false } : u))
       );
       setMetrics((m) => ({ ...m, pendingReviews: Math.max(0, m.pendingReviews - 1) }));
       loadAdminLogs();
