@@ -196,6 +196,8 @@ type TranslationMap = {
     toastBucketMissing: string;
     toastPhotoRemoved: string;
     toastPrimaryUpdated: string;
+    useSimulatedCode: string;
+    aiKeyMissing: string;
     optSingle: string;
     optDivorced: string;
     optWidowed: string;
@@ -497,6 +499,8 @@ const translations: Record<Locale, TranslationMap> = {
       toastBucketMissing: "Photo storage is not set up. Please contact support.",
       toastPhotoRemoved: "Photo removed.",
       toastPrimaryUpdated: "Primary photo updated.",
+      useSimulatedCode: "For simulation, use code 123456.",
+      aiKeyMissing: "AI suggestions are not configured. Add NEXT_PUBLIC_GEMINI_API_KEY or GEMINI_API_KEY to .env.local",
       optSingle: "Single",
       optDivorced: "Divorced",
       optWidowed: "Widowed",
@@ -785,6 +789,8 @@ const translations: Record<Locale, TranslationMap> = {
       toastBucketMissing: "تخزين الصور غير مُعد. يرجى التواصل مع الدعم.",
       toastPhotoRemoved: "تم حذف الصورة.",
       toastPrimaryUpdated: "تم تحديث الصورة الرئيسية.",
+      useSimulatedCode: "للمحاكاة، استخدم الرمز 123456.",
+      aiKeyMissing: "الذكاء الاصطناعي غير مُعد. أضف NEXT_PUBLIC_GEMINI_API_KEY أو GEMINI_API_KEY إلى .env.local",
       optSingle: "أعزب/عزباء",
       optDivorced: "مطلق/مطلقة",
       optWidowed: "أرمل/أرملة",

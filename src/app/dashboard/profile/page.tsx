@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { dispatchProfileUpdated } from "@/lib/profileCompleteness";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { COUNTRIES, getFlagEmoji } from "@/lib/countries";
 import PhoneInput from "react-phone-number-input/max";
 import "react-phone-number-input/style.css";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,9 +26,109 @@ import {
   Loader2,
   Camera,
   Wand2,
+  ChevronDown,
 } from "lucide-react";
 
 const BUCKET = "user-assets";
+const MAX_COUNTRY_VISIBLE = 50;
+
+function SearchableCountrySelect({
+  value,
+  onChange,
+  placeholder,
+  className,
+  inputClass,
+}: {
+  value: string;
+  onChange: (name: string) => void;
+  placeholder: string;
+  className?: string;
+  inputClass: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const searchLower = search.trim().toLowerCase();
+  const filtered =
+    searchLower.length === 0
+      ? COUNTRIES.slice(0, 200)
+      : COUNTRIES.filter((c) => c.name.toLowerCase().includes(searchLower)).slice(0, 100);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const displayValue = value || "";
+  const selectedCountry = COUNTRIES.find((c) => c.name === value);
+
+  return (
+    <div ref={containerRef} className={`relative ${className ?? ""}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`flex w-full items-center justify-between gap-2 rounded-xl border border-slate-600 bg-slate-800/80 px-4 py-2.5 text-left text-slate-100 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/50 ${!displayValue ? "text-slate-500" : ""}`}
+      >
+        <span className="flex items-center gap-2 truncate">
+          {selectedCountry ? (
+            <>
+              <span className="text-lg leading-none">{getFlagEmoji(selectedCountry.code)}</span>
+              <span>{selectedCountry.name}</span>
+            </>
+          ) : (
+            displayValue || placeholder
+          )}
+        </span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition ${open ? "rotate-180" : ""}`} />
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            className="absolute top-full left-0 right-0 z-50 mt-1 max-h-72 overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-xl"
+          >
+            <div className="border-b border-slate-700 p-2">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={placeholder}
+                className={inputClass + " py-2"}
+                autoFocus
+              />
+            </div>
+            <ul className="max-h-60 overflow-y-auto py-1">
+              {filtered.slice(0, MAX_COUNTRY_VISIBLE).map((c) => (
+                <li key={c.code}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange(c.name);
+                      setOpen(false);
+                      setSearch("");
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-slate-200 hover:bg-white/10"
+                  >
+                    <span className="text-lg leading-none">{getFlagEmoji(c.code)}</span>
+                    <span>{c.name}</span>
+                  </button>
+                </li>
+              ))}
+              {filtered.length === 0 && (
+                <li className="px-4 py-3 text-sm text-slate-500">No matches</li>
+              )}
+            </ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
 const MAX_PHOTOS = 5;
 
 type Toast = { type: "success" | "error"; message: string } | null;
@@ -292,6 +393,10 @@ export default function ProfilePage() {
       showToast("error", t("profile.enterCode"));
       return;
     }
+    if (code !== "123456") {
+      showToast("error", t("profile.useSimulatedCode"));
+      return;
+    }
     setPhoneOtpConfirming(true);
     await new Promise((r) => setTimeout(r, 600));
     await supabase.from("profiles").update({ phone_verified: true }).eq("id", userId);
@@ -324,19 +429,21 @@ export default function ProfilePage() {
     }
     setUploadingIndex(index);
     try {
-      const ext = file.name.split(".").pop() || "jpg";
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
       const path = `${userId}/${crypto.randomUUID()}.${ext}`;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, {
         upsert: false,
-        contentType: file.type,
+        contentType: file.type || "image/jpeg",
       });
       if (uploadError) {
-        const msg = uploadError.message || "";
-        if (msg.includes("Bucket") || msg.includes("bucket") || msg.includes("not found") || msg.includes("404")) {
-          showToast("error", t("profile.toastBucketMissing"));
-        } else {
-          showToast("error", t("profile.toastUploadFailed"));
-        }
+        const msg = String(uploadError.message || "").toLowerCase();
+        const isBucketError =
+          msg.includes("bucket") ||
+          msg.includes("not found") ||
+          msg.includes("404") ||
+          msg.includes("resource") ||
+          msg.includes("does not exist");
+        showToast("error", isBucketError ? t("profile.toastBucketMissing") : t("profile.toastUploadFailed"));
         setUploadingIndex(null);
         e.target.value = "";
         return;
@@ -349,7 +456,14 @@ export default function ProfilePage() {
       if (trimmed.length === 1) updateField("primary_photo_index", 0);
       showToast("success", t("profile.toastSaved"));
     } catch (err) {
-      showToast("error", err instanceof Error ? err.message : t("profile.toastUploadFailed"));
+      const msg = err instanceof Error ? String(err.message).toLowerCase() : "";
+      const isBucketError =
+        msg.includes("bucket") ||
+        msg.includes("not found") ||
+        msg.includes("404") ||
+        msg.includes("resource") ||
+        msg.includes("does not exist");
+      showToast("error", isBucketError ? t("profile.toastBucketMissing") : t("profile.toastUploadFailed"));
     } finally {
       setUploadingIndex(null);
       e.target.value = "";
@@ -393,7 +507,10 @@ export default function ProfilePage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed");
+      if (!res.ok) {
+        const message = res.status === 503 ? t("profile.aiKeyMissing") : (data.error || "Failed");
+        throw new Error(message);
+      }
       if (data.text) updateField(field, data.text);
     } catch (e) {
       showToast("error", e instanceof Error ? e.message : t("profile.toastError"));
@@ -497,11 +614,11 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.nationality")}</label>
-                    <input
-                      type="text"
+                    <SearchableCountrySelect
                       value={profile.nationality}
-                      onChange={(e) => updateField("nationality", e.target.value)}
-                      className={inputClass}
+                      onChange={(name) => updateField("nationality", name)}
+                      placeholder={t("profile.selectOption")}
+                      inputClass={inputClass}
                     />
                   </div>
                   <div>
@@ -690,7 +807,12 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.country")}</label>
-                    <input type="text" value={profile.country} onChange={(e) => updateField("country", e.target.value)} className={inputClass} />
+                    <SearchableCountrySelect
+                      value={profile.country}
+                      onChange={(name) => updateField("country", name)}
+                      placeholder={t("profile.selectOption")}
+                      inputClass={inputClass}
+                    />
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.city")}</label>

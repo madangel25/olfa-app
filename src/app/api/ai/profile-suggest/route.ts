@@ -17,10 +17,15 @@ type SuggestBody = {
 };
 
 export async function POST(request: Request) {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey =
+    process.env.NEXT_PUBLIC_GEMINI_API_KEY ||
+    process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { error: "AI suggestion is not configured (missing GEMINI_API_KEY)." },
+      {
+        error:
+          "AI suggestions are not available. Add NEXT_PUBLIC_GEMINI_API_KEY or GEMINI_API_KEY to your .env.local file.",
+      },
       { status: 503 }
     );
   }
