@@ -113,18 +113,17 @@ export default function DiscoveryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-50 flex items-center justify-center">
+      <div className="flex min-h-[40vh] items-center justify-center">
         <p className="text-sm text-slate-400">Loading discovery…</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-50">
-      <div className="mx-auto max-w-2xl px-4 py-6">
+    <div>
         <div className="mb-4 flex items-center justify-between">
           <Link href="/dashboard" className="text-sm text-amber-400/90 hover:text-amber-300">
-            ← Home
+            ← الرئيسية
           </Link>
           <h1 className="text-xl font-semibold">Discovery</h1>
           <span />
@@ -186,9 +185,8 @@ export default function DiscoveryPage() {
           ))}
         </ul>
         {users.length === 0 && (
-          <p className="text-center text-sm text-slate-500 py-8">No other verified users right now.</p>
+          <p className="py-8 text-center text-sm text-slate-500">No other verified users right now.</p>
         )}
-      </div>
     </div>
   );
 }

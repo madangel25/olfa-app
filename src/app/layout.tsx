@@ -32,7 +32,7 @@ export default function RootLayout({
       >
         <LanguageProvider>
           <Navbar />
-          {children}
+          <div className="min-h-screen pt-14">{children}</div>
         </LanguageProvider>
       </body>
     </html>
