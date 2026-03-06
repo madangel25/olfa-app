@@ -241,6 +241,7 @@ export default function ProfilePage() {
   const [phoneOtpConfirming, setPhoneOtpConfirming] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [aiLoading, setAiLoading] = useState<"about_me" | "ideal_partner" | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const showToast = useCallback((type: "success" | "error", message: string) => {
     setToast({ type, message });
@@ -535,13 +536,14 @@ export default function ProfilePage() {
 
   const handleAiSuggest = async (field: "about_me" | "ideal_partner") => {
     setAiLoading(field);
+    setIsLoading(true);
     try {
       const age = profile.age || "unknown";
       const job = profile.job_title || "unknown";
       const prompt =
         field === "about_me"
-          ? `Write a short bio for a person who is ${age} years old and works as ${job}.`
-          : `Write a short description of an ideal partner for someone who is ${age} years old and works as ${job}.`;
+          ? `Write a professional 2-line bio for a person who is ${age} years old and works as ${job}. Detect the language of the input; if it is Arabic, write the bio in Arabic. If it is English, write it in English. Return ONLY the bio text, no options, no introductions.`
+          : `Write a professional 2-line description of an ideal partner for someone who is ${age} years old and works as ${job}. Detect the language of the input; if it is Arabic, write in Arabic. If it is English, write in English. Return ONLY the text, no options, no introductions.`;
 
       console.log("Gemini prompt (before send):", prompt);
 
@@ -580,6 +582,7 @@ export default function ProfilePage() {
       console.log(e);
     } finally {
       setAiLoading(null);
+      setIsLoading(false);
     }
   };
 
@@ -951,7 +954,7 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => handleAiSuggest("about_me")}
-                      disabled={aiLoading !== null}
+                      disabled={isLoading}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
                     >
                       {aiLoading === "about_me" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
@@ -973,7 +976,7 @@ export default function ProfilePage() {
                     <button
                       type="button"
                       onClick={() => handleAiSuggest("ideal_partner")}
-                      disabled={aiLoading !== null}
+                      disabled={isLoading}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
                     >
                       {aiLoading === "ideal_partner" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
