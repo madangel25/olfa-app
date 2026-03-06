@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import {
+  getProfileCompleteness,
+  PROFILE_UPDATED_EVENT,
+  type ProfileForCompleteness,
+} from "@/lib/profileCompleteness";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "الرئيسية", labelEn: "Home" },
@@ -12,37 +17,43 @@ const NAV_ITEMS = [
   { href: "/dashboard/messages", label: "الرسائل", labelEn: "Messages" },
 ];
 
-/** Profile fields that count toward completeness (each 25%). */
-function getProfileCompleteness(profile: {
-  full_name?: string | null;
-  gender?: string | null;
-  email?: string | null;
-  is_verified?: boolean | null;
-}): number {
-  let score = 0;
-  if (profile?.full_name?.trim()) score += 25;
-  if (profile?.gender?.trim()) score += 25;
-  if (profile?.email?.trim()) score += 25;
-  if (profile?.is_verified) score += 25;
-  return Math.min(100, score);
-}
+const PROFILE_SELECT_MINIMAL = "full_name, gender, email, is_verified";
+const PROFILE_SELECT_FULL =
+  "full_name, gender, email, is_verified, phone, phone_verified, nationality, age, marital_status, height_cm, weight_kg, skin_tone, smoking_status, religious_commitment, desire_children, job_title, education_level, country, city, about_me, ideal_partner, photo_urls";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [profileComplete, setProfileComplete] = useState<number | null>(null);
 
-  useEffect(() => {
-    const run = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase
+  const fetchCompleteness = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const select = PROFILE_SELECT_FULL;
+    const { data, error } = await supabase
+      .from("profiles")
+      .select(select)
+      .eq("id", user.id)
+      .maybeSingle();
+    if (error) {
+      const { data: fallback } = await supabase
         .from("profiles")
-        .select("full_name, gender, email, is_verified")
+        .select(PROFILE_SELECT_MINIMAL)
         .eq("id", user.id)
         .maybeSingle();
-      setProfileComplete(data ? getProfileCompleteness(data) : 0);
-    };
-    run();
+      setProfileComplete(fallback ? getProfileCompleteness(fallback as ProfileForCompleteness) : 0);
+      return;
+    }
+    setProfileComplete(data ? getProfileCompleteness(data as ProfileForCompleteness) : 0);
+  };
+
+  useEffect(() => {
+    fetchCompleteness();
+  }, []);
+
+  useEffect(() => {
+    const onProfileUpdated = () => void fetchCompleteness();
+    window.addEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
+    return () => window.removeEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
   }, []);
 
   const showProgress = profileComplete !== null && profileComplete < 100;
