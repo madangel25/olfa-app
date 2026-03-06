@@ -34,9 +34,21 @@ export default function OnboardingQuizPage() {
 
       if (!user) {
         router.replace("/register");
-      } else {
-        setCheckingSession(false);
+        return;
       }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("pledge_accepted")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!profile?.pledge_accepted) {
+        router.replace("/onboarding/pledge");
+        return;
+      }
+
+      setCheckingSession(false);
     };
 
     ensureAuthenticated();

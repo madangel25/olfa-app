@@ -71,6 +71,7 @@ export default function RegisterPage() {
         gender: formGender,
         role: initialRole,
         quiz_completed: false,
+        pledge_accepted: false,
       });
 
       if (profileError) {
@@ -79,7 +80,7 @@ export default function RegisterPage() {
       }
 
       setMessage(t("register.successMessage"));
-      router.push("/onboarding/quiz");
+      router.push("/onboarding/pledge");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t("register.unexpectedError")

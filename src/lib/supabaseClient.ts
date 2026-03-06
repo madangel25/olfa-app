@@ -35,11 +35,11 @@ export async function ensureUserProfile(
 } | null> {
   const { data: existing } = await client
     .from("profiles")
-    .select("role, email, quiz_completed, verification_submitted, is_verified")
+    .select("role, email, quiz_completed, verification_submitted, is_verified, pledge_accepted")
     .eq("id", authUser.id)
     .maybeSingle();
 
-  if (existing) return existing as { role: string; email: string | null; quiz_completed: boolean; verification_submitted: boolean; [key: string]: unknown };
+  if (existing) return existing as { role: string; email: string | null; quiz_completed: boolean; verification_submitted: boolean; pledge_accepted?: boolean; [key: string]: unknown };
 
   const fullName = authUser.user_metadata?.full_name ?? null;
   const email = authUser.email ?? null;
@@ -52,23 +52,24 @@ export async function ensureUserProfile(
     quiz_completed: false,
     verification_submitted: false,
     is_verified: false,
+    pledge_accepted: false,
   });
 
   if (insertError) {
     const { data: afterConflict } = await client
       .from("profiles")
-      .select("role, email, quiz_completed, verification_submitted, is_verified")
+      .select("role, email, quiz_completed, verification_submitted, is_verified, pledge_accepted")
       .eq("id", authUser.id)
       .maybeSingle();
-    return afterConflict as { role: string; email: string | null; quiz_completed: boolean; verification_submitted: boolean; [key: string]: unknown } | null;
+    return afterConflict as { role: string; email: string | null; quiz_completed: boolean; verification_submitted: boolean; pledge_accepted?: boolean; [key: string]: unknown } | null;
   }
 
   const { data: created } = await client
     .from("profiles")
-    .select("role, email, quiz_completed, verification_submitted, is_verified")
+    .select("role, email, quiz_completed, verification_submitted, is_verified, pledge_accepted")
     .eq("id", authUser.id)
     .maybeSingle();
 
-  return created as { role: string; email: string | null; quiz_completed: boolean; verification_submitted: boolean; [key: string]: unknown } | null;
+  return created as { role: string; email: string | null; quiz_completed: boolean; verification_submitted: boolean; pledge_accepted?: boolean; [key: string]: unknown } | null;
 }
 

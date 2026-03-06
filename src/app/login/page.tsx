@@ -62,8 +62,15 @@ export default function LoginPage() {
         return;
       }
 
+      const pledgeAccepted = (profile as { pledge_accepted?: boolean }).pledge_accepted ?? false;
+
+      if (!pledgeAccepted) {
+        router.replace("/onboarding/pledge");
+        return;
+      }
+
       if (!profile.quiz_completed) {
-        router.replace("/onboarding/quiz");
+        router.replace("/onboarding/social");
         return;
       }
 

@@ -121,6 +121,21 @@ type TranslationMap = {
     body: string;
     backHome: string;
   };
+  pledge: {
+    title: string;
+    agreeButton: string;
+    loading: string;
+  };
+  social: {
+    title: string;
+    disclaimer: string;
+    facebookLabel: string;
+    linkedinLabel: string;
+    skip: string;
+    continue: string;
+    saving: string;
+    optional: string;
+  };
   nav: {
     home: string;
     login: string;
@@ -322,6 +337,21 @@ const translations: Record<Locale, TranslationMap> = {
       body: "Your answers and photos have been securely submitted to the Olfa team. We will notify you once your profile is reviewed and approved. Until then, parts of the platform will stay limited to protect the community.",
       backHome: "Return to home",
     },
+    pledge: {
+      title: "Ethical Pledge",
+      agreeButton: "I Agree and Commit",
+      loading: "Saving…",
+    },
+    social: {
+      title: "Social profile (optional)",
+      disclaimer: "This is for AI interest analysis and social verification only. We will NEVER post anything.",
+      facebookLabel: "Facebook profile URL",
+      linkedinLabel: "LinkedIn profile URL",
+      skip: "Skip for now",
+      continue: "Continue",
+      saving: "Saving…",
+      optional: "Optional",
+    },
     nav: {
       home: "Home",
       login: "Login",
@@ -509,6 +539,21 @@ const translations: Record<Locale, TranslationMap> = {
       title: "شكراً! ملفك قيد المراجعة.",
       body: "تم إرسال إجاباتك وصورك بشكل آمن إلى فريق أولفا. سنخبرك عند مراجعة واعتماد ملفك. حتى ذلك الحين، أجزاء من المنصة ستظل محدودة لحماية المجتمع.",
       backHome: "العودة للرئيسية",
+    },
+    pledge: {
+      title: "تعهد الجدية",
+      agreeButton: "أوافق وألتزم",
+      loading: "جاري الحفظ…",
+    },
+    social: {
+      title: "الملف الاجتماعي (اختياري)",
+      disclaimer: "هذا لتحليل الاهتمامات بالذكاء الاصطناعي والتحقق الاجتماعي فقط. لن ننشر أي شيء أبداً.",
+      facebookLabel: "رابط فيسبوك",
+      linkedinLabel: "رابط لينكد إن",
+      skip: "تخطي الآن",
+      continue: "متابعة",
+      saving: "جاري الحفظ…",
+      optional: "اختياري",
     },
     nav: {
       home: "الرئيسية",
