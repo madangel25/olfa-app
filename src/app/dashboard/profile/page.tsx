@@ -243,6 +243,7 @@ export default function ProfilePage() {
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const [aiLoading, setAiLoading] = useState<"about_me" | "ideal_partner" | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [tone, setTone] = useState<"friendly" | "romantic" | "professional">("friendly");
 
   const showToast = useCallback((type: "success" | "error", message: string) => {
     setToast({ type, message });
@@ -549,19 +550,28 @@ export default function ProfilePage() {
     try {
       const age = profile.age || "unknown";
       const job = profile.job_title || "unknown";
-      const genderTerm = profile.gender === "female" ? "أنثى" : "ذكر";
-      const appealTerm = profile.gender === "female" ? "خبيرة ومبدعة" : "خبير ومبدع";
+      const userGender = profile.gender === "female" ? "بنت" : "شاب";
+      const toneText =
+        tone === "friendly" ? "رايق وكول" : tone === "romantic" ? "رومانسي وحالم" : "جاد وعملي";
+      const aboutMe = profile.about_me?.trim() || "(لم يذكر بعد)";
+      const partnerInfo = profile.ideal_partner?.trim() || "(لم يذكر بعد)";
+
       const prompt =
         field === "about_me"
-          ? `اكتب نبذة شخصية احترافية ملهمة باللغة العربية الفصحى لشخص ${genderTerm}، عمره ${age} ويعمل في مجال ${job}.
+          ? `أنت صديق وخبير كاريزما. اكتب نبذة شخصية (Bio) بلساني (أنا).
+المعطيات:
+- أنا ${userGender}، سني ${age}، وبشتغل ${job}.
+- عن نفسي: "${aboutMe}"
+- اللي بدور عليه: "${partnerInfo}"
+- المود المطلوب: ${toneText}
+
 المطلوب:
-1. صياغة فقرة متماسكة (حوالي 3 إلى 4 أسطر).
-2. التركيز على الشغف، الخبرة، والطموح.
-3. استخدام لغة قوية وجذابة (Professional Branding).
-4. التحدث بصيغة الغائب (مثال: "مصمم متميز يجمع بين...") أو صيغة المتحدث حسب رغبتك، والأفضل صيغة الغائب للبروفايلات الرسمية.
-5. تأكد من مطابقة القواعد اللغوية لجنس الشخص (${genderTerm}).
-النتيجة: النص فقط، بدون مقدمات أو خيارات.`
-          : `Write a professional 2-line description in Arabic of an ideal partner for someone who is ${age} years old and works as ${job}. Return ONLY the Arabic text. No English, no introductions, no "Option 1".`;
+1. اكتب بلهجة عربية "بيضاء" (مصرية أو سعودية خفيفة) مفهومة للكل، بعيداً عن الفصحى المعقدة.
+2. اتكلم بضمير المتكلم (أنا).
+3. الطول: من 2 لـ 4 سطور بالظبط (ممنوع الزيادة).
+4. ادمج بين شخصيتي واللي بتمناه في شريكي بأسلوب صايع وغير مباشر.
+5. النتيجة: النص فقط بدون أي مقدمات.`
+          : `أنت صديق وخبير كاريزما. اكتب وصفاً قصيراً بالعربية (من 2 لـ 4 أسطر) عن الشريك المثالي لشخص ${userGender} عمره ${age} وبشتغل ${job}. المود: ${toneText}. عن نفسه قال: "${aboutMe}". اللي بدور عليه: "${partnerInfo}". النتيجة: النص فقط بدون مقدمات.`;
 
       console.log("Gemini prompt (before send):", prompt);
 
@@ -976,17 +986,28 @@ export default function ProfilePage() {
               <p className="mb-4 text-xs text-slate-500">{t("profile.personalEssaysSub")}</p>
               <div className="space-y-4">
                 <div>
-                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
                     <label className="text-xs font-medium text-slate-400">{t("profile.aboutMe")}</label>
-                    <button
-                      type="button"
-                      onClick={() => handleAiSuggest("about_me")}
-                      disabled={isLoading}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
-                    >
-                      {aiLoading === "about_me" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
-                      {t("profile.magicWand")}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={tone}
+                        onChange={(e) => setTone(e.target.value as "friendly" | "romantic" | "professional")}
+                        className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                      >
+                        <option value="friendly">رايق</option>
+                        <option value="romantic">رومانسي</option>
+                        <option value="professional">جاد</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => handleAiSuggest("about_me")}
+                        disabled={isLoading}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
+                      >
+                        {aiLoading === "about_me" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+                        {t("profile.magicWand")}
+                      </button>
+                    </div>
                   </div>
                   <div className="relative rounded-xl bg-zinc-50 p-1 shadow-sm dark:bg-zinc-900/50">
                     <textarea
@@ -1009,17 +1030,28 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div>
-                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
                     <label className="text-xs font-medium text-slate-400">{t("profile.idealPartner")}</label>
-                    <button
-                      type="button"
-                      onClick={() => handleAiSuggest("ideal_partner")}
-                      disabled={isLoading}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
-                    >
-                      {aiLoading === "ideal_partner" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
-                      {t("profile.magicWand")}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={tone}
+                        onChange={(e) => setTone(e.target.value as "friendly" | "romantic" | "professional")}
+                        className="rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm outline-none focus:ring-2 focus:ring-blue-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                      >
+                        <option value="friendly">رايق</option>
+                        <option value="romantic">رومانسي</option>
+                        <option value="professional">جاد</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => handleAiSuggest("ideal_partner")}
+                        disabled={isLoading}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-500/20 disabled:opacity-60"
+                      >
+                        {aiLoading === "ideal_partner" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+                        {t("profile.magicWand")}
+                      </button>
+                    </div>
                   </div>
                   <div className="relative rounded-xl bg-zinc-50 p-1 shadow-sm dark:bg-zinc-900/50">
                     <textarea
