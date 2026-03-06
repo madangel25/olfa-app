@@ -123,7 +123,7 @@ export default function DiscoveryPage() {
     <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-50">
       <div className="mx-auto max-w-2xl px-4 py-6">
         <div className="mb-4 flex items-center justify-between">
-          <Link href="/dashboard/home" className="text-sm text-amber-400/90 hover:text-amber-300">
+          <Link href="/dashboard" className="text-sm text-amber-400/90 hover:text-amber-300">
             ← Home
           </Link>
           <h1 className="text-xl font-semibold">Discovery</h1>

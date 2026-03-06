@@ -75,7 +75,7 @@ export default function LoginPage() {
       }
 
       if (pledgeAccepted && profile.quiz_completed) {
-        router.replace("/dashboard/home");
+        router.replace("/dashboard");
         return;
       }
 
@@ -84,7 +84,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.replace("/dashboard/home");
+      router.replace("/dashboard");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t("login.somethingWrong")

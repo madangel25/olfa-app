@@ -44,7 +44,7 @@ export default function OnboardingQuizPage() {
         .maybeSingle();
 
       if (profile?.pledge_accepted && profile?.quiz_completed) {
-        router.replace("/dashboard/home");
+        router.replace("/dashboard");
         return;
       }
       if (!profile?.pledge_accepted) {
