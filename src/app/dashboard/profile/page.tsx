@@ -541,9 +541,18 @@ export default function ProfilePage() {
     try {
       const age = profile.age || "unknown";
       const job = profile.job_title || "unknown";
+      const genderTerm = profile.gender === "female" ? "أنثى" : "ذكر";
+      const appealTerm = profile.gender === "female" ? "خبيرة ومبدعة" : "خبير ومبدع";
       const prompt =
         field === "about_me"
-          ? `Write a professional 2-line bio in Arabic for a person who is ${age} years old and works as ${job}. Return ONLY the Arabic text. No English, no introductions, no "Option 1".`
+          ? `اكتب نبذة شخصية احترافية ملهمة باللغة العربية الفصحى لشخص ${genderTerm}، عمره ${age} ويعمل في مجال ${job}.
+المطلوب:
+1. صياغة فقرة متماسكة (حوالي 3 إلى 4 أسطر).
+2. التركيز على الشغف، الخبرة، والطموح.
+3. استخدام لغة قوية وجذابة (Professional Branding).
+4. التحدث بصيغة الغائب (مثال: "مصمم متميز يجمع بين...") أو صيغة المتحدث حسب رغبتك، والأفضل صيغة الغائب للبروفايلات الرسمية.
+5. تأكد من مطابقة القواعد اللغوية لجنس الشخص (${genderTerm}).
+النتيجة: النص فقط، بدون مقدمات أو خيارات.`
           : `Write a professional 2-line description in Arabic of an ideal partner for someone who is ${age} years old and works as ${job}. Return ONLY the Arabic text. No English, no introductions, no "Option 1".`;
 
       console.log("Gemini prompt (before send):", prompt);
@@ -680,6 +689,19 @@ export default function ProfilePage() {
                       onChange={(e) => updateField("full_name", e.target.value)}
                       className={inputClass}
                     />
+                  </div>
+                  <div>
+                    <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.gender")}</label>
+                    <select
+                      value={profile.gender || ""}
+                      disabled
+                      aria-readonly
+                      className={inputClass + " opacity-75 cursor-not-allowed"}
+                    >
+                      <option value="">{t("profile.selectOption")}</option>
+                      <option value="male">{t("profile.male")}</option>
+                      <option value="female">{t("profile.female")}</option>
+                    </select>
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs font-medium text-slate-400">{t("profile.nationality")}</label>
@@ -970,7 +992,7 @@ export default function ProfilePage() {
                       onChange={(e) => updateField("about_me", e.target.value)}
                       rows={5}
                       placeholder={t("profile.aboutMePlaceholder")}
-                      className={inputClass + " min-h-0 resize-y bg-transparent"}
+                      className={inputClass + " min-h-0 resize-y bg-transparent text-lg leading-relaxed"}
                     />
                     <button
                       type="button"
@@ -1003,7 +1025,7 @@ export default function ProfilePage() {
                       onChange={(e) => updateField("ideal_partner", e.target.value)}
                       rows={5}
                       placeholder={t("profile.idealPartnerPlaceholder")}
-                      className={inputClass + " min-h-0 resize-y bg-transparent"}
+                      className={inputClass + " min-h-0 resize-y bg-transparent text-lg leading-relaxed"}
                     />
                     <button
                       type="button"

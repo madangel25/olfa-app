@@ -145,6 +145,9 @@ type TranslationMap = {
     step3: string;
     step4: string;
     fullName: string;
+    gender: string;
+    male: string;
+    female: string;
     nationality: string;
     age: string;
     maritalStatus: string;
@@ -449,6 +452,9 @@ const translations: Record<Locale, TranslationMap> = {
       step3: "Photos & Privacy",
       step4: "Personal Essays",
       fullName: "Full name",
+      gender: "Gender",
+      male: "Male",
+      female: "Female",
       nationality: "Nationality",
       age: "Age",
       maritalStatus: "Marital status",
@@ -740,6 +746,9 @@ const translations: Record<Locale, TranslationMap> = {
       step3: "الصور والخصوصية",
       step4: "النصوص الشخصية",
       fullName: "الاسم الكامل",
+      gender: "الجنس",
+      male: "ذكر",
+      female: "أنثى",
       nationality: "الجنسية",
       age: "العمر",
       maritalStatus: "الحالة الاجتماعية",
