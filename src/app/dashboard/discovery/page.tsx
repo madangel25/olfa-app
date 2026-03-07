@@ -11,6 +11,7 @@ type UserCard = {
   id: string;
   full_name: string | null;
   gender: string | null;
+  age: string | null;
   job_title: string | null;
   last_seen_at: string | null;
   is_online: boolean;
@@ -65,7 +66,7 @@ export default function DiscoveryPage() {
 
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("id, full_name, gender, job_title, last_seen_at")
+        .select("id, full_name, gender, age, job_title, last_seen_at")
         .neq("id", user.id)
         .eq("is_verified", true);
 
@@ -92,6 +93,7 @@ export default function DiscoveryPage() {
           id: p.id,
           full_name: p.full_name,
           gender: p.gender,
+          age: p.age != null ? String(p.age) : null,
           job_title: p.job_title ?? null,
           last_seen_at: lastSeen,
           is_online: isOnline,
@@ -242,13 +244,22 @@ export default function DiscoveryPage() {
               key={u.id}
               className={`rounded-2xl border bg-white p-4 shadow-sm transition hover:shadow-md ${cardBorder}`}
             >
-              <Link href={`/profile/${u.id}`} className="flex flex-col gap-3 block">
+              <Link
+                href={`/profile/${u.id}`}
+                className="flex flex-col gap-3 block cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-400"
+                aria-label={locale === "ar" ? `عرض ملف ${u.full_name ?? "المستخدم"}` : `View ${u.full_name ?? "user"}'s profile`}
+              >
                 <div className={`flex items-center gap-3 ${isRtl ? "flex-row-reverse" : ""}`}>
                   <div className={`h-12 w-12 shrink-0 rounded-full flex items-center justify-center text-lg font-medium ${cardIconBg}`}>
                     {(u.full_name ?? "?").slice(0, 1)}
                   </div>
                   <div className={`min-w-0 flex-1 ${isRtl ? "text-right" : "text-left"}`}>
                     <p className="truncate font-medium text-zinc-900">{u.full_name ?? "Unknown"}</p>
+                    {u.age ? (
+                      <p className="text-xs text-zinc-600">
+                        {u.age} {locale === "ar" ? "سنة" : "y/o"}
+                      </p>
+                    ) : null}
                     {u.job_title ? (
                       <p className="truncate text-xs text-zinc-600">{u.job_title}</p>
                     ) : null}

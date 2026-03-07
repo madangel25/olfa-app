@@ -208,7 +208,10 @@ export default function PublicProfilePage() {
   const isFemale = profile?.gender === "female";
   const themeBorder = isFemale ? "border-pink-200" : "border-sky-200";
   const themeAccent = isFemale ? "text-pink-600" : "text-sky-600";
-  const themeBg = isFemale ? "bg-pink-500" : "bg-sky-500";
+  const themeAccentHover = isFemale ? "hover:text-pink-700" : "hover:text-sky-700";
+  const themeBg = isFemale ? "bg-pink-500 hover:bg-pink-600" : "bg-sky-500 hover:bg-sky-600";
+  const themeBgSoft = isFemale ? "bg-pink-50" : "bg-sky-50";
+  const themeBorderL = isFemale ? "border-l-pink-500" : "border-l-sky-500";
   const themeAvatar = isFemale ? "bg-pink-100 text-pink-700" : "bg-sky-100 text-sky-700";
   const themeStarFill = isFemale ? "text-pink-500" : "text-sky-500";
   const sameGender = currentUserGender != null && profile?.gender != null && currentUserGender === profile.gender;
@@ -263,19 +266,20 @@ export default function PublicProfilePage() {
         {/* Back button */}
         <Link
           href="/dashboard/discovery"
-          className={`mb-6 inline-flex items-center gap-2 text-sm font-medium text-zinc-700 hover:text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}
+          className={`mb-6 inline-flex items-center gap-2 text-sm font-medium text-zinc-900 ${themeAccent} ${themeAccentHover} transition ${isRtl ? "flex-row-reverse" : ""}`}
         >
           <ArrowLeft className="h-4 w-4" />
           {locale === "ar" ? "العودة للبحث" : "Back to Discovery"}
         </Link>
 
-        {/* Hero Header */}
+        {/* Hero Header — Name, Age, Country, large Avatar */}
         <div
-          className={`relative overflow-hidden rounded-2xl border bg-white shadow-md ${themeBorder}`}
+          className={`relative overflow-hidden rounded-2xl border-2 bg-white shadow-lg ${themeBorder}`}
         >
+          <div className={`absolute inset-x-0 top-0 h-1 ${isFemale ? "bg-pink-500" : "bg-sky-500"}`} aria-hidden />
           <div className={`flex flex-col gap-6 p-6 sm:flex-row sm:items-center ${isRtl ? "sm:flex-row-reverse" : ""}`}>
             <div
-              className={`h-32 w-32 shrink-0 overflow-hidden rounded-2xl ${themeAvatar} flex items-center justify-center text-5xl font-semibold`}
+              className={`h-40 w-40 shrink-0 overflow-hidden rounded-2xl sm:h-48 sm:w-48 ${themeAvatar} flex items-center justify-center text-5xl sm:text-6xl font-semibold`}
             >
               {primaryPhoto ? (
                 <img src={primaryPhoto} alt="" className="h-full w-full object-cover" />
@@ -314,11 +318,11 @@ export default function PublicProfilePage() {
           </div>
         </div>
 
-        {/* Community: Strength + Charisma + Rating + Rate */}
+        {/* Community: Profile Strength bar + Charisma (peer) Rating + Rate */}
         <div className="mt-6 rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("profile.profileStrength")}</p>
+              <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.profileStrength")}</p>
               <div className="flex items-center gap-2">
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-200">
                   <div
@@ -330,7 +334,7 @@ export default function PublicProfilePage() {
               </div>
             </div>
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("profile.charismaRating")}</p>
+              <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.charismaRating")}</p>
               <div className={`flex items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
                 <div className="flex gap-0.5">
                   {[1, 2, 3, 4, 5].map((i) => (
@@ -345,7 +349,7 @@ export default function PublicProfilePage() {
               </div>
             </div>
             <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("profile.communityRating")}</p>
+              <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.communityRating")}</p>
               {communityRating !== null && communityRating.count > 0 ? (
                 <div className={`flex items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
                   <div className="flex gap-0.5">
@@ -365,7 +369,7 @@ export default function PublicProfilePage() {
             </div>
             {!sameGender && (
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("profile.rateThisProfile")}</p>
+                <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.rateThisProfile")}</p>
                 {hasInteraction ? (
                   <div className={`flex flex-wrap items-center gap-1 ${isRtl ? "flex-row-reverse" : ""}`}>
                     {[1, 2, 3, 4, 5].map((i) => (
@@ -397,31 +401,31 @@ export default function PublicProfilePage() {
           </div>
         </div>
 
-        {/* Detailed Info Grid */}
+        {/* Detailed Info Grid — small cards with icons */}
         <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {profile.job_title?.trim() && (
-            <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
+            <div className={`rounded-xl border bg-white p-4 shadow-sm ${themeBorder}`}>
               <Briefcase className={`mb-2 h-5 w-5 ${themeAccent}`} />
               <p className="text-xs font-medium text-zinc-500">{t("profile.jobTitle")}</p>
               <p className="mt-0.5 text-sm font-medium text-zinc-900">{profile.job_title}</p>
             </div>
           )}
           {educationLabel && (
-            <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
+            <div className={`rounded-xl border bg-white p-4 shadow-sm ${themeBorder}`}>
               <GraduationCap className={`mb-2 h-5 w-5 ${themeAccent}`} />
               <p className="text-xs font-medium text-zinc-500">{t("profile.education")}</p>
               <p className="mt-0.5 text-sm font-medium text-zinc-900">{educationLabel}</p>
             </div>
           )}
           {profile.height_cm?.trim() && (
-            <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
+            <div className={`rounded-xl border bg-white p-4 shadow-sm ${themeBorder}`}>
               <Ruler className={`mb-2 h-5 w-5 ${themeAccent}`} />
               <p className="text-xs font-medium text-zinc-500">{locale === "ar" ? "الطول" : "Height"}</p>
               <p className="mt-0.5 text-sm font-medium text-zinc-900">{profile.height_cm} cm</p>
             </div>
           )}
           {maritalLabel && (
-            <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
+            <div className={`rounded-xl border bg-white p-4 shadow-sm ${themeBorder}`}>
               <Heart className={`mb-2 h-5 w-5 ${themeAccent}`} />
               <p className="text-xs font-medium text-zinc-500">{t("profile.maritalStatus")}</p>
               <p className="mt-0.5 text-sm font-medium text-zinc-900">{maritalLabel}</p>
@@ -429,21 +433,21 @@ export default function PublicProfilePage() {
           )}
         </div>
 
-        {/* About Me */}
+        {/* About Me — large readable typography for AI-generated bio */}
         {profile.about_me?.trim() && (
-          <div className="mt-6 rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-zinc-900">{t("profile.aboutMe")}</h2>
-            <p className="mt-4 text-base leading-relaxed text-zinc-900 whitespace-pre-wrap">
+          <div className={`mt-6 rounded-2xl border bg-white p-6 shadow-sm ${themeBorder}`}>
+            <h2 className={`text-lg font-semibold ${themeAccent}`}>{t("profile.aboutMe")}</h2>
+            <p className="mt-4 text-xl leading-relaxed text-zinc-900 whitespace-pre-wrap">
               {profile.about_me}
             </p>
           </div>
         )}
 
-        {/* Partner Preferences */}
+        {/* Partner Preferences — clearly separated block */}
         {profile.ideal_partner?.trim() && (
-          <div className="mt-6 rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-zinc-900">{t("profile.idealPartner")}</h2>
-            <p className="mt-4 text-base leading-relaxed text-zinc-900 whitespace-pre-wrap">
+          <div className={`mt-6 rounded-2xl border border-zinc-100 border-l-4 p-6 shadow-sm ${themeBorderL} ${themeBgSoft}`}>
+            <h2 className={`text-lg font-semibold ${themeAccent}`}>{t("profile.idealPartner")}</h2>
+            <p className="mt-4 text-lg leading-relaxed text-zinc-900 whitespace-pre-wrap">
               {profile.ideal_partner}
             </p>
           </div>
