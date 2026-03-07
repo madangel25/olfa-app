@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { getSiteSettings, type SiteSettingsRow } from "@/lib/siteSettings";
+import { getSiteSettingsWithDefaults, type SiteSettingsRow } from "@/lib/siteSettings";
 import { LandingLanguageSwitcher } from "@/components/LandingLanguageSwitcher";
 
 export default function Home() {
@@ -11,7 +11,7 @@ export default function Home() {
   const [settings, setSettings] = useState<SiteSettingsRow | null>(null);
 
   useEffect(() => {
-    getSiteSettings().then(setSettings);
+    getSiteSettingsWithDefaults().then(setSettings);
   }, []);
 
   const heroTitle =

@@ -26,12 +26,22 @@ export async function middleware(request: NextRequest) {
 
   // 1. حماية صفحات الأدمن (Admin Only)
   if (path.startsWith('/admin')) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .single()
-    
-    if (!session || profile?.role !== 'admin') {
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .maybeSingle()
+
+      const isAdmin =
+        !profileError &&
+        profile != null &&
+        typeof profile === 'object' &&
+        (profile as { role?: string }).role === 'admin'
+
+      if (!session || !isAdmin) {
+        return NextResponse.redirect(new URL('/dashboard', request.url))
+      }
+    } catch {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   }
