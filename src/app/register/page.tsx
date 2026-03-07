@@ -266,12 +266,12 @@ export default function RegisterPage() {
             {t("common.login")}
           </Link>
           <span className="mx-1">·</span>
-          <Link href="/" className="text-zinc-500 hover:text-zinc-700">
+          <Link href={'/'} className="text-zinc-500 hover:text-zinc-700">
             {t("common.backToHome")}
           </Link>
         </p>
       </div>
     </div>
-    </PublicRouteGuard>
+  </PublicRouteGuard>
   );
 }
