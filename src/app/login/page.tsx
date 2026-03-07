@@ -25,16 +25,6 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        window.location.href = "/dashboard";
-      }
-    };
-    checkUser();
-  }, []);
-
-  useEffect(() => {
     getSiteSettings().then((row) => {
       if (row?.logo_url?.trim()) setLogoUrl(row.logo_url);
     });
@@ -83,7 +73,8 @@ export default function LoginPage() {
 
       const role = (profile.role as Role) || "user";
 
-      if (role === "admin" || role === "moderator") {
+      // Middleware allows only role === 'admin' on /admin; redirect admins there.
+      if (role === "admin") {
         router.replace("/admin/dashboard");
         return;
       }

@@ -5,21 +5,10 @@ import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getSiteSettings, type SiteSettingsRow } from "@/lib/siteSettings";
 import { LandingLanguageSwitcher } from "@/components/LandingLanguageSwitcher";
-import { supabase } from "@/lib/supabaseClient";
 
 export default function Home() {
   const { t, locale, dir } = useLanguage();
   const [settings, setSettings] = useState<SiteSettingsRow | null>(null);
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        window.location.href = "/dashboard";
-      }
-    };
-    checkUser();
-  }, []);
 
   useEffect(() => {
     getSiteSettings().then(setSettings);

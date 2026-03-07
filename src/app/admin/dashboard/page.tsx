@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient";
 import {
   Users,
   UserPlus,
@@ -84,31 +84,7 @@ export default function AdminDashboardPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [usersError, setUsersError] = useState<string | null>(null);
 
-  // Admin-only redirect: if not admin/moderator, send to /dashboard (no middleware; in-page only).
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-      if (userError || !user) return;
-      const profile = await ensureUserProfile(supabase, {
-        id: user.id,
-        email: user.email ?? undefined,
-        user_metadata: user.user_metadata,
-      });
-      if (cancelled || !profile) return;
-      const role = (profile as { role?: string }).role;
-      if (role !== "admin" && role !== "moderator") {
-        window.location.href = "/dashboard";
-        return;
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // Admin access is enforced by middleware (role === 'admin' only). Non-admins are redirected to /dashboard.
 
   const loadStats = useCallback(async () => {
     setLoadingStats(true);

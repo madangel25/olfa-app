@@ -20,16 +20,6 @@ export default function RegisterPage() {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        window.location.href = "/dashboard";
-      }
-    };
-    checkUser();
-  }, []);
-
-  useEffect(() => {
     getSiteSettings().then((row) => {
       if (row?.logo_url?.trim()) setLogoUrl(row.logo_url);
     });
