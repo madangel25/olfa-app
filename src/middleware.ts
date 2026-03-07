@@ -1,6 +1,21 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
+/** Cookie entry shape passed to setAll by @supabase/ssr (aligned with cookie serialization options) */
+type CookieToSet = {
+  name: string;
+  value: string;
+  options?: {
+    path?: string;
+    maxAge?: number;
+    expires?: Date;
+    domain?: string;
+    secure?: boolean;
+    httpOnly?: boolean;
+    sameSite?: true | false | "lax" | "strict" | "none";
+  };
+};
+
 const PUBLIC_PATHS = ["/", "/login", "/register", "/forgot-password", "/reset-password"];
 const PROTECTED_PREFIXES = ["/dashboard", "/profile", "/onboarding", "/admin", "/chat"];
 
@@ -26,10 +41,14 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
+        setAll(cookiesToSet: CookieToSet[]) {
+          for (const { name, value, options } of cookiesToSet) {
+            if (value) {
+              response.cookies.set(name, value, options ?? { path: "/" });
+            } else {
+              response.cookies.delete(name);
+            }
+          }
         },
       },
     }
