@@ -91,7 +91,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       className={`flex min-h-[calc(100vh-3.5rem)] bg-[#f8f9fa] font-[family-name:var(--font-cairo)] text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}
     >
       <aside
-        className={`fixed top-14 z-40 h-[calc(100vh-3.5rem)] w-56 bg-white ${sidebarPosition}`}
+        className={`fixed top-14 z-40 h-[calc(100vh-3.5rem)] w-56 shrink-0 bg-white shadow-sm ${sidebarPosition}`}
         aria-label="Dashboard navigation"
       >
         <nav className="flex flex-col gap-1 p-4">

@@ -225,8 +225,8 @@ function valueToKeySuffix(value: string): string {
 }
 
 /**
- * Returns gender-aware label for a dropdown option.
- * Uses profile.gender to show male/female form (e.g. Arabic: أعزب vs عزباء).
+ * Returns gender-aware label for a dropdown option (Social Status, Education, etc.).
+ * Male: e.g. Arabic أعزب only; Female: e.g. عزباء. Never shows combined "أعزب/عزباء" when a gendered key exists.
  */
 function getOptionLabel(
   t: (key: string) => string,
@@ -237,8 +237,8 @@ function getOptionLabel(
   const suffix = valueToKeySuffix(value);
   const genderedKey = `profile.opt${suffix}${isFemale ? "Female" : "Male"}`;
   const neutralKey = `profile.opt${suffix}`;
-  const out = t(genderedKey);
-  if (out && out !== genderedKey) return out;
+  const gendered = t(genderedKey);
+  if (gendered && gendered !== genderedKey) return gendered;
   return t(neutralKey);
 }
 
@@ -691,7 +691,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-full space-y-6 bg-[#f8f9fa] pb-8 font-[family-name:var(--font-cairo)]" dir={dir}>
-      {/* Page header: title and subtitle only; save actions are at bottom of form */}
+      {/* Page header: title and subtitle only — no Save buttons here; only "Save Changes" and "Save & Return" at bottom */}
       <header className={`mb-8 ${dir === "rtl" ? "text-right" : "text-left"}`}>
         <h1 className="text-2xl font-semibold text-zinc-900">{t("profile.title")}</h1>
         <p className="mt-2 text-sm text-zinc-500">{t("profile.subtitle")}</p>

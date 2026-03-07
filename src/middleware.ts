@@ -6,11 +6,20 @@ const PUBLIC_ROUTES = ["/", "/login", "/register"];
 const PROTECTED_PREFIXES = ["/dashboard", "/profile", "/onboarding", "/admin"];
 
 function isPublicRoute(pathname: string): boolean {
-  return PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"));
+  return PUBLIC_ROUTES.includes(pathname);
 }
 
 function isProtectedRoute(pathname: string): boolean {
-  return PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + "/"));
+  return PROTECTED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
+  );
+}
+
+/** Copy cookies from one response to another so redirects preserve refreshed auth. */
+function copyCookies(from: NextResponse, to: NextResponse): void {
+  from.cookies.getAll().forEach((cookie) => {
+    to.cookies.set(cookie.name, cookie.value, { path: "/" });
+  });
 }
 
 export async function middleware(request: NextRequest) {
@@ -26,31 +35,36 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
           cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options ?? {});
+            response.cookies.set(name, value, { ...options, path: "/" } as { path?: string });
           });
         },
       },
     }
   );
 
-  // Refresh session and sync cookies (required for SSR)
+  // Refresh session and sync cookies (required for SSR; prevents stale session / redirect loops)
   const { data: { user } } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
 
-  // Logged-in user on public route → redirect to dashboard
+  // Logged-in user on public route → redirect to /dashboard
   if (user && isPublicRoute(pathname)) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard/discovery";
-    return NextResponse.redirect(url);
+    url.pathname = "/dashboard";
+    url.searchParams.delete("redirect");
+    const redirectResponse = NextResponse.redirect(url);
+    copyCookies(response, redirectResponse);
+    return redirectResponse;
   }
 
-  // Not logged in on protected route → redirect to login
+  // Not logged in on protected route → redirect to login with return url
   if (!user && isProtectedRoute(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(url);
+    const redirectResponse = NextResponse.redirect(url);
+    copyCookies(response, redirectResponse);
+    return redirectResponse;
   }
 
   return response;
@@ -58,6 +72,13 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|api).*)",
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization)
+     * - favicon.ico, icons, images
+     * - api routes
+     */
+    "/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:ico|png|jpg|jpeg|gif|webp|svg|woff2?|ttf|eot)$).*)",
   ],
 };
