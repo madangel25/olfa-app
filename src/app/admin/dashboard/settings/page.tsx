@@ -17,6 +17,7 @@ type TabId = "identity" | "content" | "theme";
 type FormState = {
   logo_url: string;
   home_background_url: string;
+  landing_feature_image_url: string;
   hero_heading_en: string;
   hero_heading_ar: string;
   hero_subheading_en: string;
@@ -30,6 +31,7 @@ type FormState = {
 const emptyForm: FormState = {
   logo_url: "",
   home_background_url: "",
+  landing_feature_image_url: "",
   hero_heading_en: "",
   hero_heading_ar: "",
   hero_subheading_en: "",
@@ -57,6 +59,7 @@ function fromRow(row: SiteSettingsRow | null): FormState {
   return {
     logo_url: row.logo_url ?? "",
     home_background_url: row.home_background_url ?? "",
+    landing_feature_image_url: (row as { landing_feature_image_url?: string | null }).landing_feature_image_url ?? "",
     hero_heading_en: row.hero_heading_en ?? "",
     hero_heading_ar: row.hero_heading_ar ?? "",
     hero_subheading_en: row.hero_subheading_en ?? "",
@@ -79,6 +82,7 @@ export default function SiteSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingBg, setUploadingBg] = useState(false);
+  const [uploadingFeature, setUploadingFeature] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const load = useCallback(async () => {
@@ -133,6 +137,23 @@ export default function SiteSettingsPage() {
     e.target.value = "";
   };
 
+  const handleFeatureImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingFeature(true);
+    setMessage(null);
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const result = await uploadSiteAsset(`landing-feature.${ext}`, file);
+    if ("error" in result) {
+      setMessage({ type: "error", text: result.error });
+    } else {
+      setForm((prev) => ({ ...prev, landing_feature_image_url: result.url }));
+      setMessage({ type: "success", text: "Landing feature image uploaded. Click Save to persist." });
+    }
+    setUploadingFeature(false);
+    e.target.value = "";
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!settingsId) {
@@ -144,6 +165,7 @@ export default function SiteSettingsPage() {
     const { error } = await updateSiteSettings(settingsId, {
       logo_url: form.logo_url || null,
       home_background_url: form.home_background_url || null,
+      landing_feature_image_url: form.landing_feature_image_url || null,
       hero_heading_en: form.hero_heading_en || null,
       hero_heading_ar: form.hero_heading_ar || null,
       hero_subheading_en: form.hero_subheading_en || null,
@@ -262,6 +284,24 @@ export default function SiteSettingsPage() {
                         {uploadingBg ? "Uploading…" : "Upload"}
                       </span>
                       <input type="file" accept="image/*" className="hidden" onChange={handleBgUpload} disabled={uploadingBg} />
+                    </label>
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-2 text-xs text-slate-400">Landing feature image (1/3 split)</p>
+                  <div className="flex flex-wrap items-end gap-3">
+                    {form.landing_feature_image_url ? (
+                      <div className="h-20 w-36 overflow-hidden rounded-xl border border-white/10 bg-white/5">
+                        <img src={form.landing_feature_image_url} alt="Feature" className="h-full w-full object-cover" />
+                      </div>
+                    ) : (
+                      <div className="flex h-20 w-36 items-center justify-center rounded-xl border border-dashed border-white/10 text-xs text-slate-500">No image</div>
+                    )}
+                    <label className="cursor-pointer">
+                      <span className="inline-flex items-center rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-slate-200 hover:bg-white/10">
+                        {uploadingFeature ? "Uploading…" : "Upload"}
+                      </span>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleFeatureImageUpload} disabled={uploadingFeature} />
                     </label>
                   </div>
                 </div>

@@ -32,14 +32,19 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   const isRtl = dir === "rtl";
   const isFemale = userGender === "female";
-  const themeActive = isFemale
-    ? "bg-pink-100 text-pink-600 border-l-2 border-l-pink-500"
-    : "bg-sky-100 text-sky-600 border-l-2 border-l-sky-500";
-  const themeActiveRtl = isFemale
-    ? "bg-pink-100 text-pink-600 border-r-2 border-r-pink-500"
-    : "bg-sky-100 text-sky-600 border-r-2 border-r-sky-500";
-  const themeProgress = isFemale ? "bg-pink-500" : "bg-sky-500";
-  const themeProgressText = isFemale ? "text-pink-600" : "text-sky-600";
+  const genderKnown = userGender !== null;
+  const themeActive = !genderKnown
+    ? "bg-zinc-100 text-zinc-700 border-l-2 border-l-zinc-400"
+    : isFemale
+      ? "bg-pink-100 text-pink-600 border-l-2 border-l-pink-500"
+      : "bg-sky-100 text-sky-600 border-l-2 border-l-sky-500";
+  const themeActiveRtl = !genderKnown
+    ? "bg-zinc-100 text-zinc-700 border-r-2 border-r-zinc-400"
+    : isFemale
+      ? "bg-pink-100 text-pink-600 border-r-2 border-r-pink-500"
+      : "bg-sky-100 text-sky-600 border-r-2 border-r-sky-500";
+  const themeProgress = !genderKnown ? "bg-zinc-400" : isFemale ? "bg-pink-500" : "bg-sky-500";
+  const themeProgressText = !genderKnown ? "text-zinc-700" : isFemale ? "text-pink-600" : "text-sky-600";
 
   const fetchCompleteness = async () => {
     const { data: { user } } = await supabase.auth.getUser();

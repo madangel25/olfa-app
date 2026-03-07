@@ -4,6 +4,7 @@ export type SiteSettingsRow = {
   id: string;
   logo_url: string | null;
   home_background_url: string | null;
+  landing_feature_image_url: string | null;
   hero_heading_en: string | null;
   hero_heading_ar: string | null;
   hero_subheading_en: string | null;
