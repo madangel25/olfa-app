@@ -21,32 +21,33 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+  if (sessionError) {
+    console.error("[middleware] getSession error:", sessionError)
+  }
   const path = request.nextUrl.pathname
 
-  // 1. حماية صفحات الأدمن (Admin Only). On profile fetch failure, proceed without redirecting.
+  // 1. حماية صفحات الأدمن — temporarily only check session (profiles query commented out to avoid RLS recursion)
   if (path.startsWith('/admin')) {
-    try {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('role')
-        .maybeSingle()
-
-      if (profileError) {
-        return response
-      }
-
-      const isAdmin =
-        profile != null &&
-        typeof profile === 'object' &&
-        (profile as { role?: string }).role === 'admin'
-
-      if (!session || !isAdmin) {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
-      }
-    } catch {
-      return response
+    if (!session) {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
     }
+    // TODO: Re-enable role check when RLS is fixed. Uncomment and use console.error(profileError) for debugging.
+    // try {
+    //   const { data: profile, error: profileError } = await supabase
+    //     .from('profiles')
+    //     .select('role')
+    //     .maybeSingle()
+    //   if (profileError) {
+    //     console.error("[middleware] profiles error:", { message: profileError.message, hint: profileError.hint })
+    //     return response
+    //   }
+    //   const isAdmin = profile != null && typeof profile === 'object' && (profile as { role?: string }).role === 'admin'
+    //   if (!isAdmin) return NextResponse.redirect(new URL('/dashboard', request.url))
+    // } catch (e) {
+    //   console.error("[middleware] profiles catch:", e)
+    //   return response
+    // }
   }
 
   // 2. توجيه المسجلين دخول بعيداً عن صفحات الزوار

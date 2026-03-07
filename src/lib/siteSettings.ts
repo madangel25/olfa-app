@@ -53,19 +53,27 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsRow = {
   updated_at: new Date(0).toISOString(),
 };
 
-/** Fetch the single site_settings row (singleton). Does not throw; returns null on error. */
+/** Fetch the single site_settings row (singleton). Simple select, no extra filters. Does not throw; returns null on error. */
 export async function getSiteSettings(): Promise<SiteSettingsRow | null> {
   try {
     const { data, error } = await supabase
       .from("site_settings")
       .select("*")
-      .limit(1)
       .maybeSingle();
 
-    if (error) return null;
+    if (error) {
+      console.error("[getSiteSettings] Supabase error:", {
+        message: error.message,
+        hint: error.hint,
+        details: error.details,
+        code: error.code,
+      });
+      return null;
+    }
     if (data == null) return null;
     return data as SiteSettingsRow;
-  } catch {
+  } catch (err) {
+    console.error("[getSiteSettings] Unexpected error:", err);
     return null;
   }
 }
