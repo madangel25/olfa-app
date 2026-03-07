@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
-import { getSiteSettings, updateSiteSettings, type SiteSettingsRow } from "@/lib/siteSettings";
 import {
   Users,
   UserPlus,
@@ -14,13 +13,11 @@ import {
   Ban,
   Trash2,
   BarChart3,
-  Settings,
-  Save,
   Loader2,
-  X,
+  RotateCw,
 } from "lucide-react";
 
-type TabId = "overview" | "users" | "config";
+type TabId = "overview" | "users";
 
 type UserRow = {
   id: string;
@@ -73,11 +70,8 @@ export default function AdminDashboardPage() {
     premiumUsers: 0,
     pendingApprovals: 0,
   });
-  const [siteSettings, setSiteSettings] = useState<SiteSettingsRow | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingUsers, setLoadingUsers] = useState(false);
-  const [loadingConfig, setLoadingConfig] = useState(false);
-  const [savingConfig, setSavingConfig] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
   const [modal, setModal] = useState<
@@ -86,13 +80,9 @@ export default function AdminDashboardPage() {
     | { type: "ban"; user: UserRow }
     | { type: "delete"; user: UserRow }
   >(null);
-  const [configForm, setConfigForm] = useState({
-    site_name: "",
-    maintenance_mode: false,
-    contact_email: "",
-  });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [usersError, setUsersError] = useState<string | null>(null);
 
   // Admin-only redirect: if not admin/moderator, send to /dashboard (no middleware; in-page only).
   useEffect(() => {
@@ -160,7 +150,7 @@ export default function AdminDashboardPage() {
 
   const loadUsers = useCallback(async () => {
     setLoadingUsers(true);
-    setError(null);
+    setUsersError(null);
     try {
       const { data, error: err } = await supabase
         .from("profiles")
@@ -169,7 +159,11 @@ export default function AdminDashboardPage() {
         )
         .order("created_at", { ascending: false });
 
-      if (err) throw err;
+      if (err) {
+        const msg = err.message || "Failed to load users. Check RLS: admins need a policy to select all profiles.";
+        setUsersError(msg);
+        return;
+      }
       setUsers(
         (data ?? []).map((row: Record<string, unknown>) => ({
           id: row.id as string,
@@ -183,27 +177,9 @@ export default function AdminDashboardPage() {
         }))
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load users.");
+      setUsersError(e instanceof Error ? e.message : "Failed to load users.");
     } finally {
       setLoadingUsers(false);
-    }
-  }, []);
-
-  const loadSiteConfig = useCallback(async () => {
-    setLoadingConfig(true);
-    setError(null);
-    try {
-      const row = await getSiteSettings();
-      setSiteSettings(row ?? null);
-      setConfigForm({
-        site_name: row?.site_name ?? "",
-        maintenance_mode: row?.maintenance_mode ?? false,
-        contact_email: row?.contact_email ?? "",
-      });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load site config.");
-    } finally {
-      setLoadingConfig(false);
     }
   }, []);
 
@@ -215,10 +191,6 @@ export default function AdminDashboardPage() {
     if (activeTab === "users") loadUsers();
   }, [activeTab, loadUsers]);
 
-  useEffect(() => {
-    if (activeTab === "config") loadSiteConfig();
-  }, [activeTab, loadSiteConfig]);
-
   const filteredUsers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return users;
@@ -228,29 +200,6 @@ export default function AdminDashboardPage() {
         (u.email ?? "").toLowerCase().includes(q)
     );
   }, [users, searchQuery]);
-
-  const handleSaveConfig = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!siteSettings?.id) return;
-    setSavingConfig(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      const res = await updateSiteSettings(siteSettings.id, {
-        site_name: configForm.site_name || null,
-        maintenance_mode: configForm.maintenance_mode,
-        contact_email: configForm.contact_email || null,
-      });
-      if (res.error) throw new Error(res.error);
-      setSuccess("تم حفظ الإعدادات.");
-      const updated = await getSiteSettings();
-      if (updated) setSiteSettings(updated);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save.");
-    } finally {
-      setSavingConfig(false);
-    }
-  };
 
   const handleBan = async (user: UserRow) => {
     setError(null);
@@ -292,7 +241,6 @@ export default function AdminDashboardPage() {
   const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
     { id: "overview", label: "نظرة عامة", icon: BarChart3 },
     { id: "users", label: "المستخدمون", icon: Users },
-    { id: "config", label: "إعدادات الموقع", icon: Settings },
   ];
 
   return (
@@ -418,42 +366,59 @@ export default function AdminDashboardPage() {
                   placeholder="بحث بالاسم أو البريد..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pr-10 pl-4 text-sm text-zinc-900 placeholder-zinc-400 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                  className="w-full rounded-xl border border-zinc-200 bg-white py-2.5 pr-10 pl-4 text-sm text-zinc-900 placeholder-zinc-400 shadow-sm focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                 />
               </div>
             </div>
-            <div className="overflow-x-auto">
-              {loadingUsers ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-sky-500" />
-                </div>
-              ) : (
-                <table className="w-full text-sm text-right">
+
+            {loadingUsers ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <Loader2 className="h-10 w-10 animate-spin text-sky-500" />
+                <p className="text-sm text-zinc-500">جاري تحميل المستخدمين...</p>
+              </div>
+            ) : usersError ? (
+              <div className="flex flex-col items-center justify-center py-16 px-4 gap-4">
+                <p className="text-sm text-red-600 text-center max-w-md">{usersError}</p>
+                <p className="text-xs text-zinc-500 text-center">
+                  تأكد من تشغيل migration: Admins and moderators can select all profiles (profiles table).
+                </p>
+                <button
+                  type="button"
+                  onClick={() => loadUsers()}
+                  className="inline-flex items-center gap-2 rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-sky-600"
+                >
+                  <RotateCw className="h-4 w-4" />
+                  إعادة المحاولة
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-right border-collapse">
                   <thead>
-                    <tr className="bg-zinc-50 border-b border-zinc-200">
-                      <th className="p-3 font-semibold text-zinc-700">الاسم</th>
-                      <th className="p-3 font-semibold text-zinc-700">الجنس</th>
-                      <th className="p-3 font-semibold text-zinc-700">تاريخ الانضمام</th>
-                      <th className="p-3 font-semibold text-zinc-700">الحالة</th>
-                      <th className="p-3 font-semibold text-zinc-700 w-20">إجراءات</th>
+                    <tr className="bg-zinc-50/80">
+                      <th className="px-4 py-3 font-semibold text-zinc-600 text-right rounded-tr-lg">الاسم</th>
+                      <th className="px-4 py-3 font-semibold text-zinc-600 text-right">الجنس</th>
+                      <th className="px-4 py-3 font-semibold text-zinc-600 text-right">تاريخ الانضمام</th>
+                      <th className="px-4 py-3 font-semibold text-zinc-600 text-right">الحالة</th>
+                      <th className="px-3 py-3 font-semibold text-zinc-600 text-right rounded-tl-lg w-20">إجراءات</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-zinc-100">
                     {filteredUsers.map((user) => (
                       <tr
                         key={user.id}
-                        className="border-b border-zinc-100 hover:bg-zinc-50/50"
+                        className="hover:bg-sky-50/50 transition"
                       >
-                        <td className="p-3 text-zinc-900">
+                        <td className="px-4 py-3 text-zinc-900">
                           {user.full_name || user.email || "—"}
                         </td>
-                        <td className="p-3 text-zinc-600">
+                        <td className="px-4 py-3 text-zinc-600">
                           {user.gender === "male" ? "ذكر" : user.gender === "female" ? "أنثى" : "—"}
                         </td>
-                        <td className="p-3 text-zinc-600">
+                        <td className="px-4 py-3 text-zinc-600">
                           {formatDate(user.created_at)}
                         </td>
-                        <td className="p-3">
+                        <td className="px-4 py-3">
                           <span
                             className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
                               user.banned_at
@@ -468,14 +433,14 @@ export default function AdminDashboardPage() {
                             {statusLabel(user)}
                           </span>
                         </td>
-                        <td className="p-3">
+                        <td className="px-3 py-3">
                           <div className="relative">
                             <button
                               type="button"
                               onClick={() =>
                                 setActionMenuId(actionMenuId === user.id ? null : user.id)
                               }
-                              className="p-2 rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-700"
+                              className="p-2 rounded-lg hover:bg-zinc-100 text-zinc-500 hover:text-zinc-700 transition"
                               aria-label="قائمة الإجراءات"
                             >
                               <MoreVertical className="h-4 w-4" />
@@ -532,85 +497,10 @@ export default function AdminDashboardPage() {
                     ))}
                   </tbody>
                 </table>
-              )}
-            </div>
-            {!loadingUsers && filteredUsers.length === 0 && (
-              <p className="p-6 text-center text-zinc-500">لا مستخدمين</p>
-            )}
-          </div>
-        )}
-
-        {/* Site Config */}
-        {activeTab === "config" && (
-          <div className={SKY.card + " p-6 max-w-xl"}>
-            {loadingConfig ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-sky-500" />
+                {filteredUsers.length === 0 && (
+                  <p className="p-8 text-center text-zinc-500 text-sm">لا مستخدمين</p>
+                )}
               </div>
-            ) : (
-              <form onSubmit={handleSaveConfig} className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 mb-1">
-                    اسم الموقع
-                  </label>
-                  <input
-                    type="text"
-                    value={configForm.site_name}
-                    onChange={(e) =>
-                      setConfigForm((f) => ({ ...f, site_name: e.target.value }))
-                    }
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-                    placeholder="مثال: Olfa"
-                  />
-                </div>
-                <div>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={configForm.maintenance_mode}
-                      onChange={(e) =>
-                        setConfigForm((f) => ({
-                          ...f,
-                          maintenance_mode: e.target.checked,
-                        }))
-                      }
-                      className="rounded border-zinc-300 text-sky-600 focus:ring-sky-500"
-                    />
-                    <span className="text-sm font-medium text-zinc-700">
-                      وضع الصيانة
-                    </span>
-                  </label>
-                  <p className="text-xs text-zinc-500 mt-1">
-                    عند التفعيل، يظهر للمستخدمين رسالة صيانة (ما عدا الإدارة).
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-zinc-700 mb-1">
-                    البريد الإلكتروني للتواصل
-                  </label>
-                  <input
-                    type="email"
-                    value={configForm.contact_email}
-                    onChange={(e) =>
-                      setConfigForm((f) => ({ ...f, contact_email: e.target.value }))
-                    }
-                    className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm text-zinc-900 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-                    placeholder="contact@example.com"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={savingConfig}
-                  className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold ${SKY.button} disabled:opacity-60`}
-                >
-                  {savingConfig ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                  حفظ
-                </button>
-              </form>
             )}
           </div>
         )}
