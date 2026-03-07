@@ -44,7 +44,7 @@ export async function ensureUserProfile(
   const fullName = authUser.user_metadata?.full_name ?? null;
   const email = authUser.email ?? null;
 
-  const { error: insertError } = await client.from("profiles").insert({
+  const row = {
     id: authUser.id,
     email,
     full_name: fullName,
@@ -53,15 +53,19 @@ export async function ensureUserProfile(
     verification_submitted: false,
     is_verified: false,
     pledge_accepted: false,
-  });
+  };
 
-  if (insertError) {
-    const { data: afterConflict } = await client
+  const { error: upsertError } = await client
+    .from("profiles")
+    .upsert(row, { onConflict: "id" });
+
+  if (upsertError) {
+    const { data: fallback } = await client
       .from("profiles")
       .select("role, email, quiz_completed, verification_submitted, is_verified, pledge_accepted")
       .eq("id", authUser.id)
       .maybeSingle();
-    return afterConflict as { role: string; email: string | null; quiz_completed: boolean; verification_submitted: boolean; pledge_accepted?: boolean; [key: string]: unknown } | null;
+    return fallback as { role: string; email: string | null; quiz_completed: boolean; verification_submitted: boolean; pledge_accepted?: boolean; [key: string]: unknown } | null;
   }
 
   const { data: created } = await client
