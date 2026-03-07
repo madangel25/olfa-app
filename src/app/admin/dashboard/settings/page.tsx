@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import {
   getSiteSettings,
   uploadSiteAsset,
@@ -162,9 +163,7 @@ export default function SiteSettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50 flex items-center justify-center">
-        <p className="text-sm text-slate-200/80">Loading site settings…</p>
-      </div>
+      <LoadingScreen message="Loading site settings…" theme="sky" />
     );
   }
 

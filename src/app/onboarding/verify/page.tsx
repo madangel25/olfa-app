@@ -6,6 +6,7 @@ import Webcam from "react-webcam";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 type Pose = "front" | "right" | "left";
 
@@ -227,11 +228,7 @@ export default function OnboardingVerifyPage() {
 
   if (checkingSession) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-purple-900 text-slate-50 flex items-center justify-center">
-        <p className="text-sm text-slate-200/80">
-          {t("verify.preparing")}
-        </p>
-      </div>
+      <LoadingScreen message={t("verify.preparing")} theme="sky" />
     );
   }
 

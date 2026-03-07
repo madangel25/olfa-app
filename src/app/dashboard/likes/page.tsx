@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 type LikeRow = {
   id: string;
@@ -70,9 +71,10 @@ export default function LikesPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center font-[family-name:var(--font-cairo)]">
-        <p className="text-sm text-zinc-700">{locale === "ar" ? "جاري التحميل…" : "Loading…"}</p>
-      </div>
+      <LoadingScreen
+        message={locale === "ar" ? "جاري التحميل…" : "Loading…"}
+        theme="sky"
+      />
     );
   }
 

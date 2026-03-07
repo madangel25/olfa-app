@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 type QuestionId =
   | "financial_views"
@@ -118,11 +119,7 @@ export default function OnboardingQuizPage() {
   };
 
   if (checkingSession) {
-    return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-purple-900 text-slate-50 flex items-center justify-center">
-        <p className="text-sm text-slate-200/80">{t("common.loading")}</p>
-      </div>
-    );
+    return <LoadingScreen message={t("common.loading")} theme="sky" />;
   }
 
   return (

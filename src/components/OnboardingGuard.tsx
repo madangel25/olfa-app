@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 interface OnboardingGuardProps {
   children: React.ReactNode;
@@ -54,22 +55,21 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
 
   if (checking) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-purple-900 text-slate-50 flex items-center justify-center">
-        <p className="text-sm text-slate-200/80">
-          Checking your onboarding status...
-        </p>
-      </div>
+      <LoadingScreen
+        message="Checking your onboarding status…"
+        theme="sky"
+      />
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-purple-900 text-slate-50 flex items-center justify-center px-4 text-center">
-        <div>
-          <p className="text-sm text-red-200">
+      <div className="min-h-screen w-full bg-[#f8f9fa] font-[family-name:var(--font-cairo)] flex items-center justify-center px-4 text-center">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 max-w-sm">
+          <p className="text-sm font-medium text-red-800">
             We couldn&apos;t verify your onboarding status:
           </p>
-          <p className="mt-1 text-xs text-red-100/90">{error}</p>
+          <p className="mt-2 text-sm text-red-700">{error}</p>
         </div>
       </div>
     );

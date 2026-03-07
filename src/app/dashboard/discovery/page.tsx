@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import { Search } from "lucide-react";
 
 type UserCard = {
@@ -149,9 +150,7 @@ export default function DiscoveryPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center font-[family-name:var(--font-cairo)]">
-        <p className="text-sm text-zinc-700">Loading discovery…</p>
-      </div>
+      <LoadingScreen message={locale === "ar" ? "جاري التحميل…" : "Loading discovery…"} theme="sky" />
     );
   }
 

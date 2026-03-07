@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getSiteSettings } from "@/lib/siteSettings";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 const DEFAULT_PLEDGE_EN = `By using Olfa, I commit to a serious, respectful search for marriage. I understand and accept the following:
 
@@ -98,11 +99,7 @@ export default function OnboardingPledgePage() {
   };
 
   if (checking) {
-    return (
-      <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-50 flex items-center justify-center px-4">
-        <p className="text-sm text-slate-200/80">{t("common.loading")}</p>
-      </div>
-    );
+    return <LoadingScreen message={t("common.loading")} theme="sky" />;
   }
 
   const showEn = locale === "en" || true;

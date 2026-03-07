@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import {
   Star,
   ArrowLeft,
@@ -231,9 +232,10 @@ export default function PublicProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center bg-[#f8f9fa] font-[family-name:var(--font-cairo)]">
-        <p className="text-zinc-700">Loading…</p>
-      </div>
+      <LoadingScreen
+        message={locale === "ar" ? "جاري التحميل…" : "Loading…"}
+        theme="sky"
+      />
     );
   }
 

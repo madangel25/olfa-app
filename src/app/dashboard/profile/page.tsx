@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { dispatchProfileUpdated } from "@/lib/profileCompleteness";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import { COUNTRIES, getFlagEmoji } from "@/lib/countries";
 import PhoneInput from "react-phone-number-input/max";
 import "react-phone-number-input/style.css";
@@ -614,9 +615,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center bg-[#f8f9fa]" dir={dir}>
-        <Loader2 className="h-8 w-8 animate-spin text-sky-500" />
-      </div>
+      <LoadingScreen message={t("common.loading")} theme="sky" />
     );
   }
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { LoadingScreen } from "@/components/LoadingScreen";
 import { Pencil, Eye, Wand2, Star } from "lucide-react";
 
 type ProfileData = {
@@ -111,9 +112,10 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center font-[family-name:var(--font-cairo)]">
-        <p className="text-zinc-700">Loading…</p>
-      </div>
+      <LoadingScreen
+        message={locale === "ar" ? "جاري التحميل…" : "Loading…"}
+        theme="sky"
+      />
     );
   }
 
