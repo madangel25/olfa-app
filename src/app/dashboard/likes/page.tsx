@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type LikeRow = {
   id: string;
@@ -14,6 +15,8 @@ type LikeRow = {
 
 export default function LikesPage() {
   const router = useRouter();
+  const { locale, dir, t } = useLanguage();
+  const [currentUserGender, setCurrentUserGender] = useState<string | null>(null);
   const [rows, setRows] = useState<LikeRow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,6 +27,13 @@ export default function LikesPage() {
         router.replace("/register");
         return;
       }
+      const { data: myProfile } = await supabase
+        .from("profiles")
+        .select("gender")
+        .eq("id", user.id)
+        .maybeSingle();
+      setCurrentUserGender(myProfile?.gender ?? null);
+
       const { data: likesTo } = await supabase
         .from("likes")
         .select("from_user_id")
@@ -56,69 +66,90 @@ export default function LikesPage() {
     run();
   }, [router]);
 
+  const isRtl = dir === "rtl";
+
   if (loading) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <p className="text-sm text-zinc-700">جاري التحميل…</p>
+      <div className="flex min-h-[40vh] items-center justify-center font-[family-name:var(--font-cairo)]">
+        <p className="text-sm text-zinc-700">{locale === "ar" ? "جاري التحميل…" : "Loading…"}</p>
       </div>
     );
   }
 
   if (rows.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-zinc-100 bg-white px-6 py-16 text-center shadow-sm">
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-zinc-100 bg-white px-6 py-16 text-center font-[family-name:var(--font-cairo)] shadow-sm">
         <p className="text-lg font-medium text-zinc-900">
-          لم تبدأ رحلة الإعجاب بعد..
+          {locale === "ar" ? "لم تبدأ رحلة الإعجاب بعد.." : "You haven't started liking yet."}
         </p>
         <p className="mt-2 text-zinc-700">
-          ابحث عن شريك حياتك الآن!
+          {locale === "ar" ? "ابحث عن شريك حياتك الآن!" : "Find your life partner now!"}
         </p>
         <Link
           href="/dashboard/discovery"
           className="mt-6 rounded-xl border border-sky-300 bg-sky-50 px-6 py-3 text-sm font-medium text-sky-700 shadow-sm transition hover:bg-sky-100"
         >
-          الذهاب إلى البحث
+          {locale === "ar" ? "الذهاب إلى البحث" : "Go to Discovery"}
         </Link>
       </div>
     );
   }
 
   return (
-    <div>
-      <h1 className="text-xl font-semibold text-zinc-900">الإعجابات</h1>
-      <p className="mt-1 text-sm text-zinc-700">من أعجب بك — يمكنك الإعجاب بهم للتوافق.</p>
-      <ul className="mt-6 space-y-3">
-        {rows.map((u) => (
-          <li
-            key={u.id}
-            className="flex items-center justify-between rounded-2xl border border-zinc-100 bg-white px-4 py-3 shadow-sm"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-200 text-sm font-medium text-zinc-700">
-                {(u.full_name ?? "?").slice(0, 1)}
+    <div className="font-[family-name:var(--font-cairo)]">
+      <h1 className="text-xl font-semibold text-zinc-900">{locale === "ar" ? "الإعجابات" : "Likes"}</h1>
+      <p className="mt-1 text-sm text-zinc-700">
+        {locale === "ar" ? "من أعجب بك — يمكنك الإعجاب بهم للتوافق." : "Who liked you — like them back to match."}
+      </p>
+      <ul className={`mt-6 space-y-3 ${isRtl ? "text-right" : "text-left"}`}>
+        {rows.map((u) => {
+          const sameGender = currentUserGender != null && u.gender != null && currentUserGender === u.gender;
+          const canCommunicate = !sameGender;
+          const isMale = u.gender === "male";
+          const cardBorder = isMale ? "border-sky-200" : "border-pink-200";
+          const cardIconBg = isMale ? "bg-sky-100 text-sky-600" : "bg-pink-100 text-pink-600";
+
+          return (
+            <li
+              key={u.id}
+              className={`flex items-center justify-between gap-4 rounded-2xl border bg-white px-4 py-3 shadow-sm ${cardBorder} ${isRtl ? "flex-row-reverse" : ""}`}
+            >
+              <div className={`flex items-center gap-3 ${isRtl ? "flex-row-reverse" : ""}`}>
+                <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-sm font-medium ${cardIconBg}`}>
+                  {(u.full_name ?? "?").slice(0, 1)}
+                </div>
+                <div>
+                  <p className="font-medium text-zinc-900">{u.full_name ?? "Unknown"}</p>
+                  <p className="text-xs text-zinc-600">{u.gender ?? ""}</p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-zinc-900">{u.full_name ?? "Unknown"}</p>
-                <p className="text-xs text-zinc-600">{u.gender ?? ""}</p>
-              </div>
-            </div>
-            {u.is_match ? (
-              <Link
-                href={`/dashboard/messages?with=${u.id}`}
-                className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-600"
-              >
-                Chat
-              </Link>
-            ) : (
-              <Link
-                href="/dashboard/discovery"
-                className="rounded-xl border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700 shadow-sm hover:bg-sky-100"
-              >
-                اعجب به
-              </Link>
-            )}
-          </li>
-        ))}
+              {canCommunicate ? (
+                u.is_match ? (
+                  <Link
+                    href={`/dashboard/messages?with=${u.id}`}
+                    className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-600"
+                  >
+                    {t("discovery.chat")}
+                  </Link>
+                ) : (
+                  <Link
+                    href="/dashboard/discovery"
+                    className="rounded-xl border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700 shadow-sm hover:bg-sky-100"
+                  >
+                    {locale === "ar" ? "اعجب به" : "Like back"}
+                  </Link>
+                )
+              ) : (
+                <p
+                  className="max-w-[180px] text-xs text-zinc-500"
+                  title={t("discovery.sameGenderOnlyMessage")}
+                >
+                  {t("discovery.sameGenderOnlyMessage")}
+                </p>
+              )}
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

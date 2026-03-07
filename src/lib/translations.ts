@@ -235,6 +235,20 @@ type TranslationMap = {
     logout: string;
     language: string;
   };
+  discovery: {
+    filterAll: string;
+    filterMales: string;
+    filterFemales: string;
+    searchPlaceholder: string;
+    sameGenderOnlyMessage: string;
+    like: string;
+    liked: string;
+    chat: string;
+    online: string;
+    offline: string;
+    noUsers: string;
+    matchToast: string;
+  };
 };
 
 function getNested(obj: Record<string, unknown>, path: string): string | undefined {
@@ -545,6 +559,20 @@ const translations: Record<Locale, TranslationMap> = {
       logout: "Logout",
       language: "Language",
     },
+    discovery: {
+      filterAll: "All",
+      filterMales: "Males",
+      filterFemales: "Females",
+      searchPlaceholder: "Search by name or job…",
+      sameGenderOnlyMessage: "Communication is only available with the opposite gender.",
+      like: "Like",
+      liked: "Liked",
+      chat: "Chat",
+      online: "Online",
+      offline: "Offline",
+      noUsers: "No other verified users right now.",
+      matchToast: "It's a match with {name}! You can chat now.",
+    },
   },
   ar: {
     common: {
@@ -841,6 +869,20 @@ const translations: Record<Locale, TranslationMap> = {
       profile: "الملف الشخصي",
       logout: "تسجيل الخروج",
       language: "اللغة",
+    },
+    discovery: {
+      filterAll: "الكل",
+      filterMales: "رجال",
+      filterFemales: "نساء",
+      searchPlaceholder: "بحث بالاسم أو المهنة…",
+      sameGenderOnlyMessage: "التواصل متاح فقط مع الجنس الآخر.",
+      like: "إعجاب",
+      liked: "تم الإعجاب",
+      chat: "محادثة",
+      online: "متصل",
+      offline: "غير متصل",
+      noUsers: "لا يوجد أعضاء آخرون موثقون حالياً.",
+      matchToast: "توافق مع {name}! يمكنك المحادثة الآن.",
     },
   },
 };
