@@ -24,7 +24,7 @@ export async function middleware(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession()
   const path = request.nextUrl.pathname
 
-  // 1. حماية صفحات الأدمن (Admin Only)
+  // 1. حماية صفحات الأدمن (Admin Only). On profile fetch failure, proceed without redirecting.
   if (path.startsWith('/admin')) {
     try {
       const { data: profile, error: profileError } = await supabase
@@ -32,8 +32,11 @@ export async function middleware(request: NextRequest) {
         .select('role')
         .maybeSingle()
 
+      if (profileError) {
+        return response
+      }
+
       const isAdmin =
-        !profileError &&
         profile != null &&
         typeof profile === 'object' &&
         (profile as { role?: string }).role === 'admin'
@@ -42,7 +45,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
       }
     } catch {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
+      return response
     }
   }
 
