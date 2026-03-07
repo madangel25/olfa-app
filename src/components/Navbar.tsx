@@ -200,6 +200,42 @@ export function Navbar() {
             </>
           ) : (
             <>
+              {/* Language switcher: Globe icon, transparent bg, subtle border, Sky Blue active */}
+              <div
+                className={`flex items-center gap-0.5 rounded-xl border border-zinc-200 bg-transparent p-0.5 ${dir === "rtl" ? "flex-row-reverse" : ""}`}
+                role="group"
+                aria-label={locale === "ar" ? "Language" : "اللغة"}
+              >
+                <span className="flex items-center px-2 text-zinc-500" aria-hidden>
+                  <Globe className="h-4 w-4 shrink-0" />
+                </span>
+                <button
+                  type="button"
+                  onClick={() => switchLocale("en")}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    locale === "en"
+                      ? "bg-sky-50 text-sky-600 border border-sky-200 shadow-sm"
+                      : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 border border-transparent"
+                  }`}
+                  aria-pressed={locale === "en"}
+                  aria-label="English"
+                >
+                  <span className="font-[family-name:var(--font-geist-sans)]">EN</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchLocale("ar")}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    locale === "ar"
+                      ? "bg-sky-50 text-sky-600 border border-sky-200 shadow-sm"
+                      : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 border border-transparent"
+                  }`}
+                  aria-pressed={locale === "ar"}
+                  aria-label="العربية"
+                >
+                  <span className="font-[family-name:var(--font-cairo)]" lang="ar">AR</span>
+                </button>
+              </div>
               <Link
                 href="/login"
                 className={`text-sm font-medium transition ${
