@@ -6,6 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getSiteSettings } from "@/lib/siteSettings";
+import { supabase } from "@/lib/supabaseClient";
 import { User, UserCircle } from "lucide-react";
 
 type Gender = "male" | "female";
@@ -18,6 +19,16 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        window.location.href = "/dashboard";
+      }
+    };
+    checkUser();
+  }, []);
 
   useEffect(() => {
     getSiteSettings().then((row) => {

@@ -5,11 +5,21 @@ import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getSiteSettings, type SiteSettingsRow } from "@/lib/siteSettings";
 import { LandingLanguageSwitcher } from "@/components/LandingLanguageSwitcher";
-import { PublicRouteGuard } from "@/components/PublicRouteGuard";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Home() {
   const { t, locale, dir } = useLanguage();
   const [settings, setSettings] = useState<SiteSettingsRow | null>(null);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        window.location.href = "/dashboard";
+      }
+    };
+    checkUser();
+  }, []);
 
   useEffect(() => {
     getSiteSettings().then(setSettings);
@@ -29,7 +39,6 @@ export default function Home() {
   const isRtl = dir === "rtl";
 
   return (
-    <PublicRouteGuard>
     <div
       className="min-h-screen w-full bg-white font-[family-name:var(--font-cairo)] text-zinc-900"
       dir={dir}
@@ -104,6 +113,5 @@ export default function Home() {
         </div>
       </div>
     </div>
-    </PublicRouteGuard>
   );
 }

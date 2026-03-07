@@ -6,7 +6,6 @@ import Link from "next/link";
 import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getSiteSettings } from "@/lib/siteSettings";
-import { PublicRouteGuard } from "@/components/PublicRouteGuard";
 
 type Role = "admin" | "moderator" | "user";
 
@@ -24,6 +23,16 @@ export default function LoginPage() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        window.location.href = "/dashboard";
+      }
+    };
+    checkUser();
+  }, []);
 
   useEffect(() => {
     getSiteSettings().then((row) => {
@@ -116,7 +125,6 @@ export default function LoginPage() {
   const isRtl = dir === "rtl";
 
   return (
-    <PublicRouteGuard>
     <div
       className="min-h-screen w-full bg-[#f8f9fa] font-[family-name:var(--font-cairo)] flex items-center justify-center px-4 py-10"
       dir={dir}
@@ -217,6 +225,5 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
-    </PublicRouteGuard>
   );
 }
