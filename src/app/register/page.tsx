@@ -6,7 +6,6 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getSiteSettings } from "@/lib/siteSettings";
-import { PublicRouteGuard } from "@/components/PublicRouteGuard";
 import { User, UserCircle } from "lucide-react";
 
 type Gender = "male" | "female";
@@ -272,6 +271,5 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
-  </PublicRouteGuard>
-);
+  );
 }
