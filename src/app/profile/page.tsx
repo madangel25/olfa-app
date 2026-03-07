@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Pencil, Eye, Wand2 } from "lucide-react";
+import { Pencil, Eye, Wand2, Star } from "lucide-react";
 
 type ProfileData = {
   full_name: string | null;
   gender: string | null;
+  age: string | null;
   job_title: string | null;
   country: string | null;
   city: string | null;
@@ -18,6 +19,28 @@ type ProfileData = {
   photo_urls: string[];
   primary_photo_index: number;
 };
+
+/** Profile strength: Image 25%, Bio 25%, Job 20%, Age 15%, Location 15%. Returns 0–100. */
+function getProfileStrength(p: ProfileData): number {
+  const hasImage = p.photo_urls.length > 0;
+  const hasBio = Boolean(p.about_me?.trim() && p.ideal_partner?.trim());
+  const bioPartial = (Boolean(p.about_me?.trim()) ? 12.5 : 0) + (Boolean(p.ideal_partner?.trim()) ? 12.5 : 0);
+  const hasJob = Boolean(p.job_title?.trim());
+  const hasAge = Boolean(p.age != null && String(p.age).trim() !== "");
+  const hasLocation = Boolean(p.country?.trim() || p.city?.trim());
+  return (
+    (hasImage ? 25 : 0) +
+    (hasBio ? 25 : bioPartial) +
+    (hasJob ? 20 : 0) +
+    (hasAge ? 15 : 0) +
+    (hasLocation ? 15 : 0)
+  );
+}
+
+/** Charisma rating out of 10, derived from profile strength (can later be DB-driven). */
+function getCharismaRating(strengthPercent: number): number {
+  return Math.round((strengthPercent / 100) * 10 * 10) / 10;
+}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -35,7 +58,7 @@ export default function ProfilePage() {
       }
       const { data, error } = await supabase
         .from("profiles")
-        .select("full_name, gender, job_title, country, city, about_me, ideal_partner, photo_urls, primary_photo_index")
+        .select("full_name, gender, age, job_title, country, city, about_me, ideal_partner, photo_urls, primary_photo_index")
         .eq("id", user.id)
         .maybeSingle();
 
@@ -51,9 +74,11 @@ export default function ProfilePage() {
       }
       const primary_photo_index = typeof raw.primary_photo_index === "number" ? raw.primary_photo_index : 0;
 
+      const ageVal = raw.age;
       setProfile({
         full_name: (raw.full_name as string) ?? null,
         gender: (raw.gender as string) ?? null,
+        age: ageVal != null ? String(ageVal) : null,
         job_title: (raw.job_title as string) ?? null,
         country: (raw.country as string) ?? null,
         city: (raw.city as string) ?? null,
@@ -101,6 +126,12 @@ export default function ProfilePage() {
   const hasIdealPartner = Boolean(profile.ideal_partner?.trim());
   const hasAnyBio = hasAboutMe || hasIdealPartner;
 
+  const strengthPercent = useMemo(() => getProfileStrength(profile), [profile]);
+  const charismaOutOf10 = useMemo(() => getCharismaRating(strengthPercent), [strengthPercent]);
+  const charismaStars = (charismaOutOf10 / 10) * 5;
+  const themeProgress = isFemale ? "bg-pink-500" : "bg-sky-500";
+  const themeStarFill = isFemale ? "text-pink-500" : "text-sky-500";
+
   return (
     <div className={`mx-auto max-w-3xl px-4 py-8 font-[family-name:var(--font-cairo)] ${isRtl ? "text-right" : "text-left"}`}>
       {/* Top actions */}
@@ -120,6 +151,39 @@ export default function ProfilePage() {
           <Eye className="h-4 w-4" />
           {t("profile.viewAsOthersSeeMe")}
         </button>
+      </div>
+
+      {/* Profile Strength & Charisma card */}
+      <div className="mb-8 rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div>
+            <p className="mb-2 text-sm font-semibold text-zinc-800">{t("profile.profileStrength")}</p>
+            <div className="flex items-center gap-3">
+              <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-zinc-200">
+                <div
+                  className={`h-full rounded-full ${themeProgress} transition-all duration-500`}
+                  style={{ width: `${strengthPercent}%` }}
+                />
+              </div>
+              <span className="w-10 shrink-0 text-sm font-medium text-zinc-800">{strengthPercent}%</span>
+            </div>
+          </div>
+          <div>
+            <p className="mb-2 text-sm font-semibold text-zinc-800">{t("profile.charismaRating")}</p>
+            <div className={`flex items-center gap-2 ${isRtl ? "flex-row-reverse" : ""}`}>
+              <div className="flex gap-0.5" aria-label={`${charismaOutOf10} out of 10`}>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star
+                    key={i}
+                    className={`h-5 w-5 shrink-0 ${i <= charismaStars ? themeStarFill : "text-zinc-200"}`}
+                    fill={i <= charismaStars ? "currentColor" : "none"}
+                  />
+                ))}
+              </div>
+              <span className={`text-sm font-medium text-zinc-800 ${themeAccent}`}>{charismaOutOf10}/10</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Public preview card (when toggle on) */}
@@ -147,6 +211,20 @@ export default function ProfilePage() {
               {[profile.about_me, profile.ideal_partner].filter(Boolean).join(" ").slice(0, 200)}…
             </p>
           )}
+          {/* Charisma Rating in public view */}
+          <div className={`mt-4 flex items-center gap-2 border-t border-zinc-100 pt-4 ${isRtl ? "flex-row-reverse justify-end" : ""}`}>
+            <span className="text-xs font-medium text-zinc-500">{t("profile.charismaRating")}</span>
+            <div className="flex gap-0.5">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star
+                  key={i}
+                  className={`h-4 w-4 shrink-0 ${i <= charismaStars ? themeStarFill : "text-zinc-200"}`}
+                  fill={i <= charismaStars ? "currentColor" : "none"}
+                />
+              ))}
+            </div>
+            <span className={`text-xs font-semibold ${themeAccent}`}>{charismaOutOf10}/10</span>
+          </div>
         </div>
       )}
 

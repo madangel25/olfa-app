@@ -755,6 +755,9 @@ export default function ProfilePage() {
                       onChange={(e) => updateField("age", e.target.value)}
                       className={inputClass}
                     />
+                    {!profile.age?.trim() && (
+                      <p className="mt-1 text-xs text-amber-600">{t("profile.completeFieldToBoostStrength")}</p>
+                    )}
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.maritalStatus")}</label>
@@ -917,6 +920,9 @@ export default function ProfilePage() {
                   <div>
                     <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.jobTitle")}</label>
                     <input type="text" value={profile.job_title} onChange={(e) => updateField("job_title", e.target.value)} className={inputClass} />
+                    {!profile.job_title?.trim() && (
+                      <p className="mt-1 text-xs text-amber-600">{t("profile.completeFieldToBoostStrength")}</p>
+                    )}
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.education")}</label>
@@ -938,6 +944,9 @@ export default function ProfilePage() {
                       placeholder={t("profile.selectOption")}
                       inputClass={inputClass}
                     />
+                    {!profile.country?.trim() && !profile.city?.trim() && (
+                      <p className="mt-1 text-xs text-amber-600">{t("profile.completeFieldToBoostStrength")}</p>
+                    )}
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.city")}</label>
@@ -957,6 +966,9 @@ export default function ProfilePage() {
                     {t("profile.photos")}
                   </h2>
                   <p className="mt-1 text-xs text-zinc-500">{t("profile.photosSub")}</p>
+                  {profile.photo_urls.length === 0 && (
+                    <p className="mt-1 text-xs text-amber-600">{t("profile.completeFieldToBoostStrength")}</p>
+                  )}
                 </div>
                 <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100">
                   <span className="flex items-center gap-1.5">
@@ -1007,6 +1019,9 @@ export default function ProfilePage() {
                 <div>
                   <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
                     <label className="text-xs font-medium text-zinc-500">{t("profile.aboutMe")}</label>
+                    {!profile.about_me?.trim() && (
+                      <span className="text-xs text-amber-600">{t("profile.completeFieldToBoostStrength")}</span>
+                    )}
                     <div className="flex items-center gap-2">
                       <select
                         value={tone}
@@ -1053,6 +1068,9 @@ export default function ProfilePage() {
                 <div>
                   <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
                     <label className="text-xs font-medium text-zinc-700">{t("profile.idealPartner")}</label>
+                    {!profile.ideal_partner?.trim() && (
+                      <span className="text-xs text-amber-600">{t("profile.completeFieldToBoostStrength")}</span>
+                    )}
                     <div className="flex items-center gap-2">
                       <select
                         value={tone}

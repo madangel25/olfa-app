@@ -193,6 +193,9 @@ type TranslationMap = {
     editProfile: string;
     viewAsOthersSeeMe: string;
     letAiWriteBioNow: string;
+    profileStrength: string;
+    charismaRating: string;
+    completeFieldToBoostStrength: string;
     magicWand: string;
     aiGenerating: string;
     selectOption: string;
@@ -520,6 +523,9 @@ const translations: Record<Locale, TranslationMap> = {
       editProfile: "Edit Profile",
       viewAsOthersSeeMe: "View as others see me",
       letAiWriteBioNow: "Let AI write your bio now",
+      profileStrength: "Profile Strength",
+      charismaRating: "Charisma Rating",
+      completeFieldToBoostStrength: "Complete this field to boost your profile strength!",
       magicWand: "Suggest with AI",
       aiGenerating: "Generating…",
       selectOption: "Select…",
@@ -834,6 +840,9 @@ const translations: Record<Locale, TranslationMap> = {
       editProfile: "تعديل البيانات",
       viewAsOthersSeeMe: "عرض الصفحة كما يراها الآخرون",
       letAiWriteBioNow: "دع الذكاء الاصطناعي يكتب سيرتك الآن",
+      profileStrength: "قوة ملفك الشخصي",
+      charismaRating: "تقييم الكاريزما",
+      completeFieldToBoostStrength: "أكمل هذا الحقل لزيادة قوة بروفايلك!",
       magicWand: "اقتراح بالذكاء الاصطناعي",
       aiGenerating: "جاري الاقتراح…",
       selectOption: "اختر…",
