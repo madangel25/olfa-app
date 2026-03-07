@@ -14,6 +14,7 @@ type TranslationMap = {
     joinOlfa: string;
     createAccount: string;
     backToHome: string;
+    backToLogin: string;
     save: string;
     next: string;
     submit: string;
@@ -65,6 +66,31 @@ type TranslationMap = {
       enterEmailPassword: string;
       failed: string;
       somethingWrong: string;
+      rememberMe: string;
+      forgotPasswordLink: string;
+    };
+    forgotPassword: {
+      title: string;
+      subtitle: string;
+      emailPlaceholder: string;
+      enterEmail: string;
+      submit: string;
+      sending: string;
+      successMessage: string;
+      backToLogin: string;
+      errorSend: string;
+    };
+    resetPassword: {
+      title: string;
+      subtitle: string;
+      newPassword: string;
+      confirmPassword: string;
+      submit: string;
+      updating: string;
+      successMessage: string;
+      passwordsMustMatch: string;
+      passwordMinLength: string;
+      errorUpdate: string;
     };
   quiz: {
     stepLabel: string;
@@ -331,6 +357,7 @@ const translations: Record<Locale, TranslationMap> = {
       joinOlfa: "Join Olfa",
       createAccount: "Create an account",
       backToHome: "Back to home",
+      backToLogin: "Back to login",
       save: "Save",
       next: "Next",
       submit: "Submit",
@@ -389,6 +416,31 @@ const translations: Record<Locale, TranslationMap> = {
       enterEmailPassword: "Please enter your email and password.",
       failed: "Login failed. Please try again.",
       somethingWrong: "Something went wrong. Please try again.",
+      rememberMe: "Remember me",
+      forgotPasswordLink: "Forgot password?",
+    },
+    forgotPassword: {
+      title: "Forgot password",
+      subtitle: "Enter your email and we'll send you a link to reset your password.",
+      emailPlaceholder: "you@example.com",
+      enterEmail: "Please enter your email.",
+      submit: "Send reset link",
+      sending: "Sending…",
+      successMessage: "Password reset link has been sent to your email.",
+      backToLogin: "Back to login",
+      errorSend: "Failed to send reset link. Please try again.",
+    },
+    resetPassword: {
+      title: "Set new password",
+      subtitle: "Enter your new password below.",
+      newPassword: "New password",
+      confirmPassword: "Confirm password",
+      submit: "Update password",
+      updating: "Updating…",
+      successMessage: "Password updated. You can sign in now.",
+      passwordsMustMatch: "Passwords must match.",
+      passwordMinLength: "Password must be at least 6 characters.",
+      errorUpdate: "Failed to update password. Please try again.",
     },
     quiz: {
       stepLabel: "Onboarding · Step 1 of 2",
@@ -704,6 +756,7 @@ const translations: Record<Locale, TranslationMap> = {
       joinOlfa: "انضم إلى أولفا",
       createAccount: "إنشاء حساب",
       backToHome: "العودة للرئيسية",
+      backToLogin: "العودة لتسجيل الدخول",
       save: "حفظ",
       next: "التالي",
       submit: "إرسال",
@@ -762,6 +815,31 @@ const translations: Record<Locale, TranslationMap> = {
       enterEmailPassword: "يرجى إدخال بريدك الإلكتروني وكلمة المرور.",
       failed: "فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.",
       somethingWrong: "حدث خطأ. يرجى المحاولة مرة أخرى.",
+      rememberMe: "تذكرني",
+      forgotPasswordLink: "نسيت كلمة المرور؟",
+    },
+    forgotPassword: {
+      title: "استعادة كلمة المرور",
+      subtitle: "أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.",
+      emailPlaceholder: "you@example.com",
+      enterEmail: "يرجى إدخال البريد الإلكتروني.",
+      submit: "إرسال الرابط",
+      sending: "جاري الإرسال…",
+      successMessage: "تم إرسال رابط استعادة كلمة السر إلى بريدك.",
+      backToLogin: "العودة لتسجيل الدخول",
+      errorSend: "فشل إرسال الرابط. يرجى المحاولة مرة أخرى.",
+    },
+    resetPassword: {
+      title: "تعيين كلمة مرور جديدة",
+      subtitle: "أدخل كلمة المرور الجديدة أدناه.",
+      newPassword: "كلمة المرور الجديدة",
+      confirmPassword: "تأكيد كلمة المرور",
+      submit: "تحديث كلمة المرور",
+      updating: "جاري التحديث…",
+      successMessage: "تم تحديث كلمة المرور. يمكنك تسجيل الدخول الآن.",
+      passwordsMustMatch: "يجب أن تتطابق كلمتا المرور.",
+      passwordMinLength: "كلمة المرور يجب أن تكون 6 أحرف على الأقل.",
+      errorUpdate: "فشل تحديث كلمة المرور. يرجى المحاولة مرة أخرى.",
     },
     quiz: {
       stepLabel: "الانضمام · الخطوة ١ من ٢",

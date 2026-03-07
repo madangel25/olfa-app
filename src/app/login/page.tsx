@@ -3,7 +3,7 @@
 import { FormEvent, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
+import { supabase, ensureUserProfile, setRememberMeBeforeSignIn } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getSiteSettings } from "@/lib/siteSettings";
 
@@ -22,9 +22,11 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const { t, dir } = useLanguage();
   const nextPath = safeNextPath(searchParams.get("next"));
+  const resetSuccess = searchParams.get("reset") === "success";
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(true);
 
   useEffect(() => {
     getSiteSettings().then((row) => {
@@ -46,6 +48,7 @@ export default function LoginPage() {
     }
 
     setLoading(true);
+    setRememberMeBeforeSignIn(rememberMe);
 
     try {
       const { data: signInData, error: signInError } =
@@ -142,6 +145,15 @@ export default function LoginPage() {
           {t("login.subtitle")}
         </p>
 
+        {resetSuccess && (
+          <div
+            className="mt-6 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800"
+            role="status"
+          >
+            {t("resetPassword.successMessage")}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <div className="space-y-2">
             <label
@@ -179,6 +191,29 @@ export default function LoginPage() {
               className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
               placeholder="••••••••"
             />
+          </div>
+
+          <div className={`flex items-center gap-3 ${isRtl ? "flex-row-reverse" : ""}`}>
+            <input
+              id="rememberMe"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded border-zinc-300 text-sky-500 focus:ring-sky-500/20"
+              aria-label={t("login.rememberMe")}
+            />
+            <label htmlFor="rememberMe" className={`text-sm font-medium text-zinc-700 cursor-pointer ${isRtl ? "text-right" : "text-left"}`}>
+              {t("login.rememberMe")}
+            </label>
+          </div>
+
+          <div className={`text-sm ${isRtl ? "text-right" : "text-left"}`}>
+            <Link
+              href="/forgot-password"
+              className="font-medium text-sky-600 hover:text-sky-700 focus:outline-none focus:underline"
+            >
+              {t("login.forgotPasswordLink")}
+            </Link>
           </div>
 
           {error && (

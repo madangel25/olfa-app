@@ -1,0 +1,127 @@
+"use client";
+
+import { FormEvent, useState, useEffect } from "react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabaseClient";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getSiteSettings } from "@/lib/siteSettings";
+
+export default function ForgotPasswordPage() {
+  const { t, dir, locale } = useLanguage();
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    getSiteSettings().then((row) => {
+      if (row?.logo_url?.trim()) setLogoUrl(row.logo_url);
+    });
+  }, []);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setSuccess(false);
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") || "").trim().toLowerCase();
+    if (!email) {
+      setError(t("forgotPassword.enterEmail"));
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined,
+      });
+      if (err) {
+        setError(err.message);
+        return;
+      }
+      setSuccess(true);
+    } catch {
+      setError(t("forgotPassword.errorSend"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isRtl = dir === "rtl";
+
+  return (
+    <div
+      className="min-h-screen w-full bg-[#f8f9fa] font-[family-name:var(--font-cairo)] flex items-center justify-center px-4 py-10"
+      dir={dir}
+    >
+      <div className="w-full max-w-md rounded-3xl border border-zinc-200/80 bg-white px-8 py-10 shadow-xl">
+        {logoUrl ? (
+          <div className="flex justify-center mb-6">
+            <img src={logoUrl} alt="Olfa" className="h-12 w-auto object-contain sm:h-14" />
+          </div>
+        ) : (
+          <h2 className="text-center text-xl font-bold text-zinc-900 mb-6">Olfa</h2>
+        )}
+
+        <h1 className={`text-2xl font-bold tracking-tight text-zinc-900 ${isRtl ? "text-right" : "text-left"}`}>
+          {t("forgotPassword.title")}
+        </h1>
+        <p className={`mt-2 text-sm text-zinc-600 ${isRtl ? "text-right" : "text-left"}`}>
+          {t("forgotPassword.subtitle")}
+        </p>
+
+        {success ? (
+          <div className="mt-8 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+            {t("forgotPassword.successMessage")}
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <div className="space-y-2">
+              <label
+                htmlFor="email"
+                className={`block text-sm font-medium text-zinc-900 ${isRtl ? "text-right" : "text-left"}`}
+              >
+                {t("common.email")}
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                dir="ltr"
+                className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
+                placeholder={t("forgotPassword.emailPlaceholder")}
+              />
+            </div>
+            {error && (
+              <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                {error}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex w-full items-center justify-center rounded-xl bg-sky-500 px-4 py-3.5 text-base font-semibold text-white shadow-md transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {loading ? t("forgotPassword.sending") : t("forgotPassword.submit")}
+            </button>
+          </form>
+        )}
+
+        <p className={`mt-6 text-center text-sm text-zinc-600 ${isRtl ? "text-right" : "text-left"}`}>
+          <Link
+            href="/login"
+            className="font-semibold text-sky-600 hover:text-sky-700 focus:outline-none focus:underline"
+          >
+            {t("forgotPassword.backToLogin")}
+          </Link>
+        </p>
+        <p className="mt-4 text-center">
+          <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-700">
+            {t("common.backToHome")}
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+}
