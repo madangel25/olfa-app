@@ -1,19 +1,29 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getSiteSettings } from "@/lib/siteSettings";
+import { User, UserCircle } from "lucide-react";
 
 type Gender = "male" | "female";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, dir } = useLanguage();
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [gender, setGender] = useState<Gender | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    getSiteSettings().then((row) => {
+      if (row?.logo_url?.trim()) setLogoUrl(row.logo_url);
+    });
+  }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -34,8 +44,6 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Initial role is always "user". Admin and moderator promotion
-      // are only possible from the protected admin dashboard.
       const initialRole = "user";
 
       const { data: signUpData, error: signUpError } =
@@ -90,45 +98,47 @@ export default function RegisterPage() {
     }
   };
 
+  const isRtl = dir === "rtl";
   const isMale = gender === "male";
   const isFemale = gender === "female";
 
-  const backgroundGradient = isMale
-    ? "from-slate-950 via-slate-900 to-slate-800"
-    : isFemale
-    ? "from-purple-900 via-fuchsia-800 to-rose-800"
-    : "from-slate-950 via-slate-900 to-purple-900";
-
-  const cardClasses = isMale
-    ? "bg-slate-900/80 border-slate-700 shadow-slate-900/60"
-    : isFemale
-    ? "bg-purple-950/80 border-purple-500/60 shadow-purple-900/60"
-    : "bg-slate-900/80 border-slate-700 shadow-slate-900/60";
-
-  const accentTextClasses = isMale ? "text-sky-300" : "text-pink-200";
+  const inputFocusClass =
+    "w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20";
 
   return (
     <div
-      className={`min-h-screen w-full bg-gradient-to-br ${backgroundGradient} text-slate-50 flex items-center justify-center px-4 py-10`}
+      className="min-h-screen w-full bg-[#f8f9fa] font-[family-name:var(--font-cairo)] flex items-center justify-center px-4 py-10"
+      dir={dir}
     >
-      <div
-        className={`w-full max-w-xl rounded-3xl border px-8 py-10 shadow-2xl backdrop-blur ${cardClasses}`}
-      >
-        <h1 className="text-3xl font-semibold tracking-tight mb-2">
+      <div className="w-full max-w-xl rounded-3xl border border-zinc-200/80 bg-white px-8 py-10 shadow-xl">
+        {/* Logo */}
+        {logoUrl ? (
+          <div className="flex justify-center mb-6">
+            <img
+              src={logoUrl}
+              alt="Olfa"
+              className="h-12 w-auto object-contain sm:h-14"
+            />
+          </div>
+        ) : (
+          <h2 className="text-center text-xl font-bold text-zinc-900 mb-6">
+            Olfa
+          </h2>
+        )}
+
+        <h1 className={`text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl ${isRtl ? "text-right" : "text-left"}`}>
           {t("register.title")}
         </h1>
-        <p className="text-sm text-slate-200/80 mb-6">
+        <p className={`mt-2 text-sm text-zinc-600 mb-6 ${isRtl ? "text-right" : "text-left"}`}>
           {t("register.subtitle")}{" "}
-          <span className={accentTextClasses}>
-            {t("register.subtitleTail")}
-          </span>
+          <span className="text-sky-600 font-medium">{t("register.subtitleTail")}</span>
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label
               htmlFor="fullName"
-              className="block text-sm font-medium text-slate-100"
+              className={`block text-sm font-medium text-zinc-900 ${isRtl ? "text-right" : "text-left"}`}
             >
               {t("common.fullName")}
             </label>
@@ -137,15 +147,16 @@ export default function RegisterPage() {
               name="fullName"
               type="text"
               required
-              className="w-full rounded-xl border border-slate-700 bg-black/30 px-3 py-2 text-sm outline-none ring-0 focus:border-sky-400 focus:ring-2 focus:ring-sky-500/40"
-              placeholder="Your real name"
+              className={inputFocusClass}
+              placeholder={isRtl ? "الاسم الكامل" : "Your real name"}
+              dir={isRtl ? "rtl" : "ltr"}
             />
           </div>
 
           <div className="space-y-2">
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-slate-100"
+              className={`block text-sm font-medium text-zinc-900 ${isRtl ? "text-right" : "text-left"}`}
             >
               {t("common.email")}
             </label>
@@ -154,7 +165,8 @@ export default function RegisterPage() {
               name="email"
               type="email"
               required
-              className="w-full rounded-xl border border-slate-700 bg-black/30 px-3 py-2 text-sm outline-none ring-0 focus:border-sky-400 focus:ring-2 focus:ring-sky-500/40"
+              dir="ltr"
+              className={inputFocusClass}
               placeholder="you@example.com"
             />
           </div>
@@ -162,7 +174,7 @@ export default function RegisterPage() {
           <div className="space-y-2">
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-slate-100"
+              className={`block text-sm font-medium text-zinc-900 ${isRtl ? "text-right" : "text-left"}`}
             >
               {t("common.password")}
             </label>
@@ -172,62 +184,62 @@ export default function RegisterPage() {
               type="password"
               required
               minLength={8}
-              className="w-full rounded-xl border border-slate-700 bg-black/30 px-3 py-2 text-sm outline-none ring-0 focus:border-sky-400 focus:ring-2 focus:ring-sky-500/40"
-              placeholder="At least 8 characters"
+              dir="ltr"
+              className={inputFocusClass}
+              placeholder={isRtl ? "8 أحرف على الأقل" : "At least 8 characters"}
             />
           </div>
 
+          {/* Gender: visual cards with icons */}
           <fieldset className="space-y-3">
-            <legend className="text-sm font-medium text-slate-100">
+            <legend className={`text-sm font-medium text-zinc-900 ${isRtl ? "text-right" : "text-left"}`}>
               {t("common.gender")}
             </legend>
-            <p className="text-xs text-slate-300/80">
+            <p className={`text-xs text-zinc-500 ${isRtl ? "text-right" : "text-left"}`}>
               {t("register.genderHint")}
             </p>
-            <div className="mt-2 grid grid-cols-2 gap-3">
+            <div className={`grid grid-cols-2 gap-4 ${isRtl ? "flex-row-reverse" : ""}`}>
               <button
                 type="button"
                 onClick={() => setGender("male")}
-                className={`rounded-2xl border px-3 py-2 text-sm font-medium transition ${
+                className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 px-4 py-5 text-sm font-semibold transition ${
                   isMale
-                    ? "border-sky-400 bg-sky-500/20 text-sky-100"
-                    : "border-slate-700 bg-black/20 text-slate-100 hover:border-sky-400/60 hover:bg-sky-500/10"
+                    ? "border-sky-500 bg-sky-50 text-sky-700 shadow-md shadow-sky-100"
+                    : "border-zinc-200 bg-zinc-50/50 text-zinc-600 hover:border-sky-300 hover:bg-sky-50/50"
                 }`}
               >
+                <User className={`h-8 w-8 shrink-0 ${isMale ? "text-sky-500" : "text-zinc-400"}`} />
                 {t("common.male")}
               </button>
               <button
                 type="button"
                 onClick={() => setGender("female")}
-                className={`rounded-2xl border px-3 py-2 text-sm font-medium transition ${
+                className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 px-4 py-5 text-sm font-semibold transition ${
                   isFemale
-                    ? "border-pink-300 bg-pink-500/25 text-pink-50"
-                    : "border-slate-700 bg-black/20 text-slate-100 hover:border-pink-300/70 hover:bg-pink-500/15"
+                    ? "border-pink-500 bg-pink-50 text-pink-700 shadow-md shadow-pink-100"
+                    : "border-zinc-200 bg-zinc-50/50 text-zinc-600 hover:border-pink-300 hover:bg-pink-50/50"
                 }`}
               >
+                <UserCircle className={`h-8 w-8 shrink-0 ${isFemale ? "text-pink-500" : "text-zinc-400"}`} />
                 {t("common.female")}
               </button>
             </div>
-            <input
-              type="hidden"
-              name="gender"
-              value={gender ?? ""}
-            />
+            <input type="hidden" name="gender" value={gender ?? ""} />
           </fieldset>
 
-          <div className="rounded-2xl border border-dashed border-slate-700/80 bg-black/20 px-4 py-3 text-xs text-slate-200/80">
-            <p className="font-semibold mb-1">{t("register.initialRoleTitle")}</p>
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 text-xs text-zinc-700">
+            <p className="font-semibold text-zinc-900 mb-1">{t("register.initialRoleTitle")}</p>
             <p>{t("register.roleNotice")}</p>
           </div>
 
           {error && (
-            <p className="rounded-xl border border-red-500/60 bg-red-950/60 px-3 py-2 text-xs text-red-100">
+            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
               {error}
             </p>
           )}
 
           {message && (
-            <p className="rounded-xl border border-emerald-500/60 bg-emerald-950/60 px-3 py-2 text-xs text-emerald-100">
+            <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
               {message}
             </p>
           )}
@@ -235,17 +247,29 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 inline-flex w-full items-center justify-center rounded-2xl bg-slate-50 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-md shadow-black/40 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-sky-500 px-4 py-3.5 text-base font-semibold text-white shadow-md transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {loading ? t("register.creating") : t("register.createAccount")}
           </button>
 
-          <p className="pt-2 text-[11px] leading-relaxed text-slate-300/80">
+          <p className={`pt-2 text-xs leading-relaxed text-zinc-500 ${isRtl ? "text-right" : "text-left"}`}>
             {t("register.agreeNotice")}
           </p>
         </form>
+
+        <p className={`mt-6 text-center text-sm text-zinc-600 ${isRtl ? "text-right" : "text-left"}`}>
+          <Link
+            href="/login"
+            className="font-semibold text-sky-600 hover:text-sky-700 focus:outline-none focus:underline"
+          >
+            {t("common.login")}
+          </Link>
+          <span className="mx-1">·</span>
+          <Link href="/" className="text-zinc-500 hover:text-zinc-700">
+            {t("common.backToHome")}
+          </Link>
+        </p>
       </div>
     </div>
   );
 }
-

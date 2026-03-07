@@ -1,18 +1,26 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getSiteSettings } from "@/lib/siteSettings";
 
 type Role = "admin" | "moderator" | "user";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, dir } = useLanguage();
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    getSiteSettings().then((row) => {
+      if (row?.logo_url?.trim()) setLogoUrl(row.logo_url);
+    });
+  }, []);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -94,22 +102,41 @@ export default function LoginPage() {
     }
   };
 
+  const isRtl = dir === "rtl";
+
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-50 flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md rounded-3xl border border-slate-700 bg-slate-900/80 px-8 py-10 shadow-2xl backdrop-blur">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-50">
-          Log in to Olfa
+    <div
+      className="min-h-screen w-full bg-[#f8f9fa] font-[family-name:var(--font-cairo)] flex items-center justify-center px-4 py-10"
+      dir={dir}
+    >
+      <div className="w-full max-w-md rounded-3xl border border-zinc-200/80 bg-white px-8 py-10 shadow-xl">
+        {/* Logo */}
+        {logoUrl ? (
+          <div className="flex justify-center mb-6">
+            <img
+              src={logoUrl}
+              alt="Olfa"
+              className="h-12 w-auto object-contain sm:h-14"
+            />
+          </div>
+        ) : (
+          <h2 className="text-center text-xl font-bold text-zinc-900 mb-6">
+            Olfa
+          </h2>
+        )}
+
+        <h1 className={`text-2xl font-bold tracking-tight text-zinc-900 ${isRtl ? "text-right" : "text-left"}`}>
+          {t("login.title")}
         </h1>
-        <p className="mt-2 text-sm text-slate-300/80">
-          Sign in with your email to continue. We’ll take you to the right place
-          based on your account.
+        <p className={`mt-2 text-sm text-zinc-600 ${isRtl ? "text-right" : "text-left"}`}>
+          {t("login.subtitle")}
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <div className="space-y-2">
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-slate-100"
+              className={`block text-sm font-medium text-zinc-900 ${isRtl ? "text-right" : "text-left"}`}
             >
               {t("common.email")}
             </label>
@@ -119,7 +146,8 @@ export default function LoginPage() {
               type="email"
               autoComplete="email"
               required
-              className="w-full rounded-xl border border-slate-700 bg-black/30 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 outline-none ring-0 focus:border-amber-500/70 focus:ring-2 focus:ring-amber-500/30"
+              dir="ltr"
+              className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
               placeholder="you@example.com"
             />
           </div>
@@ -127,7 +155,7 @@ export default function LoginPage() {
           <div className="space-y-2">
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-slate-100"
+              className={`block text-sm font-medium text-zinc-900 ${isRtl ? "text-right" : "text-left"}`}
             >
               {t("common.password")}
             </label>
@@ -137,13 +165,14 @@ export default function LoginPage() {
               type="password"
               autoComplete="current-password"
               required
-              className="w-full rounded-xl border border-slate-700 bg-black/30 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 outline-none ring-0 focus:border-amber-500/70 focus:ring-2 focus:ring-amber-500/30"
+              dir="ltr"
+              className="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 placeholder:text-zinc-500 outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"
               placeholder="••••••••"
             />
           </div>
 
           {error && (
-            <p className="rounded-xl border border-red-500/60 bg-red-950/60 px-3 py-2 text-xs text-red-100">
+            <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
               {error}
             </p>
           )}
@@ -151,16 +180,16 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 inline-flex w-full items-center justify-center rounded-2xl bg-amber-500 px-4 py-3 text-sm font-semibold text-slate-950 shadow-md shadow-amber-900/40 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-sky-500 px-4 py-3.5 text-base font-semibold text-white shadow-md transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {loading ? t("login.signingIn") : t("common.login")}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-300/80">
+        <p className={`mt-6 text-center text-sm text-zinc-600 ${isRtl ? "text-right" : "text-left"}`}>
           <Link
             href="/register"
-            className="font-semibold text-amber-400 hover:text-amber-300 focus:outline-none focus:underline"
+            className="font-semibold text-sky-600 hover:text-sky-700 focus:outline-none focus:underline"
           >
             {t("common.createAccount")}
           </Link>
@@ -169,7 +198,7 @@ export default function LoginPage() {
         <p className="mt-4 text-center">
           <Link
             href="/"
-            className="text-xs text-slate-500 hover:text-slate-400"
+            className="text-sm text-zinc-500 hover:text-zinc-700"
           >
             {t("common.backToHome")}
           </Link>
