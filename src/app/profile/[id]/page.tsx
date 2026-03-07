@@ -15,6 +15,14 @@ import {
   Heart,
   MapPin,
   MessageCircle,
+  Scale,
+  Globe,
+  Palette,
+  Cigarette,
+  BookOpen,
+  Baby,
+  FileText,
+  User,
 } from "lucide-react";
 
 type ProfileData = {
@@ -25,8 +33,14 @@ type ProfileData = {
   education_level: string | null;
   marital_status: string | null;
   height_cm: string | null;
+  weight_kg: string | null;
   country: string | null;
   city: string | null;
+  nationality: string | null;
+  skin_tone: string | null;
+  smoking_status: string | null;
+  religious_commitment: string | null;
+  desire_children: string | null;
   about_me: string | null;
   ideal_partner: string | null;
   photo_urls: string[];
@@ -38,7 +52,7 @@ function getProfileStrength(p: ProfileData): number {
   const hasAboutMe = Boolean(p.about_me?.trim());
   const hasPartnerInfo = Boolean(p.ideal_partner?.trim());
   const hasJob = Boolean(p.job_title?.trim());
-  const hasAge = Boolean(p.age != null && String(p.age).trim() !== "");
+  const hasAge = p.age != null && String(p.age).trim() !== "";
   const hasLocation = Boolean(p.country?.trim() || p.city?.trim());
   const jobAgeLocation = (hasJob ? 10 : 0) + (hasAge ? 10 : 0) + (hasLocation ? 10 : 0);
   return (
@@ -66,6 +80,32 @@ const MARITAL_KEYS: Record<string, string> = {
   divorced: "optDivorced",
   widowed: "optWidowed",
 };
+
+const OPT_KEYS: Record<string, string> = {
+  fair: "optFair",
+  medium: "optMedium",
+  olive: "optOlive",
+  brown: "optBrown",
+  dark: "optDark",
+  never: "optNever",
+  former: "optFormer",
+  occasionally: "optOccasionally",
+  yes: "optYes",
+  no: "optNo",
+  open: "optOpen",
+  undecided: "optUndecided",
+  practicing: "optPracticing",
+  moderate: "optModerate",
+  revert: "optRevert",
+  seeking: "optSeeking",
+};
+
+function optLabel(t: (k: string) => string, value: string | null): string | null {
+  if (!value?.trim()) return null;
+  const key = OPT_KEYS[value.trim().toLowerCase()] ?? value;
+  const out = t(`profile.${key}`);
+  return out && out !== `profile.${key}` ? out : value;
+}
 
 export default function PublicProfilePage() {
   const router = useRouter();
@@ -109,10 +149,11 @@ export default function PublicProfilePage() {
         .maybeSingle();
       setCurrentUserGender((myProfile as { gender?: string } | null)?.gender ?? null);
 
+      // Public view: never fetch email or phone
       const { data: profileRow, error } = await supabase
         .from("profiles")
         .select(
-          "full_name, gender, age, job_title, education_level, marital_status, height_cm, country, city, about_me, ideal_partner, photo_urls, primary_photo_index"
+          "full_name, gender, age, job_title, education_level, marital_status, height_cm, weight_kg, country, city, nationality, skin_tone, smoking_status, religious_commitment, desire_children, about_me, ideal_partner, photo_urls, primary_photo_index"
         )
         .eq("id", profileUserId)
         .maybeSingle();
@@ -135,8 +176,14 @@ export default function PublicProfilePage() {
         education_level: (raw.education_level as string) ?? null,
         marital_status: (raw.marital_status as string) ?? null,
         height_cm: raw.height_cm != null ? String(raw.height_cm) : null,
+        weight_kg: raw.weight_kg != null ? String(raw.weight_kg) : null,
         country: (raw.country as string) ?? null,
         city: (raw.city as string) ?? null,
+        nationality: (raw.nationality as string) ?? null,
+        skin_tone: (raw.skin_tone as string) ?? null,
+        smoking_status: (raw.smoking_status as string) ?? null,
+        religious_commitment: (raw.religious_commitment as string) ?? null,
+        desire_children: (raw.desire_children as string) ?? null,
         about_me: (raw.about_me as string) ?? null,
         ideal_partner: (raw.ideal_partner as string) ?? null,
         photo_urls,
@@ -215,6 +262,7 @@ export default function PublicProfilePage() {
   const themeBorderL = isFemale ? "border-l-pink-500" : "border-l-sky-500";
   const themeAvatar = isFemale ? "bg-pink-100 text-pink-700" : "bg-sky-100 text-sky-700";
   const themeStarFill = isFemale ? "text-pink-500" : "text-sky-500";
+  const themeIcon = isFemale ? "text-pink-500" : "text-sky-500";
   const sameGender = currentUserGender != null && profile?.gender != null && currentUserGender === profile.gender;
   const canCommunicate = !sameGender;
 
@@ -253,8 +301,28 @@ export default function PublicProfilePage() {
   const primaryPhoto = profile.photo_urls[profile.primary_photo_index] ?? profile.photo_urls[0];
   const location = [profile.city, profile.country].filter(Boolean).join(", ") || null;
 
+  const attributeRows = useMemo(() => {
+    const rows: { icon: React.ReactNode; label: string; value: string }[] = [];
+    if (profile.job_title?.trim()) rows.push({ icon: <Briefcase className="h-4 w-4 shrink-0" />, label: t("profile.jobTitle"), value: profile.job_title });
+    if (educationLabel) rows.push({ icon: <GraduationCap className="h-4 w-4 shrink-0" />, label: t("profile.education"), value: educationLabel });
+    if (profile.height_cm?.trim()) rows.push({ icon: <Ruler className="h-4 w-4 shrink-0" />, label: t("profile.height"), value: `${profile.height_cm} cm` });
+    if (profile.weight_kg?.trim()) rows.push({ icon: <Scale className="h-4 w-4 shrink-0" />, label: t("profile.weight"), value: `${profile.weight_kg} kg` });
+    if (profile.city?.trim()) rows.push({ icon: <MapPin className="h-4 w-4 shrink-0" />, label: t("profile.city"), value: profile.city });
+    if (profile.country?.trim()) rows.push({ icon: <Globe className="h-4 w-4 shrink-0" />, label: t("profile.country"), value: profile.country });
+    if (profile.nationality?.trim()) rows.push({ icon: <User className="h-4 w-4 shrink-0" />, label: t("profile.nationality"), value: profile.nationality });
+    const skin = optLabel(t, profile.skin_tone) ?? profile.skin_tone?.trim();
+    if (skin) rows.push({ icon: <Palette className="h-4 w-4 shrink-0" />, label: t("profile.skinTone"), value: skin });
+    const smoke = optLabel(t, profile.smoking_status) ?? profile.smoking_status?.trim();
+    if (smoke) rows.push({ icon: <Cigarette className="h-4 w-4 shrink-0" />, label: t("profile.smoking"), value: smoke });
+    const relig = optLabel(t, profile.religious_commitment) ?? profile.religious_commitment?.trim();
+    if (relig) rows.push({ icon: <BookOpen className="h-4 w-4 shrink-0" />, label: t("profile.religiousCommitment"), value: relig });
+    const children = optLabel(t, profile.desire_children) ?? profile.desire_children?.trim();
+    if (children) rows.push({ icon: <Baby className="h-4 w-4 shrink-0" />, label: t("profile.desireChildren"), value: children });
+    return rows;
+  }, [profile, t, educationLabel]);
+
   return (
-    <div className="min-h-screen bg-[#f8f9fa] font-[family-name:var(--font-cairo)]">
+    <div className="min-h-screen bg-[#f8f9fa] font-[family-name:var(--font-cairo)] text-zinc-900">
       {toast && (
         <div
           className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 shadow-lg"
@@ -265,7 +333,6 @@ export default function PublicProfilePage() {
       )}
 
       <div className="mx-auto max-w-3xl px-4 py-6">
-        {/* Back button */}
         <Link
           href="/dashboard/discovery"
           className={`mb-6 inline-flex items-center gap-2 text-sm font-medium text-zinc-900 ${themeAccent} ${themeAccentHover} transition ${isRtl ? "flex-row-reverse" : ""}`}
@@ -274,15 +341,11 @@ export default function PublicProfilePage() {
           {locale === "ar" ? "العودة للبحث" : "Back to Discovery"}
         </Link>
 
-        {/* Hero Header — Name, Age, Country, large Avatar */}
-        <div
-          className={`relative overflow-hidden rounded-2xl border-2 bg-white shadow-lg ${themeBorder}`}
-        >
-          <div className={`absolute inset-x-0 top-0 h-1 ${isFemale ? "bg-pink-500" : "bg-sky-500"}`} aria-hidden />
+        {/* Single unified master card: white, rounded-3xl, soft shadow */}
+        <div className={`overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-lg ${themeBorder}`}>
+          {/* Hero: Avatar, Name, Age & Marital Status prominent, location, Send Message */}
           <div className={`flex flex-col gap-6 p-6 sm:flex-row sm:items-center ${isRtl ? "sm:flex-row-reverse" : ""}`}>
-            <div
-              className={`h-40 w-40 shrink-0 overflow-hidden rounded-2xl sm:h-48 sm:w-48 ${themeAvatar} flex items-center justify-center text-5xl sm:text-6xl font-semibold`}
-            >
+            <div className={`h-36 w-36 shrink-0 overflow-hidden rounded-2xl sm:h-44 sm:w-44 ${themeAvatar} flex items-center justify-center text-5xl font-semibold`}>
               {primaryPhoto ? (
                 <img src={primaryPhoto} alt="" className="h-full w-full object-cover" />
               ) : (
@@ -291,20 +354,30 @@ export default function PublicProfilePage() {
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">{profile.full_name ?? "—"}</h1>
-              <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-zinc-700 ${isRtl ? "flex-row-reverse" : ""}`}>
-                {profile.age && <span>{profile.age} {locale === "ar" ? "سنة" : "y/o"}</span>}
-                {location && (
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin className="h-4 w-4 shrink-0" />
-                    {location}
+              <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-base font-medium text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}>
+                {profile.age && (
+                  <span className={themeAccent}>
+                    {profile.age} {locale === "ar" ? "سنة" : "y/o"}
+                  </span>
+                )}
+                {maritalLabel && (
+                  <span className={`inline-flex items-center gap-1 ${themeAccent}`}>
+                    <Heart className="h-4 w-4" />
+                    {maritalLabel}
                   </span>
                 )}
               </div>
+              {location && (
+                <p className="mt-1 flex items-center gap-1 text-sm text-zinc-600">
+                  <MapPin className="h-4 w-4 shrink-0" />
+                  {location}
+                </p>
+              )}
               {canCommunicate && (
                 <div className="mt-4">
                   <Link
                     href={`/dashboard/messages?with=${profileUserId}`}
-                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 ${themeBg}`}
+                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition ${themeBg}`}
                   >
                     <MessageCircle className="h-4 w-4" />
                     {locale === "ar" ? "إرسال رسالة" : "Send Message"}
@@ -318,142 +391,120 @@ export default function PublicProfilePage() {
               )}
             </div>
           </div>
-        </div>
 
-        {/* Community: Profile Strength bar + Charisma (peer) Rating + Rate */}
-        <div className="mt-6 rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.profileStrength")}</p>
-              <div className="flex items-center gap-2">
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-200">
-                  <div
-                    className={`h-full rounded-full ${themeProgress} transition-all duration-500`}
-                    style={{ width: `${strengthPercent}%` }}
-                  />
+          {/* Community: Strength, Charisma, Rating, Rate */}
+          <div className="border-t border-zinc-100 bg-zinc-50/50 px-6 py-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.profileStrength")}</p>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-200">
+                    <div className={`h-full rounded-full ${themeProgress} transition-all duration-500`} style={{ width: `${strengthPercent}%` }} />
+                  </div>
+                  <span className="w-9 shrink-0 text-sm font-medium text-zinc-900">{strengthPercent}%</span>
                 </div>
-                <span className="w-9 shrink-0 text-sm font-medium text-zinc-900">{strengthPercent}%</span>
               </div>
-            </div>
-            <div>
-              <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.charismaRating")}</p>
-              <div className={`flex items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
-                <div className="flex gap-0.5">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Star
-                      key={i}
-                      className={`h-4 w-4 shrink-0 ${i <= charismaStars ? themeStarFill : "text-zinc-200"}`}
-                      fill={i <= charismaStars ? "currentColor" : "none"}
-                    />
-                  ))}
-                </div>
-                <span className={`text-sm font-medium ${themeAccent}`}>{charismaOutOf10}/10</span>
-              </div>
-            </div>
-            <div>
-              <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.communityRating")}</p>
-              {communityRating !== null && communityRating.count > 0 ? (
+              <div>
+                <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.charismaRating")}</p>
                 <div className={`flex items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
                   <div className="flex gap-0.5">
                     {[1, 2, 3, 4, 5].map((i) => (
-                      <Star
-                        key={i}
-                        className={`h-4 w-4 shrink-0 ${i <= Math.round(communityRating.avg) ? themeStarFill : "text-zinc-200"}`}
-                        fill={i <= Math.round(communityRating.avg) ? "currentColor" : "none"}
-                      />
+                      <Star key={i} className={`h-4 w-4 shrink-0 ${i <= charismaStars ? themeStarFill : "text-zinc-200"}`} fill={i <= charismaStars ? "currentColor" : "none"} />
                     ))}
                   </div>
-                  <span className="text-sm text-zinc-900">{communityRating.avg.toFixed(1)} ({communityRating.count})</span>
+                  <span className={`text-sm font-medium ${themeAccent}`}>{charismaOutOf10}/10</span>
                 </div>
-              ) : (
-                <p className="text-sm text-zinc-500">{locale === "ar" ? "لا توجد تقييمات بعد" : "No ratings yet"}</p>
-              )}
-            </div>
-            {!sameGender && (
+              </div>
               <div>
-                <p className={`mb-2 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.rateThisProfile")}</p>
-                {hasInteraction ? (
-                  <div className={`flex flex-wrap items-center gap-1 ${isRtl ? "flex-row-reverse" : ""}`}>
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        disabled={submitting}
-                        onClick={() => handleRate(i)}
-                        className={`rounded p-1 transition hover:opacity-90 disabled:opacity-50 ${
-                          myRating !== null && i <= myRating ? themeStarFill : "text-zinc-200 hover:text-zinc-300"
-                        }`}
-                        aria-label={`Rate ${i} stars`}
-                      >
-                        <Star className="h-5 w-5" fill={myRating !== null && i <= myRating ? "currentColor" : "none"} />
-                      </button>
-                    ))}
+                <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.communityRating")}</p>
+                {communityRating !== null && communityRating.count > 0 ? (
+                  <div className={`flex items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Star key={i} className={`h-4 w-4 shrink-0 ${i <= Math.round(communityRating.avg) ? themeStarFill : "text-zinc-200"}`} fill={i <= Math.round(communityRating.avg) ? "currentColor" : "none"} />
+                      ))}
+                    </div>
+                    <span className="text-sm text-zinc-900">{communityRating.avg.toFixed(1)} ({communityRating.count})</span>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => showToast(t("profile.rateOnlyAfterInteraction"))}
-                    className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${isFemale ? "border-pink-200 text-pink-600" : "border-sky-200 text-sky-600"}`}
-                  >
-                    {locale === "ar" ? "قيّم" : "Rate"}
-                  </button>
+                  <p className="text-sm text-zinc-500">{locale === "ar" ? "لا توجد تقييمات بعد" : "No ratings yet"}</p>
                 )}
               </div>
-            )}
+              {!sameGender && (
+                <div>
+                  <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.rateThisProfile")}</p>
+                  {hasInteraction ? (
+                    <div className={`flex flex-wrap items-center gap-1 ${isRtl ? "flex-row-reverse" : ""}`}>
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          disabled={submitting}
+                          onClick={() => handleRate(i)}
+                          className={`rounded p-1 transition hover:opacity-90 disabled:opacity-50 ${myRating !== null && i <= myRating ? themeStarFill : "text-zinc-200 hover:text-zinc-300"}`}
+                          aria-label={`Rate ${i} stars`}
+                        >
+                          <Star className="h-5 w-5" fill={myRating !== null && i <= myRating ? "currentColor" : "none"} />
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => showToast(t("profile.rateOnlyAfterInteraction"))}
+                      className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${isFemale ? "border-pink-200 text-pink-600" : "border-sky-200 text-sky-600"}`}
+                    >
+                      {locale === "ar" ? "قيّم" : "Rate"}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Attributes grid with icons */}
+          {attributeRows.length > 0 && (
+            <div className="border-t border-zinc-100 px-6 py-5">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {attributeRows.map((row, idx) => (
+                  <div key={idx} className={`flex items-start gap-3 rounded-xl bg-zinc-50/80 px-4 py-3 ${isRtl ? "flex-row-reverse text-right" : ""}`}>
+                    <span className={themeIcon}>{row.icon}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-zinc-500">{row.label}</p>
+                      <p className="mt-0.5 text-sm font-medium text-zinc-900">{row.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* About Me — inside same card */}
+          {profile.about_me?.trim() && (
+            <div className={`border-t border-zinc-100 px-6 py-5 ${themeBgSoft} ${themeBorderL} border-l-4`}>
+              <h2 className={`flex items-center gap-2 text-base font-semibold text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}>
+                <FileText className={`h-4 w-4 shrink-0 ${themeIcon}`} />
+                {t("profile.aboutMe")}
+              </h2>
+              <p className="mt-3 text-base leading-relaxed text-zinc-900 whitespace-pre-wrap">
+                {profile.about_me}
+              </p>
+            </div>
+          )}
+
+          {/* Partner Preferences — inside same card */}
+          {profile.ideal_partner?.trim() && (
+            <div className="border-t border-zinc-100 px-6 py-5">
+              <h2 className={`flex items-center gap-2 text-base font-semibold text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}>
+                <Heart className={`h-4 w-4 shrink-0 ${themeIcon}`} />
+                {t("profile.idealPartner")}
+              </h2>
+              <p className="mt-3 text-base leading-relaxed text-zinc-900 whitespace-pre-wrap">
+                {profile.ideal_partner}
+              </p>
+            </div>
+          )}
         </div>
-
-        {/* Detailed Info Grid — small cards with icons */}
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {profile.job_title?.trim() && (
-            <div className={`rounded-xl border bg-white p-4 shadow-sm ${themeBorder}`}>
-              <Briefcase className={`mb-2 h-5 w-5 ${themeAccent}`} />
-              <p className="text-xs font-medium text-zinc-500">{t("profile.jobTitle")}</p>
-              <p className="mt-0.5 text-sm font-medium text-zinc-900">{profile.job_title}</p>
-            </div>
-          )}
-          {educationLabel && (
-            <div className={`rounded-xl border bg-white p-4 shadow-sm ${themeBorder}`}>
-              <GraduationCap className={`mb-2 h-5 w-5 ${themeAccent}`} />
-              <p className="text-xs font-medium text-zinc-500">{t("profile.education")}</p>
-              <p className="mt-0.5 text-sm font-medium text-zinc-900">{educationLabel}</p>
-            </div>
-          )}
-          {profile.height_cm?.trim() && (
-            <div className={`rounded-xl border bg-white p-4 shadow-sm ${themeBorder}`}>
-              <Ruler className={`mb-2 h-5 w-5 ${themeAccent}`} />
-              <p className="text-xs font-medium text-zinc-500">{locale === "ar" ? "الطول" : "Height"}</p>
-              <p className="mt-0.5 text-sm font-medium text-zinc-900">{profile.height_cm} cm</p>
-            </div>
-          )}
-          {maritalLabel && (
-            <div className={`rounded-xl border bg-white p-4 shadow-sm ${themeBorder}`}>
-              <Heart className={`mb-2 h-5 w-5 ${themeAccent}`} />
-              <p className="text-xs font-medium text-zinc-500">{t("profile.maritalStatus")}</p>
-              <p className="mt-0.5 text-sm font-medium text-zinc-900">{maritalLabel}</p>
-            </div>
-          )}
-        </div>
-
-        {/* About Me — large readable typography for AI-generated bio */}
-        {profile.about_me?.trim() && (
-          <div className={`mt-6 rounded-2xl border bg-white p-6 shadow-sm ${themeBorder}`}>
-            <h2 className={`text-lg font-semibold ${themeAccent}`}>{t("profile.aboutMe")}</h2>
-            <p className="mt-4 text-xl leading-relaxed text-zinc-900 whitespace-pre-wrap">
-              {profile.about_me}
-            </p>
-          </div>
-        )}
-
-        {/* Partner Preferences — clearly separated block */}
-        {profile.ideal_partner?.trim() && (
-          <div className={`mt-6 rounded-2xl border border-zinc-100 border-l-4 p-6 shadow-sm ${themeBorderL} ${themeBgSoft}`}>
-            <h2 className={`text-lg font-semibold ${themeAccent}`}>{t("profile.idealPartner")}</h2>
-            <p className="mt-4 text-lg leading-relaxed text-zinc-900 whitespace-pre-wrap">
-              {profile.ideal_partner}
-            </p>
-          </div>
-        )}
 
         <div className="pb-8" />
       </div>
