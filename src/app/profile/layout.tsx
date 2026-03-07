@@ -1,11 +1,15 @@
 import type { ReactNode } from "react";
 import { OnboardingGuard } from "@/components/OnboardingGuard";
 import { DashboardShell } from "@/components/DashboardShell";
+import { Navbar } from "@/components/Navbar";
 
 export default function ProfileLayout({ children }: { children: ReactNode }) {
   return (
     <OnboardingGuard>
-      <DashboardShell>{children}</DashboardShell>
+      <Navbar />
+      <div className="min-h-screen bg-[#f8f9fa] pt-14">
+        <DashboardShell>{children}</DashboardShell>
+      </div>
     </OnboardingGuard>
   );
 }
