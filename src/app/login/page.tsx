@@ -3,30 +3,27 @@
 import { FormEvent, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { supabase, ensureUserProfile, setRememberMeBeforeSignIn } from "@/lib/supabaseClient";
+import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getSiteSettings } from "@/lib/siteSettings";
+import { PublicRouteGuard } from "@/components/PublicRouteGuard";
 
 type Role = "admin" | "moderator" | "user";
 
-/** Safe internal path for post-login redirect (no open redirect). */
-function safeNextPath(next: string | null): string | null {
-  if (!next || typeof next !== "string") return null;
-  const path = next.startsWith("/") ? next : `/${next}`;
-  if (!path.startsWith("/dashboard") && !path.startsWith("/profile") && !path.startsWith("/onboarding") && !path.startsWith("/admin")) return null;
-  return path;
+const ALLOWED_REDIRECT_PREFIXES = ["/dashboard", "/profile", "/onboarding", "/admin"];
+
+function isAllowedRedirect(path: string | null): boolean {
+  if (!path || path[0] !== "/") return false;
+  return ALLOWED_REDIRECT_PREFIXES.some((prefix) => path === prefix || path.startsWith(prefix + "/"));
 }
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t, dir } = useLanguage();
-  const nextPath = safeNextPath(searchParams.get("next"));
-  const resetSuccess = searchParams.get("reset") === "success";
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [rememberMe, setRememberMe] = useState(true);
 
   useEffect(() => {
     getSiteSettings().then((row) => {
@@ -48,7 +45,6 @@ export default function LoginPage() {
     }
 
     setLoading(true);
-    setRememberMeBeforeSignIn(rememberMe);
 
     try {
       const { data: signInData, error: signInError } =
@@ -79,7 +75,7 @@ export default function LoginPage() {
       const role = (profile.role as Role) || "user";
 
       if (role === "admin" || role === "moderator") {
-        router.replace(nextPath && nextPath.startsWith("/admin") ? nextPath : "/admin/dashboard");
+        router.replace("/admin/dashboard");
         return;
       }
 
@@ -96,7 +92,8 @@ export default function LoginPage() {
       }
 
       if (pledgeAccepted && profile.quiz_completed) {
-        router.replace(nextPath ?? "/dashboard");
+        const redirectTo = searchParams.get("redirect");
+        router.replace(isAllowedRedirect(redirectTo) ? redirectTo! : "/dashboard");
         return;
       }
 
@@ -105,7 +102,8 @@ export default function LoginPage() {
         return;
       }
 
-      router.replace(nextPath ?? "/dashboard");
+      const redirectTo = searchParams.get("redirect");
+      router.replace(isAllowedRedirect(redirectTo) ? redirectTo! : "/dashboard");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t("login.somethingWrong")
@@ -118,6 +116,7 @@ export default function LoginPage() {
   const isRtl = dir === "rtl";
 
   return (
+    <PublicRouteGuard>
     <div
       className="min-h-screen w-full bg-[#f8f9fa] font-[family-name:var(--font-cairo)] flex items-center justify-center px-4 py-10"
       dir={dir}
@@ -144,15 +143,6 @@ export default function LoginPage() {
         <p className={`mt-2 text-sm text-zinc-600 ${isRtl ? "text-right" : "text-left"}`}>
           {t("login.subtitle")}
         </p>
-
-        {resetSuccess && (
-          <div
-            className="mt-6 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800"
-            role="status"
-          >
-            {t("resetPassword.successMessage")}
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <div className="space-y-2">
@@ -193,29 +183,6 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className={`flex items-center gap-3 ${isRtl ? "flex-row-reverse" : ""}`}>
-            <input
-              id="rememberMe"
-              type="checkbox"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded border-zinc-300 text-sky-500 focus:ring-sky-500/20"
-              aria-label={t("login.rememberMe")}
-            />
-            <label htmlFor="rememberMe" className={`text-sm font-medium text-zinc-700 cursor-pointer ${isRtl ? "text-right" : "text-left"}`}>
-              {t("login.rememberMe")}
-            </label>
-          </div>
-
-          <div className={`text-sm ${isRtl ? "text-right" : "text-left"}`}>
-            <Link
-              href="/forgot-password"
-              className="font-medium text-sky-600 hover:text-sky-700 focus:outline-none focus:underline"
-            >
-              {t("login.forgotPasswordLink")}
-            </Link>
-          </div>
-
           {error && (
             <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
               {error}
@@ -250,5 +217,6 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+    </PublicRouteGuard>
   );
 }

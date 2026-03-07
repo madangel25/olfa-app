@@ -9,50 +9,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-const REMEMBER_ME_KEY = "sb_remember_me";
-
-function getRememberMe(): boolean {
-  if (typeof window === "undefined") return true;
-  return sessionStorage.getItem(REMEMBER_ME_KEY) !== "0";
-}
-
-/** Storage that uses localStorage when "remember me" is on, sessionStorage otherwise. Call setRememberMeBeforeSignIn() on login page before signIn. */
-const rememberMeStorage = {
-  getItem(key: string): string | null {
-    if (typeof window === "undefined") return null;
-    const useLocal = getRememberMe();
-    const fromSession = sessionStorage.getItem(key);
-    const fromLocal = localStorage.getItem(key);
-    if (useLocal && fromLocal) return fromLocal;
-    if (!useLocal && fromSession) return fromSession;
-    return fromLocal ?? fromSession;
-  },
-  setItem(key: string, value: string): void {
-    if (typeof window === "undefined") return;
-    if (getRememberMe()) {
-      localStorage.setItem(key, value);
-      sessionStorage.removeItem(key);
-    } else {
-      sessionStorage.setItem(key, value);
-      localStorage.removeItem(key);
-    }
-  },
-  removeItem(key: string): void {
-    if (typeof window === "undefined") return;
-    sessionStorage.removeItem(key);
-    localStorage.removeItem(key);
-  },
-};
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: { storage: rememberMeStorage, persistSession: true },
-});
-
-/** Call this on the login page before signInWithPassword so session is stored in localStorage (true) or sessionStorage (false). */
-export function setRememberMeBeforeSignIn(remember: boolean): void {
-  if (typeof window === "undefined") return;
-  sessionStorage.setItem(REMEMBER_ME_KEY, remember ? "1" : "0");
-}
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 /** Auth user shape when ensuring profile exists. */
 export type AuthUserForProfile = {

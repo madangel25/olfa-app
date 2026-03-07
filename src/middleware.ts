@@ -1,36 +1,19 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-/** Cookie entry shape passed to setAll by @supabase/ssr (aligned with cookie serialization options) */
-type CookieToSet = {
-  name: string;
-  value: string;
-  options?: {
-    path?: string;
-    maxAge?: number;
-    expires?: Date;
-    domain?: string;
-    secure?: boolean;
-    httpOnly?: boolean;
-    sameSite?: true | false | "lax" | "strict" | "none";
-  };
-};
+const PUBLIC_ROUTES = ["/", "/login", "/register"];
+const PROTECTED_PREFIXES = ["/dashboard", "/profile", "/onboarding", "/admin"];
 
-const PUBLIC_PATHS = ["/", "/login", "/register", "/forgot-password", "/reset-password"];
-const PROTECTED_PREFIXES = ["/dashboard", "/profile", "/onboarding", "/admin", "/chat"];
-
-function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.some((p) => p === pathname);
+function isPublicRoute(pathname: string): boolean {
+  return PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route + "/"));
 }
 
-function isProtectedPath(pathname: string): boolean {
-  return PROTECTED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
+function isProtectedRoute(pathname: string): boolean {
+  return PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix + "/"));
 }
 
 export async function middleware(request: NextRequest) {
-  const url = request.nextUrl.clone();
-  const pathname = url.pathname;
-
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -41,36 +24,33 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet: CookieToSet[]) {
-          for (const { name, value, options } of cookiesToSet) {
-            if (value) {
-              response.cookies.set(name, value, options ?? { path: "/" });
-            } else {
-              response.cookies.delete(name);
-            }
-          }
+        setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options ?? {});
+          });
         },
       },
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Refresh session and sync cookies (required for SSR)
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (user && isPublicPath(pathname)) {
-    url.pathname = "/dashboard";
-    const redirectRes = NextResponse.redirect(url);
-    response.cookies.getAll().forEach((c) => redirectRes.cookies.set(c.name, c.value, { path: "/" }));
-    return redirectRes;
+  const pathname = request.nextUrl.pathname;
+
+  // Logged-in user on public route → redirect to dashboard
+  if (user && isPublicRoute(pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard/discovery";
+    return NextResponse.redirect(url);
   }
 
-  if (!user && isProtectedPath(pathname)) {
+  // Not logged in on protected route → redirect to login
+  if (!user && isProtectedRoute(pathname)) {
+    const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("next", pathname);
-    const redirectRes = NextResponse.redirect(url);
-    response.cookies.getAll().forEach((c) => redirectRes.cookies.set(c.name, c.value, { path: "/" }));
-    return redirectRes;
+    url.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(url);
   }
 
   return response;
@@ -78,9 +58,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except static files and API routes.
-     */
-    "/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|api).*)",
   ],
 };
