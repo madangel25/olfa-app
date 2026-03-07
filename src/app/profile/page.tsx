@@ -241,27 +241,6 @@ export default function ProfilePage() {
         </div>
       )}
       <div className="mx-auto max-w-3xl px-4 py-6">
-        {/* Top actions: Edit Profile, View as others see me */}
-        <div className={`mb-6 flex flex-wrap items-center justify-between gap-3 ${isRtl ? "flex-row-reverse" : ""}`}>
-          <div className={`flex flex-wrap items-center gap-3 ${isRtl ? "flex-row-reverse" : ""}`}>
-            <Link
-              href="/dashboard/profile"
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-md transition ${themeBg}`}
-            >
-              <Pencil className="h-4 w-4" />
-              {t("profile.editProfile")}
-            </Link>
-            <button
-              type="button"
-              onClick={() => setViewAsPublic((v) => !v)}
-              className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium shadow-sm transition ${themeButton}`}
-            >
-              <Eye className="h-4 w-4" />
-              {t("profile.viewAsOthersSeeMe")}
-            </button>
-          </div>
-        </div>
-
         {/* Public preview hint when toggle on */}
         {viewAsPublic && (
           <p className={`mb-4 text-sm text-zinc-600 ${isRtl ? "text-right" : "text-left"}`}>
@@ -269,34 +248,8 @@ export default function ProfilePage() {
           </p>
         )}
 
-        {/* Single unified master card: all user data (no email/phone), Edit at top */}
+        {/* Single unified master card: all user data; action buttons at bottom only */}
         <div className={`overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-lg ${themeBorder}`}>
-          {/* Edit + Share at top of card — order so in RTL Edit is at start (right) */}
-          <div className={`flex items-center justify-between gap-3 border-b border-zinc-100 px-6 py-3 ${isRtl ? "flex-row-reverse" : ""}`}>
-            <Link
-              href="/dashboard/profile"
-              className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-zinc-100 ${themeAccent}`}
-            >
-              <Pencil className="h-4 w-4" />
-              {t("profile.editProfile")}
-            </Link>
-            <button
-              type="button"
-              onClick={async () => {
-                if (!userId) return;
-                const url = `${typeof window !== "undefined" ? window.location.origin : ""}/profile/${userId}`;
-                await navigator.clipboard.writeText(url);
-                setShareToast(true);
-                setTimeout(() => setShareToast(false), 3000);
-              }}
-              disabled={!userId}
-              className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-zinc-100 ${themeAccent}`}
-            >
-              <Share2 className="h-4 w-4" />
-              {t("profile.shareProfile")}
-            </button>
-          </div>
-
           {/* Hero */}
           <div className={`flex flex-col gap-6 p-6 sm:flex-row sm:items-center ${isRtl ? "sm:flex-row-reverse" : ""}`}>
             <div className={`h-36 w-36 shrink-0 overflow-hidden rounded-2xl sm:h-44 sm:w-44 ${themeAvatar} flex items-center justify-center text-5xl font-semibold`}>
@@ -430,6 +383,42 @@ export default function ProfilePage() {
                 </Link>
               </div>
             )}
+          </div>
+
+          {/* Action buttons at bottom only */}
+          <div className={`flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 px-6 py-4 ${isRtl ? "flex-row-reverse" : ""}`}>
+            <div className={`flex flex-wrap items-center gap-3 ${isRtl ? "flex-row-reverse" : ""}`}>
+              <Link
+                href="/dashboard/profile"
+                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-md transition ${themeBg}`}
+              >
+                <Pencil className="h-4 w-4" />
+                {t("profile.editProfile")}
+              </Link>
+              <button
+                type="button"
+                onClick={() => setViewAsPublic((v) => !v)}
+                className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium shadow-sm transition ${themeButton}`}
+              >
+                <Eye className="h-4 w-4" />
+                {t("profile.viewAsOthersSeeMe")}
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!userId) return;
+                const url = `${typeof window !== "undefined" ? window.location.origin : ""}/profile/${userId}`;
+                await navigator.clipboard.writeText(url);
+                setShareToast(true);
+                setTimeout(() => setShareToast(false), 3000);
+              }}
+              disabled={!userId}
+              className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition hover:bg-zinc-100 ${themeAccent}`}
+            >
+              <Share2 className="h-4 w-4" />
+              {t("profile.shareProfile")}
+            </button>
           </div>
         </div>
       </div>

@@ -363,6 +363,9 @@ export default function ProfilePage() {
 
   const performSave = async (): Promise<boolean> => {
     if (!userId) return false;
+    const isMale = (profile.gender || "").toLowerCase() === "male";
+    const maritalStatus =
+      isMale ? "single" : (profile.marital_status?.trim() || null);
     const payload: Record<string, unknown> = {
       full_name: profile.full_name?.trim() || null,
       gender: profile.gender?.trim() || null,
@@ -371,7 +374,7 @@ export default function ProfilePage() {
       phone_verified: profile.phone_verified,
       nationality: profile.nationality?.trim() || null,
       age: toNum(profile.age),
-      marital_status: profile.marital_status?.trim() || null,
+      marital_status: maritalStatus,
       height_cm: toNum(profile.height_cm),
       weight_kg: toNum(profile.weight_kg),
       skin_tone: profile.skin_tone?.trim() || null,
@@ -413,7 +416,7 @@ export default function ProfilePage() {
       const ok = await performSave();
       if (ok) {
         showToast("success", t("profile.toastSaved"));
-        router.push("/profile");
+        window.location.assign("/profile");
         return;
       }
     } catch (e) {
@@ -796,9 +799,13 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.maritalStatus")}</label>
-                    <select value={profile.marital_status} onChange={(e) => updateField("marital_status", e.target.value)} className={inputClass}>
+                    <select
+                      value={profile.gender?.toLowerCase() === "male" && profile.marital_status && profile.marital_status !== "single" ? "single" : profile.marital_status}
+                      onChange={(e) => updateField("marital_status", e.target.value)}
+                      className={inputClass}
+                    >
                       <option value="">{t("profile.selectOption")}</option>
-                      {MARITAL_VALUES.slice(1).map((v) => (
+                      {(profile.gender?.toLowerCase() === "male" ? ["single"] : MARITAL_VALUES.slice(1)).map((v) => (
                         <option key={v} value={v}>{getOptionLabel(t, v, isFemale)}</option>
                       ))}
                     </select>
