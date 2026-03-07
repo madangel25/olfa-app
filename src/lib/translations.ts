@@ -190,6 +190,9 @@ type TranslationMap = {
     idealPartner: string;
     aboutMePlaceholder: string;
     idealPartnerPlaceholder: string;
+    editProfile: string;
+    viewAsOthersSeeMe: string;
+    letAiWriteBioNow: string;
     magicWand: string;
     aiGenerating: string;
     selectOption: string;
@@ -514,6 +517,9 @@ const translations: Record<Locale, TranslationMap> = {
       idealPartner: "Ideal partner",
       aboutMePlaceholder: "Personality, hobbies, what matters to you…",
       idealPartnerPlaceholder: "Describe the partner you are looking for…",
+      editProfile: "Edit Profile",
+      viewAsOthersSeeMe: "View as others see me",
+      letAiWriteBioNow: "Let AI write your bio now",
       magicWand: "Suggest with AI",
       aiGenerating: "Generating…",
       selectOption: "Select…",
@@ -825,6 +831,9 @@ const translations: Record<Locale, TranslationMap> = {
       idealPartner: "شريكي المنشود",
       aboutMePlaceholder: "الشخصية والهوايات وما يهمك…",
       idealPartnerPlaceholder: "صف الشريك الذي تبحث عنه…",
+      editProfile: "تعديل البيانات",
+      viewAsOthersSeeMe: "عرض الصفحة كما يراها الآخرون",
+      letAiWriteBioNow: "دع الذكاء الاصطناعي يكتب سيرتك الآن",
       magicWand: "اقتراح بالذكاء الاصطناعي",
       aiGenerating: "جاري الاقتراح…",
       selectOption: "اختر…",

@@ -142,7 +142,7 @@ export function Navbar() {
                         </p>
                       </div>
                       <Link
-                        href="/dashboard/profile"
+                        href="/profile"
                         className={`flex items-center gap-3 px-4 py-3 text-sm text-zinc-700 transition hover:bg-zinc-50 ${dir === "rtl" ? "flex-row-reverse text-right" : "text-left"}`}
                         role="menuitem"
                         onClick={() => setDropdownOpen(false)}
