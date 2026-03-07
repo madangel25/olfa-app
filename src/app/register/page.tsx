@@ -6,7 +6,6 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getSiteSettings } from "@/lib/siteSettings";
-import { supabase } from "@/lib/supabaseClient";
 import { User, UserCircle } from "lucide-react";
 
 type Gender = "male" | "female";
