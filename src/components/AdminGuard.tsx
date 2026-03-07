@@ -23,7 +23,7 @@ export function AdminGuard({ children }: AdminGuardProps) {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        router.replace("/register");
+        router.replace("/login");
         return;
       }
 

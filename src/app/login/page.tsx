@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -9,9 +9,19 @@ import { getSiteSettings } from "@/lib/siteSettings";
 
 type Role = "admin" | "moderator" | "user";
 
+/** Safe internal path for post-login redirect (no open redirect). */
+function safeNextPath(next: string | null): string | null {
+  if (!next || typeof next !== "string") return null;
+  const path = next.startsWith("/") ? next : `/${next}`;
+  if (!path.startsWith("/dashboard") && !path.startsWith("/profile") && !path.startsWith("/onboarding") && !path.startsWith("/admin")) return null;
+  return path;
+}
+
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t, dir } = useLanguage();
+  const nextPath = safeNextPath(searchParams.get("next"));
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +76,7 @@ export default function LoginPage() {
       const role = (profile.role as Role) || "user";
 
       if (role === "admin" || role === "moderator") {
-        router.replace("/admin/dashboard");
+        router.replace(nextPath && nextPath.startsWith("/admin") ? nextPath : "/admin/dashboard");
         return;
       }
 
@@ -83,7 +93,7 @@ export default function LoginPage() {
       }
 
       if (pledgeAccepted && profile.quiz_completed) {
-        router.replace("/dashboard");
+        router.replace(nextPath ?? "/dashboard");
         return;
       }
 
@@ -92,7 +102,7 @@ export default function LoginPage() {
         return;
       }
 
-      router.replace("/dashboard");
+      router.replace(nextPath ?? "/dashboard");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t("login.somethingWrong")

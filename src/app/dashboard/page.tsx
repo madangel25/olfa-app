@@ -10,7 +10,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) router.replace("/register");
+      if (!user) router.replace("/login");
     });
   }, [router]);
 
