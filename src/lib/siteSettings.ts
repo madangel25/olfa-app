@@ -2,6 +2,9 @@ import { supabase } from "@/lib/supabaseClient";
 
 export type SiteSettingsRow = {
   id: string;
+  site_name: string | null;
+  maintenance_mode: boolean | null;
+  contact_email: string | null;
   logo_url: string | null;
   home_background_url: string | null;
   landing_feature_image_url: string | null;
