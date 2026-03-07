@@ -1,23 +1,69 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Star, ArrowLeft } from "lucide-react";
+import {
+  Star,
+  ArrowLeft,
+  Briefcase,
+  GraduationCap,
+  Ruler,
+  Heart,
+  MapPin,
+  MessageCircle,
+} from "lucide-react";
 
 type ProfileData = {
   full_name: string | null;
   gender: string | null;
   age: string | null;
   job_title: string | null;
+  education_level: string | null;
+  marital_status: string | null;
+  height_cm: string | null;
   country: string | null;
   city: string | null;
   about_me: string | null;
   ideal_partner: string | null;
   photo_urls: string[];
   primary_photo_index: number;
+};
+
+function getProfileStrength(p: ProfileData): number {
+  const hasImage = p.photo_urls.length > 0;
+  const hasAboutMe = Boolean(p.about_me?.trim());
+  const hasPartnerInfo = Boolean(p.ideal_partner?.trim());
+  const hasJob = Boolean(p.job_title?.trim());
+  const hasAge = Boolean(p.age != null && String(p.age).trim() !== "");
+  const hasLocation = Boolean(p.country?.trim() || p.city?.trim());
+  const jobAgeLocation = (hasJob ? 10 : 0) + (hasAge ? 10 : 0) + (hasLocation ? 10 : 0);
+  return (
+    (hasImage ? 25 : 0) +
+    (hasAboutMe ? 25 : 0) +
+    (hasPartnerInfo ? 20 : 0) +
+    jobAgeLocation
+  );
+}
+
+function getCharismaRating(strengthPercent: number): number {
+  return Math.round((strengthPercent / 100) * 10 * 10) / 10;
+}
+
+const EDUCATION_KEYS: Record<string, string> = {
+  high_school: "optHighSchool",
+  bachelors: "optBachelors",
+  masters: "optMasters",
+  doctorate: "optDoctorate",
+  other: "optOther",
+};
+
+const MARITAL_KEYS: Record<string, string> = {
+  single: "optSingle",
+  divorced: "optDivorced",
+  widowed: "optWidowed",
 };
 
 export default function PublicProfilePage() {
@@ -64,7 +110,9 @@ export default function PublicProfilePage() {
 
       const { data: profileRow, error } = await supabase
         .from("profiles")
-        .select("full_name, gender, age, job_title, country, city, about_me, ideal_partner, photo_urls, primary_photo_index")
+        .select(
+          "full_name, gender, age, job_title, education_level, marital_status, height_cm, country, city, about_me, ideal_partner, photo_urls, primary_photo_index"
+        )
         .eq("id", profileUserId)
         .maybeSingle();
 
@@ -83,6 +131,9 @@ export default function PublicProfilePage() {
         gender: (raw.gender as string) ?? null,
         age: raw.age != null ? String(raw.age) : null,
         job_title: (raw.job_title as string) ?? null,
+        education_level: (raw.education_level as string) ?? null,
+        marital_status: (raw.marital_status as string) ?? null,
+        height_cm: raw.height_cm != null ? String(raw.height_cm) : null,
         country: (raw.country as string) ?? null,
         city: (raw.city as string) ?? null,
         about_me: (raw.about_me as string) ?? null,
@@ -157,14 +208,27 @@ export default function PublicProfilePage() {
   const isFemale = profile?.gender === "female";
   const themeBorder = isFemale ? "border-pink-200" : "border-sky-200";
   const themeAccent = isFemale ? "text-pink-600" : "text-sky-600";
+  const themeBg = isFemale ? "bg-pink-500" : "bg-sky-500";
   const themeAvatar = isFemale ? "bg-pink-100 text-pink-700" : "bg-sky-100 text-sky-700";
   const themeStarFill = isFemale ? "text-pink-500" : "text-sky-500";
   const sameGender = currentUserGender != null && profile?.gender != null && currentUserGender === profile.gender;
-  const canRate = hasInteraction && !sameGender;
+  const canCommunicate = !sameGender;
+
+  const strengthPercent = profile ? getProfileStrength(profile) : 0;
+  const charismaOutOf10 = getCharismaRating(strengthPercent);
+  const charismaStars = (charismaOutOf10 / 10) * 5;
+  const themeProgress = isFemale ? "bg-pink-500" : "bg-sky-500";
+
+  const educationLabel = profile?.education_level
+    ? t(`profile.${EDUCATION_KEYS[profile.education_level] ?? "optOther"}`)
+    : null;
+  const maritalLabel = profile?.marital_status
+    ? t(`profile.${MARITAL_KEYS[profile.marital_status] ?? "optSingle"}`)
+    : null;
 
   if (loading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center font-[family-name:var(--font-cairo)]">
+      <div className="flex min-h-[50vh] items-center justify-center bg-[#f8f9fa] font-[family-name:var(--font-cairo)]">
         <p className="text-zinc-700">Loading…</p>
       </div>
     );
@@ -173,7 +237,7 @@ export default function PublicProfilePage() {
   if (!profileUserId || !profile) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12 font-[family-name:var(--font-cairo)] text-center">
-        <p className="text-zinc-800">Profile not found.</p>
+        <p className="text-zinc-900">Profile not found.</p>
         <Link href="/dashboard/discovery" className="mt-4 inline-block text-sky-600 hover:underline">
           Back to Discovery
         </Link>
@@ -185,7 +249,7 @@ export default function PublicProfilePage() {
   const location = [profile.city, profile.country].filter(Boolean).join(", ") || null;
 
   return (
-    <div className={`mx-auto max-w-3xl px-4 py-8 font-[family-name:var(--font-cairo)] ${isRtl ? "text-right" : "text-left"}`}>
+    <div className="min-h-screen bg-[#f8f9fa] font-[family-name:var(--font-cairo)]">
       {toast && (
         <div
           className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 shadow-lg"
@@ -195,125 +259,197 @@ export default function PublicProfilePage() {
         </div>
       )}
 
-      <Link
-        href="/dashboard/discovery"
-        className={`mb-6 inline-flex items-center gap-2 text-sm font-medium text-zinc-600 hover:text-zinc-800 ${isRtl ? "flex-row-reverse" : ""}`}
-      >
-        <ArrowLeft className="h-4 w-4" />
-        {locale === "ar" ? "العودة للبحث" : "Back to Discovery"}
-      </Link>
+      <div className="mx-auto max-w-3xl px-4 py-6">
+        {/* Back button */}
+        <Link
+          href="/dashboard/discovery"
+          className={`mb-6 inline-flex items-center gap-2 text-sm font-medium text-zinc-700 hover:text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {locale === "ar" ? "العودة للبحث" : "Back to Discovery"}
+        </Link>
 
-      {/* Rating & Strength card: Community Rating + Rate this profile */}
-      <div className="mb-8 rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
-        <div className="space-y-6">
-          <div>
-            <p className="mb-2 text-sm font-semibold text-zinc-800">{t("profile.communityRating")}</p>
-            {communityRating !== null && communityRating.count > 0 ? (
-              <div className={`flex items-center gap-2 ${isRtl ? "flex-row-reverse" : ""}`}>
+        {/* Hero Header */}
+        <div
+          className={`relative overflow-hidden rounded-2xl border bg-white shadow-md ${themeBorder}`}
+        >
+          <div className={`flex flex-col gap-6 p-6 sm:flex-row sm:items-center ${isRtl ? "sm:flex-row-reverse" : ""}`}>
+            <div
+              className={`h-32 w-32 shrink-0 overflow-hidden rounded-2xl ${themeAvatar} flex items-center justify-center text-5xl font-semibold`}
+            >
+              {primaryPhoto ? (
+                <img src={primaryPhoto} alt="" className="h-full w-full object-cover" />
+              ) : (
+                (profile.full_name ?? "?").slice(0, 1)
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">{profile.full_name ?? "—"}</h1>
+              <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-zinc-700 ${isRtl ? "flex-row-reverse" : ""}`}>
+                {profile.age && <span>{profile.age} {locale === "ar" ? "سنة" : "y/o"}</span>}
+                {location && (
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin className="h-4 w-4 shrink-0" />
+                    {location}
+                  </span>
+                )}
+              </div>
+              {canCommunicate && (
+                <div className="mt-4">
+                  <Link
+                    href={`/dashboard/messages?with=${profileUserId}`}
+                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 ${themeBg}`}
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    {locale === "ar" ? "إرسال رسالة" : "Send Message"}
+                  </Link>
+                </div>
+              )}
+              {sameGender && (
+                <p className="mt-4 text-sm text-zinc-500">
+                  {locale === "ar" ? "التواصل متاح فقط مع الجنس الآخر." : "Communication is only available with the opposite gender."}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Community: Strength + Charisma + Rating + Rate */}
+        <div className="mt-6 rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("profile.profileStrength")}</p>
+              <div className="flex items-center gap-2">
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-200">
+                  <div
+                    className={`h-full rounded-full ${themeProgress} transition-all duration-500`}
+                    style={{ width: `${strengthPercent}%` }}
+                  />
+                </div>
+                <span className="w-9 shrink-0 text-sm font-medium text-zinc-900">{strengthPercent}%</span>
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("profile.charismaRating")}</p>
+              <div className={`flex items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
                 <div className="flex gap-0.5">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <Star
                       key={i}
-                      className={`h-5 w-5 shrink-0 ${i <= Math.round(communityRating.avg) ? themeStarFill : "text-zinc-200"}`}
-                      fill={i <= Math.round(communityRating.avg) ? "currentColor" : "none"}
+                      className={`h-4 w-4 shrink-0 ${i <= charismaStars ? themeStarFill : "text-zinc-200"}`}
+                      fill={i <= charismaStars ? "currentColor" : "none"}
                     />
                   ))}
                 </div>
-                <span className="text-sm font-medium text-zinc-800">
-                  {communityRating.avg.toFixed(1)} ({communityRating.count})
-                </span>
+                <span className={`text-sm font-medium ${themeAccent}`}>{charismaOutOf10}/10</span>
               </div>
-            ) : (
-              <p className="text-sm text-zinc-500">{locale === "ar" ? "لا توجد تقييمات بعد" : "No ratings yet"}</p>
-            )}
-          </div>
-
-          {!sameGender && (
-            <div className="border-t border-zinc-100 pt-4">
-              <p className="mb-2 text-sm font-semibold text-zinc-800">{t("profile.rateThisProfile")}</p>
-              {hasInteraction ? (
-                <div className={`flex flex-wrap items-center gap-2 ${isRtl ? "flex-row-reverse" : ""}`}>
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      disabled={submitting}
-                      onClick={() => handleRate(i)}
-                      className={`rounded-lg p-1.5 transition hover:opacity-90 disabled:opacity-50 ${
-                        myRating !== null && i <= myRating ? themeStarFill : "text-zinc-200 hover:text-zinc-300"
-                      }`}
-                      aria-label={`Rate ${i} stars`}
-                    >
+            </div>
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("profile.communityRating")}</p>
+              {communityRating !== null && communityRating.count > 0 ? (
+                <div className={`flex items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3, 4, 5].map((i) => (
                       <Star
-                        className="h-8 w-8"
-                        fill={myRating !== null && i <= myRating ? "currentColor" : "none"}
+                        key={i}
+                        className={`h-4 w-4 shrink-0 ${i <= Math.round(communityRating.avg) ? themeStarFill : "text-zinc-200"}`}
+                        fill={i <= Math.round(communityRating.avg) ? "currentColor" : "none"}
                       />
-                    </button>
-                  ))}
-                  {myRating !== null && (
-                    <span className="text-sm text-zinc-600">
-                      {locale === "ar" ? `قيّمته ${myRating}` : `You rated ${myRating}`}
-                    </span>
-                  )}
+                    ))}
+                  </div>
+                  <span className="text-sm text-zinc-900">{communityRating.avg.toFixed(1)} ({communityRating.count})</span>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  onClick={() => showToast(t("profile.rateOnlyAfterInteraction"))}
-                  className={`rounded-xl border px-4 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 ${
-                    isFemale ? "border-pink-200" : "border-sky-200"
-                  }`}
-                >
-                  {locale === "ar" ? "قيّم هذا البروفايل" : "Rate this profile"}
-                </button>
+                <p className="text-sm text-zinc-500">{locale === "ar" ? "لا توجد تقييمات بعد" : "No ratings yet"}</p>
               )}
             </div>
-          )}
-
-          {sameGender && (
-            <p className="border-t border-zinc-100 pt-4 text-sm text-zinc-500">
-              {locale === "ar" ? "التواصل متاح فقط مع الجنس الآخر." : "Communication is only available with the opposite gender."}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Header card */}
-      <div className={`rounded-2xl border bg-white p-6 shadow-sm ${themeBorder}`}>
-        <div className={`flex flex-col gap-6 sm:flex-row sm:items-center ${isRtl ? "sm:flex-row-reverse" : ""}`}>
-          <div className={`h-28 w-28 shrink-0 overflow-hidden rounded-2xl ${themeAvatar} flex items-center justify-center text-4xl font-semibold`}>
-            {primaryPhoto ? (
-              <img src={primaryPhoto} alt="" className="h-full w-full object-cover" />
-            ) : (
-              (profile.full_name ?? "?").slice(0, 1)
+            {!sameGender && (
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("profile.rateThisProfile")}</p>
+                {hasInteraction ? (
+                  <div className={`flex flex-wrap items-center gap-1 ${isRtl ? "flex-row-reverse" : ""}`}>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        disabled={submitting}
+                        onClick={() => handleRate(i)}
+                        className={`rounded p-1 transition hover:opacity-90 disabled:opacity-50 ${
+                          myRating !== null && i <= myRating ? themeStarFill : "text-zinc-200 hover:text-zinc-300"
+                        }`}
+                        aria-label={`Rate ${i} stars`}
+                      >
+                        <Star className="h-5 w-5" fill={myRating !== null && i <= myRating ? "currentColor" : "none"} />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => showToast(t("profile.rateOnlyAfterInteraction"))}
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-medium ${isFemale ? "border-pink-200 text-pink-600" : "border-sky-200 text-sky-600"}`}
+                  >
+                    {locale === "ar" ? "قيّم" : "Rate"}
+                  </button>
+                )}
+              </div>
             )}
           </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-2xl font-bold text-zinc-900">{profile.full_name ?? "—"}</h1>
-            {profile.job_title ? (
-              <p className={`mt-1 text-zinc-800 ${themeAccent}`}>{profile.job_title}</p>
-            ) : null}
-            {location ? (
-              <p className="mt-1 text-sm text-zinc-600">{location}</p>
-            ) : null}
-          </div>
         </div>
-      </div>
 
-      {/* Bio section */}
-      <div className="mt-8 space-y-6">
+        {/* Detailed Info Grid */}
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {profile.job_title?.trim() && (
+            <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
+              <Briefcase className={`mb-2 h-5 w-5 ${themeAccent}`} />
+              <p className="text-xs font-medium text-zinc-500">{t("profile.jobTitle")}</p>
+              <p className="mt-0.5 text-sm font-medium text-zinc-900">{profile.job_title}</p>
+            </div>
+          )}
+          {educationLabel && (
+            <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
+              <GraduationCap className={`mb-2 h-5 w-5 ${themeAccent}`} />
+              <p className="text-xs font-medium text-zinc-500">{t("profile.education")}</p>
+              <p className="mt-0.5 text-sm font-medium text-zinc-900">{educationLabel}</p>
+            </div>
+          )}
+          {profile.height_cm?.trim() && (
+            <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
+              <Ruler className={`mb-2 h-5 w-5 ${themeAccent}`} />
+              <p className="text-xs font-medium text-zinc-500">{locale === "ar" ? "الطول" : "Height"}</p>
+              <p className="mt-0.5 text-sm font-medium text-zinc-900">{profile.height_cm} cm</p>
+            </div>
+          )}
+          {maritalLabel && (
+            <div className="rounded-xl border border-zinc-100 bg-white p-4 shadow-sm">
+              <Heart className={`mb-2 h-5 w-5 ${themeAccent}`} />
+              <p className="text-xs font-medium text-zinc-500">{t("profile.maritalStatus")}</p>
+              <p className="mt-0.5 text-sm font-medium text-zinc-900">{maritalLabel}</p>
+            </div>
+          )}
+        </div>
+
+        {/* About Me */}
         {profile.about_me?.trim() && (
-          <div className="rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
+          <div className="mt-6 rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-zinc-900">{t("profile.aboutMe")}</h2>
-            <p className="mt-3 whitespace-pre-wrap text-zinc-800">{profile.about_me}</p>
+            <p className="mt-4 text-base leading-relaxed text-zinc-900 whitespace-pre-wrap">
+              {profile.about_me}
+            </p>
           </div>
         )}
+
+        {/* Partner Preferences */}
         {profile.ideal_partner?.trim() && (
-          <div className="rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
+          <div className="mt-6 rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
             <h2 className="text-lg font-semibold text-zinc-900">{t("profile.idealPartner")}</h2>
-            <p className="mt-3 whitespace-pre-wrap text-zinc-800">{profile.ideal_partner}</p>
+            <p className="mt-4 text-base leading-relaxed text-zinc-900 whitespace-pre-wrap">
+              {profile.ideal_partner}
+            </p>
           </div>
         )}
+
+        <div className="pb-8" />
       </div>
     </div>
   );

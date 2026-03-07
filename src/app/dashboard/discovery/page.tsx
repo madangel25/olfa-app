@@ -240,17 +240,15 @@ export default function DiscoveryPage() {
           return (
             <li
               key={u.id}
-              className={`rounded-2xl border bg-white p-4 shadow-sm ${cardBorder}`}
+              className={`rounded-2xl border bg-white p-4 shadow-sm transition hover:shadow-md ${cardBorder}`}
             >
-              <div className="flex flex-col gap-3">
+              <Link href={`/profile/${u.id}`} className="flex flex-col gap-3 block">
                 <div className={`flex items-center gap-3 ${isRtl ? "flex-row-reverse" : ""}`}>
                   <div className={`h-12 w-12 shrink-0 rounded-full flex items-center justify-center text-lg font-medium ${cardIconBg}`}>
                     {(u.full_name ?? "?").slice(0, 1)}
                   </div>
                   <div className={`min-w-0 flex-1 ${isRtl ? "text-right" : "text-left"}`}>
-                    <Link href={`/profile/${u.id}`} className="truncate font-medium text-zinc-900 hover:underline">
-                      {u.full_name ?? "Unknown"}
-                    </Link>
+                    <p className="truncate font-medium text-zinc-900">{u.full_name ?? "Unknown"}</p>
                     {u.job_title ? (
                       <p className="truncate text-xs text-zinc-600">{u.job_title}</p>
                     ) : null}
@@ -272,6 +270,7 @@ export default function DiscoveryPage() {
                         <Link
                           href={`/dashboard/messages?with=${u.id}`}
                           className="flex w-full items-center justify-center rounded-xl bg-sky-500 px-3 py-2 text-sm font-medium text-white shadow-sm hover:bg-sky-600"
+                          onClick={(e) => e.stopPropagation()}
                         >
                           {t("discovery.chat")}
                         </Link>
@@ -280,7 +279,11 @@ export default function DiscoveryPage() {
                       ) : (
                         <button
                           type="button"
-                          onClick={() => handleLike(u.id)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleLike(u.id);
+                          }}
                           disabled={likingId === u.id}
                           className={`w-full rounded-xl px-3 py-2 text-sm font-medium shadow-sm disabled:opacity-60 ${
                             isMale
@@ -301,7 +304,7 @@ export default function DiscoveryPage() {
                     </p>
                   )}
                 </div>
-              </div>
+              </Link>
             </li>
           );
         })}
