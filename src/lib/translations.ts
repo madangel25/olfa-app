@@ -195,6 +195,9 @@ type TranslationMap = {
     letAiWriteBioNow: string;
     profileStrength: string;
     charismaRating: string;
+    communityRating: string;
+    rateThisProfile: string;
+    rateOnlyAfterInteraction: string;
     completeFieldToBoostStrength: string;
     magicWand: string;
     aiGenerating: string;
@@ -525,6 +528,9 @@ const translations: Record<Locale, TranslationMap> = {
       letAiWriteBioNow: "Let AI write your bio now",
       profileStrength: "Profile Strength",
       charismaRating: "Charisma Rating",
+      communityRating: "Community Rating",
+      rateThisProfile: "Rate this profile",
+      rateOnlyAfterInteraction: "You can only rate after interacting with this member.",
       completeFieldToBoostStrength: "Complete this field to boost your profile strength!",
       magicWand: "Suggest with AI",
       aiGenerating: "Generating…",
@@ -842,6 +848,9 @@ const translations: Record<Locale, TranslationMap> = {
       letAiWriteBioNow: "دع الذكاء الاصطناعي يكتب سيرتك الآن",
       profileStrength: "قوة ملفك الشخصي",
       charismaRating: "تقييم الكاريزما",
+      communityRating: "تقييم الأعضاء",
+      rateThisProfile: "قيّم هذا البروفايل",
+      rateOnlyAfterInteraction: "يمكنك التقييم فقط بعد التواصل مع العضو",
       completeFieldToBoostStrength: "أكمل هذا الحقل لزيادة قوة بروفايلك!",
       magicWand: "اقتراح بالذكاء الاصطناعي",
       aiGenerating: "جاري الاقتراح…",

@@ -248,7 +248,9 @@ export default function DiscoveryPage() {
                     {(u.full_name ?? "?").slice(0, 1)}
                   </div>
                   <div className={`min-w-0 flex-1 ${isRtl ? "text-right" : "text-left"}`}>
-                    <p className="truncate font-medium text-zinc-900">{u.full_name ?? "Unknown"}</p>
+                    <Link href={`/profile/${u.id}`} className="truncate font-medium text-zinc-900 hover:underline">
+                      {u.full_name ?? "Unknown"}
+                    </Link>
                     {u.job_title ? (
                       <p className="truncate text-xs text-zinc-600">{u.job_title}</p>
                     ) : null}

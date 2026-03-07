@@ -20,20 +20,20 @@ type ProfileData = {
   primary_photo_index: number;
 };
 
-/** Profile strength: Image 25%, Bio 25%, Job 20%, Age 15%, Location 15%. Returns 0–100. */
+/** Profile strength: Image 25%, About Me 25%, Partner Info 20%, Job/Age/Location 30%. Returns 0–100. */
 function getProfileStrength(p: ProfileData): number {
   const hasImage = p.photo_urls.length > 0;
-  const hasBio = Boolean(p.about_me?.trim() && p.ideal_partner?.trim());
-  const bioPartial = (Boolean(p.about_me?.trim()) ? 12.5 : 0) + (Boolean(p.ideal_partner?.trim()) ? 12.5 : 0);
+  const hasAboutMe = Boolean(p.about_me?.trim());
+  const hasPartnerInfo = Boolean(p.ideal_partner?.trim());
   const hasJob = Boolean(p.job_title?.trim());
   const hasAge = Boolean(p.age != null && String(p.age).trim() !== "");
   const hasLocation = Boolean(p.country?.trim() || p.city?.trim());
+  const jobAgeLocation = (hasJob ? 10 : 0) + (hasAge ? 10 : 0) + (hasLocation ? 10 : 0);
   return (
     (hasImage ? 25 : 0) +
-    (hasBio ? 25 : bioPartial) +
-    (hasJob ? 20 : 0) +
-    (hasAge ? 15 : 0) +
-    (hasLocation ? 15 : 0)
+    (hasAboutMe ? 25 : 0) +
+    (hasPartnerInfo ? 20 : 0) +
+    jobAgeLocation
   );
 }
 
@@ -48,6 +48,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewAsPublic, setViewAsPublic] = useState(false);
+  const [communityRating, setCommunityRating] = useState<{ avg: number; count: number } | null>(null);
 
   useEffect(() => {
     const run = async () => {
@@ -87,6 +88,13 @@ export default function ProfilePage() {
         photo_urls,
         primary_photo_index,
       });
+
+      const { data: ratingRow } = await supabase.rpc("get_profile_rating", { p_to_user_id: user.id });
+      const row = Array.isArray(ratingRow) ? ratingRow[0] : ratingRow;
+      if (row && typeof (row as { avg_rating?: number }).avg_rating === "number") {
+        const r = row as { avg_rating: number; count_ratings: number };
+        setCommunityRating({ avg: r.avg_rating, count: Number(r.count_ratings) || 0 });
+      }
       setLoading(false);
     };
     run();
@@ -153,9 +161,9 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      {/* Profile Strength & Charisma card */}
+      {/* Profile Strength, Charisma & Community Rating card */}
       <div className="mb-8 rounded-2xl border border-zinc-100 bg-white p-6 shadow-sm">
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <p className="mb-2 text-sm font-semibold text-zinc-800">{t("profile.profileStrength")}</p>
             <div className="flex items-center gap-3">
@@ -182,6 +190,27 @@ export default function ProfilePage() {
               </div>
               <span className={`text-sm font-medium text-zinc-800 ${themeAccent}`}>{charismaOutOf10}/10</span>
             </div>
+          </div>
+          <div>
+            <p className="mb-2 text-sm font-semibold text-zinc-800">{t("profile.communityRating")}</p>
+            {communityRating !== null && communityRating.count > 0 ? (
+              <div className={`flex items-center gap-2 ${isRtl ? "flex-row-reverse" : ""}`}>
+                <div className="flex gap-0.5">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Star
+                      key={i}
+                      className={`h-5 w-5 shrink-0 ${i <= Math.round(communityRating.avg) ? themeStarFill : "text-zinc-200"}`}
+                      fill={i <= Math.round(communityRating.avg) ? "currentColor" : "none"}
+                    />
+                  ))}
+                </div>
+                <span className="text-sm font-medium text-zinc-800">
+                  {communityRating.avg.toFixed(1)} ({communityRating.count})
+                </span>
+              </div>
+            ) : (
+              <p className="text-sm text-zinc-500">{locale === "ar" ? "لا توجد تقييمات بعد" : "No ratings yet"}</p>
+            )}
           </div>
         </div>
       </div>
