@@ -662,32 +662,11 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-full space-y-6 bg-[#f8f9fa] pb-8 font-[family-name:var(--font-cairo)]" dir={dir}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-zinc-900">{t("profile.title")}</h1>
-          <p className="mt-1 text-sm text-zinc-500">{t("profile.subtitle")}</p>
-        </div>
-        <div className={`flex flex-wrap gap-3 ${dir === "rtl" ? "flex-row-reverse" : ""}`}>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className={buttonClass + ` border ${theme.border} ${theme.primaryBtn}`}
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {t("profile.saveChanges")}
-          </button>
-          <button
-            type="button"
-            onClick={handleSaveAndReturn}
-            disabled={saving}
-            className={buttonClass + ` border ${theme.border} ${theme.primaryBtn}`}
-          >
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {t("profile.saveAndReturn")}
-          </button>
-        </div>
-      </div>
+      {/* Page header: title and subtitle only; save actions are at bottom of form */}
+      <header className={`mb-8 ${dir === "rtl" ? "text-right" : "text-left"}`}>
+        <h1 className="text-2xl font-semibold text-zinc-900">{t("profile.title")}</h1>
+        <p className="mt-2 text-sm text-zinc-500">{t("profile.subtitle")}</p>
+      </header>
 
       {toast && (
         <motion.div
@@ -1150,7 +1129,8 @@ export default function ProfilePage() {
         </motion.div>
       </AnimatePresence>
 
-      <div className={`flex flex-wrap justify-end gap-3 ${dir === "rtl" ? "flex-row-reverse" : ""}`}>
+      {/* Save actions at bottom only — consistent spacing from last field */}
+      <div className={`mt-8 flex flex-wrap justify-end gap-3 pt-2 ${dir === "rtl" ? "flex-row-reverse" : ""}`}>
         <button
           type="button"
           onClick={handleSave}
