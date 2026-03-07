@@ -216,6 +216,32 @@ const RELIGIOUS_VALUES = ["", "practicing", "moderate", "revert", "seeking"] as 
 const CHILDREN_VALUES = ["", "yes", "no", "open", "undecided"] as const;
 const EDUCATION_VALUES = ["", "high_school", "bachelors", "masters", "doctorate", "other"] as const;
 
+/** Converts option value to translation key suffix, e.g. "high_school" -> "HighSchool". */
+function valueToKeySuffix(value: string): string {
+  return value
+    .split("_")
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())
+    .join("");
+}
+
+/**
+ * Returns gender-aware label for a dropdown option.
+ * Uses profile.gender to show male/female form (e.g. Arabic: أعزب vs عزباء).
+ */
+function getOptionLabel(
+  t: (key: string) => string,
+  value: string,
+  isFemale: boolean
+): string {
+  if (!value) return "";
+  const suffix = valueToKeySuffix(value);
+  const genderedKey = `profile.opt${suffix}${isFemale ? "Female" : "Male"}`;
+  const neutralKey = `profile.opt${suffix}`;
+  const out = t(genderedKey);
+  if (out && out !== genderedKey) return out;
+  return t(neutralKey);
+}
+
 function toNum(s: string): number | null {
   const n = parseInt(s, 10);
   return Number.isFinite(n) ? n : null;
@@ -773,7 +799,7 @@ export default function ProfilePage() {
                     <select value={profile.marital_status} onChange={(e) => updateField("marital_status", e.target.value)} className={inputClass}>
                       <option value="">{t("profile.selectOption")}</option>
                       {MARITAL_VALUES.slice(1).map((v) => (
-                        <option key={v} value={v}>{t(`profile.opt${v.charAt(0).toUpperCase() + v.slice(1)}` as "optSingle" | "optDivorced" | "optWidowed")}</option>
+                        <option key={v} value={v}>{getOptionLabel(t, v, isFemale)}</option>
                       ))}
                     </select>
                   </div>
@@ -877,7 +903,7 @@ export default function ProfilePage() {
                     <select value={profile.skin_tone} onChange={(e) => updateField("skin_tone", e.target.value)} className={inputClass}>
                       <option value="">{t("profile.selectOption")}</option>
                       {SKIN_VALUES.slice(1).map((v) => (
-                        <option key={v} value={v}>{t(`profile.opt${v.charAt(0).toUpperCase() + v.slice(1)}` as "optFair" | "optMedium" | "optOlive" | "optBrown" | "optDark")}</option>
+                        <option key={v} value={v}>{getOptionLabel(t, v, isFemale)}</option>
                       ))}
                     </select>
                   </div>
@@ -895,7 +921,7 @@ export default function ProfilePage() {
                     <select value={profile.smoking_status} onChange={(e) => updateField("smoking_status", e.target.value)} className={inputClass}>
                       <option value="">{t("profile.selectOption")}</option>
                       {SMOKING_VALUES.slice(1).map((v) => (
-                        <option key={v} value={v}>{t(`profile.opt${v.charAt(0).toUpperCase() + v.slice(1)}` as "optNever" | "optFormer" | "optOccasionally" | "optYes")}</option>
+                        <option key={v} value={v}>{getOptionLabel(t, v, isFemale)}</option>
                       ))}
                     </select>
                   </div>
@@ -904,7 +930,7 @@ export default function ProfilePage() {
                     <select value={profile.religious_commitment} onChange={(e) => updateField("religious_commitment", e.target.value)} className={inputClass}>
                       <option value="">{t("profile.selectOption")}</option>
                       {RELIGIOUS_VALUES.slice(1).map((v) => (
-                        <option key={v} value={v}>{t(`profile.opt${v.charAt(0).toUpperCase() + v.slice(1)}` as "optPracticing" | "optModerate" | "optRevert" | "optSeeking")}</option>
+                        <option key={v} value={v}>{getOptionLabel(t, v, isFemale)}</option>
                       ))}
                     </select>
                   </div>
@@ -913,7 +939,7 @@ export default function ProfilePage() {
                     <select value={profile.desire_children} onChange={(e) => updateField("desire_children", e.target.value)} className={inputClass}>
                       <option value="">{t("profile.selectOption")}</option>
                       {CHILDREN_VALUES.slice(1).map((v) => (
-                        <option key={v} value={v}>{t(`profile.opt${v.charAt(0).toUpperCase() + v.slice(1)}` as "optYes" | "optNo" | "optOpen" | "optUndecided")}</option>
+                        <option key={v} value={v}>{getOptionLabel(t, v, isFemale)}</option>
                       ))}
                     </select>
                   </div>
@@ -937,11 +963,9 @@ export default function ProfilePage() {
                     <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.education")}</label>
                     <select value={profile.education_level} onChange={(e) => updateField("education_level", e.target.value)} className={inputClass}>
                       <option value="">{t("profile.selectOption")}</option>
-                      <option value="high_school">{t("profile.optHighSchool")}</option>
-                      <option value="bachelors">{t("profile.optBachelors")}</option>
-                      <option value="masters">{t("profile.optMasters")}</option>
-                      <option value="doctorate">{t("profile.optDoctorate")}</option>
-                      <option value="other">{t("profile.optOther")}</option>
+                      {EDUCATION_VALUES.slice(1).map((v) => (
+                        <option key={v} value={v}>{getOptionLabel(t, v, isFemale)}</option>
+                      ))}
                     </select>
                   </div>
                   <div>

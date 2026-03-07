@@ -239,6 +239,55 @@ type TranslationMap = {
     optMasters: string;
     optDoctorate: string;
     optOther: string;
+    /** Gender-aware option labels (Edit Profile). Use opt{Value}Male / opt{Value}Female when present. */
+    optSingleMale?: string;
+    optSingleFemale?: string;
+    optDivorcedMale?: string;
+    optDivorcedFemale?: string;
+    optWidowedMale?: string;
+    optWidowedFemale?: string;
+    optHighSchoolMale?: string;
+    optHighSchoolFemale?: string;
+    optBachelorsMale?: string;
+    optBachelorsFemale?: string;
+    optMastersMale?: string;
+    optMastersFemale?: string;
+    optDoctorateMale?: string;
+    optDoctorateFemale?: string;
+    optOtherMale?: string;
+    optOtherFemale?: string;
+    optFairMale?: string;
+    optFairFemale?: string;
+    optMediumMale?: string;
+    optMediumFemale?: string;
+    optOliveMale?: string;
+    optOliveFemale?: string;
+    optBrownMale?: string;
+    optBrownFemale?: string;
+    optDarkMale?: string;
+    optDarkFemale?: string;
+    optNeverMale?: string;
+    optNeverFemale?: string;
+    optFormerMale?: string;
+    optFormerFemale?: string;
+    optOccasionallyMale?: string;
+    optOccasionallyFemale?: string;
+    optYesMale?: string;
+    optYesFemale?: string;
+    optNoMale?: string;
+    optNoFemale?: string;
+    optOpenMale?: string;
+    optOpenFemale?: string;
+    optUndecidedMale?: string;
+    optUndecidedFemale?: string;
+    optPracticingMale?: string;
+    optPracticingFemale?: string;
+    optModerateMale?: string;
+    optModerateFemale?: string;
+    optRevertMale?: string;
+    optRevertFemale?: string;
+    optSeekingMale?: string;
+    optSeekingFemale?: string;
   };
   nav: {
     home: string;
@@ -576,6 +625,54 @@ const translations: Record<Locale, TranslationMap> = {
       optMasters: "Master's",
       optDoctorate: "Doctorate",
       optOther: "Other",
+      optSingleMale: "Single",
+      optSingleFemale: "Single",
+      optDivorcedMale: "Divorced",
+      optDivorcedFemale: "Divorced",
+      optWidowedMale: "Widowed",
+      optWidowedFemale: "Widowed",
+      optHighSchoolMale: "High School",
+      optHighSchoolFemale: "High School",
+      optBachelorsMale: "Bachelor's",
+      optBachelorsFemale: "Bachelor's",
+      optMastersMale: "Master's",
+      optMastersFemale: "Master's",
+      optDoctorateMale: "Doctorate",
+      optDoctorateFemale: "Doctorate",
+      optOtherMale: "Other",
+      optOtherFemale: "Other",
+      optFairMale: "Fair",
+      optFairFemale: "Fair",
+      optMediumMale: "Medium",
+      optMediumFemale: "Medium",
+      optOliveMale: "Olive",
+      optOliveFemale: "Olive",
+      optBrownMale: "Brown",
+      optBrownFemale: "Brown",
+      optDarkMale: "Dark",
+      optDarkFemale: "Dark",
+      optNeverMale: "Never",
+      optNeverFemale: "Never",
+      optFormerMale: "Former",
+      optFormerFemale: "Former",
+      optOccasionallyMale: "Occasionally",
+      optOccasionallyFemale: "Occasionally",
+      optYesMale: "Yes",
+      optYesFemale: "Yes",
+      optNoMale: "No",
+      optNoFemale: "No",
+      optOpenMale: "Open",
+      optOpenFemale: "Open",
+      optUndecidedMale: "Undecided",
+      optUndecidedFemale: "Undecided",
+      optPracticingMale: "Practicing",
+      optPracticingFemale: "Practicing",
+      optModerateMale: "Moderate",
+      optModerateFemale: "Moderate",
+      optRevertMale: "Revert",
+      optRevertFemale: "Revert",
+      optSeekingMale: "Seeking to strengthen",
+      optSeekingFemale: "Seeking to strengthen",
     },
     nav: {
       home: "Home",
@@ -900,6 +997,54 @@ const translations: Record<Locale, TranslationMap> = {
       optMasters: "ماجستير",
       optDoctorate: "دكتوراه",
       optOther: "أخرى",
+      optSingleMale: "أعزب",
+      optSingleFemale: "عزباء",
+      optDivorcedMale: "مطلق",
+      optDivorcedFemale: "مطلقة",
+      optWidowedMale: "أرمل",
+      optWidowedFemale: "أرملة",
+      optHighSchoolMale: "ثانوي",
+      optHighSchoolFemale: "ثانوية",
+      optBachelorsMale: "خريج بكالوريوس",
+      optBachelorsFemale: "خريجة بكالوريوس",
+      optMastersMale: "ماجستير",
+      optMastersFemale: "ماجستير",
+      optDoctorateMale: "دكتوراه",
+      optDoctorateFemale: "دكتوراه",
+      optOtherMale: "آخر",
+      optOtherFemale: "أخرى",
+      optFairMale: "فاتح",
+      optFairFemale: "فاتحة",
+      optMediumMale: "متوسط",
+      optMediumFemale: "متوسطة",
+      optOliveMale: "زيتوني",
+      optOliveFemale: "زيتونية",
+      optBrownMale: "بني",
+      optBrownFemale: "بنية",
+      optDarkMale: "غامق",
+      optDarkFemale: "غامقة",
+      optNeverMale: "لا",
+      optNeverFemale: "لا",
+      optFormerMale: "سابقاً",
+      optFormerFemale: "سابقاً",
+      optOccasionallyMale: "أحياناً",
+      optOccasionallyFemale: "أحياناً",
+      optYesMale: "نعم",
+      optYesFemale: "نعم",
+      optNoMale: "لا",
+      optNoFemale: "لا",
+      optOpenMale: "مفتوح",
+      optOpenFemale: "مفتوحة",
+      optUndecidedMale: "غير محدد",
+      optUndecidedFemale: "غير محددة",
+      optPracticingMale: "ملتزم",
+      optPracticingFemale: "ملتزمة",
+      optModerateMale: "معتدل",
+      optModerateFemale: "معتدلة",
+      optRevertMale: "معتنق",
+      optRevertFemale: "معتنقة",
+      optSeekingMale: "أسعى للتقوية",
+      optSeekingFemale: "تسعى للتقوية",
     },
     nav: {
       home: "الرئيسية",
