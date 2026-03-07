@@ -335,42 +335,61 @@ export default function ProfilePage() {
     [showToast, t]
   );
 
+  const performSave = async (): Promise<boolean> => {
+    if (!userId) return false;
+    const payload: Record<string, unknown> = {
+      full_name: profile.full_name?.trim() || null,
+      gender: profile.gender?.trim() || null,
+      email: profile.email?.trim() || null,
+      phone: profile.phone?.trim() || null,
+      phone_verified: profile.phone_verified,
+      nationality: profile.nationality?.trim() || null,
+      age: toNum(profile.age),
+      marital_status: profile.marital_status?.trim() || null,
+      height_cm: toNum(profile.height_cm),
+      weight_kg: toNum(profile.weight_kg),
+      skin_tone: profile.skin_tone?.trim() || null,
+      smoking_status: profile.smoking_status?.trim() || null,
+      religious_commitment: profile.religious_commitment?.trim() || null,
+      desire_children: profile.desire_children?.trim() || null,
+      job_title: profile.job_title?.trim() || null,
+      education_level: profile.education_level?.trim() || null,
+      country: profile.country?.trim() || null,
+      city: profile.city?.trim() || null,
+      about_me: profile.about_me?.trim() || null,
+      ideal_partner: profile.ideal_partner?.trim() || null,
+      photo_urls: Array.isArray(profile.photo_urls) ? profile.photo_urls : [],
+      primary_photo_index: typeof profile.primary_photo_index === "number" ? profile.primary_photo_index : 0,
+      photo_privacy_blur: profile.photo_privacy_blur === true,
+    };
+    const { error } = await supabase.from("profiles").update(payload).eq("id", userId);
+    if (error) throw error;
+    dispatchProfileUpdated();
+    return true;
+  };
+
   const handleSave = async () => {
-    if (!userId) return;
     setSaving(true);
     try {
-      const payload: Record<string, unknown> = {
-        full_name: profile.full_name?.trim() || null,
-        gender: profile.gender?.trim() || null,
-        email: profile.email?.trim() || null,
-        phone: profile.phone?.trim() || null,
-        phone_verified: profile.phone_verified,
-        nationality: profile.nationality?.trim() || null,
-        age: toNum(profile.age),
-        marital_status: profile.marital_status?.trim() || null,
-        height_cm: toNum(profile.height_cm),
-        weight_kg: toNum(profile.weight_kg),
-        skin_tone: profile.skin_tone?.trim() || null,
-        smoking_status: profile.smoking_status?.trim() || null,
-        religious_commitment: profile.religious_commitment?.trim() || null,
-        desire_children: profile.desire_children?.trim() || null,
-        job_title: profile.job_title?.trim() || null,
-        education_level: profile.education_level?.trim() || null,
-        country: profile.country?.trim() || null,
-        city: profile.city?.trim() || null,
-        about_me: profile.about_me?.trim() || null,
-        ideal_partner: profile.ideal_partner?.trim() || null,
-        photo_urls: Array.isArray(profile.photo_urls) ? profile.photo_urls : [],
-        primary_photo_index: typeof profile.primary_photo_index === "number" ? profile.primary_photo_index : 0,
-        photo_privacy_blur: profile.photo_privacy_blur === true,
-      };
-      const { error } = await supabase
-        .from("profiles")
-        .update(payload)
-        .eq("id", userId);
-      if (error) throw error;
-      showToast("success", t("profile.toastSaved"));
-      dispatchProfileUpdated();
+      const ok = await performSave();
+      if (ok) showToast("success", t("profile.toastSaved"));
+    } catch (e) {
+      console.warn("Profile save failed:", e);
+      showToast("error", e instanceof Error ? e.message : t("profile.toastError"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveAndReturn = async () => {
+    setSaving(true);
+    try {
+      const ok = await performSave();
+      if (ok) {
+        showToast("success", t("profile.toastSaved"));
+        router.push("/profile");
+        return;
+      }
     } catch (e) {
       console.warn("Profile save failed:", e);
       showToast("error", e instanceof Error ? e.message : t("profile.toastError"));
@@ -632,6 +651,7 @@ export default function ProfilePage() {
     hoverText: isFemale ? "hover:text-pink-600" : "hover:text-sky-600",
     fill: isFemale ? "fill-pink-600" : "fill-sky-600",
     badge: isFemale ? "bg-pink-500" : "bg-sky-500",
+    primaryBtn: isFemale ? "bg-pink-500 hover:bg-pink-600 text-white border-0" : "bg-sky-500 hover:bg-sky-600 text-white border-0",
   };
 
   const cardClass = "rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6";
@@ -647,15 +667,26 @@ export default function ProfilePage() {
           <h1 className="text-2xl font-semibold text-zinc-900">{t("profile.title")}</h1>
           <p className="mt-1 text-sm text-zinc-500">{t("profile.subtitle")}</p>
         </div>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className={buttonClass + ` border ${theme.border} ${theme.bg} ${theme.textMuted} ${theme.hoverBg}`}
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {t("profile.save")}
-        </button>
+        <div className={`flex flex-wrap gap-3 ${dir === "rtl" ? "flex-row-reverse" : ""}`}>
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className={buttonClass + ` border ${theme.border} ${theme.primaryBtn}`}
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {t("profile.saveChanges")}
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveAndReturn}
+            disabled={saving}
+            className={buttonClass + ` border ${theme.border} ${theme.primaryBtn}`}
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            {t("profile.saveAndReturn")}
+          </button>
+        </div>
       </div>
 
       {toast && (
@@ -1119,15 +1150,24 @@ export default function ProfilePage() {
         </motion.div>
       </AnimatePresence>
 
-      <div className="flex justify-end">
+      <div className={`flex flex-wrap justify-end gap-3 ${dir === "rtl" ? "flex-row-reverse" : ""}`}>
         <button
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className={buttonClass + ` border ${theme.border} ${theme.bg} ${theme.textMuted} ${theme.hoverBg}`}
+          className={buttonClass + ` border ${theme.border} ${theme.primaryBtn}`}
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {t("profile.save")}
+          {t("profile.saveChanges")}
+        </button>
+        <button
+          type="button"
+          onClick={handleSaveAndReturn}
+          disabled={saving}
+          className={buttonClass + ` border ${theme.border} ${theme.primaryBtn}`}
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {t("profile.saveAndReturn")}
         </button>
       </div>
     </div>

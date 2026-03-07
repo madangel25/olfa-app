@@ -192,6 +192,10 @@ type TranslationMap = {
     idealPartnerPlaceholder: string;
     editProfile: string;
     viewAsOthersSeeMe: string;
+    shareProfile: string;
+    linkCopiedSuccess: string;
+    saveChanges: string;
+    saveAndReturn: string;
     letAiWriteBioNow: string;
     profileStrength: string;
     charismaRating: string;
@@ -525,6 +529,10 @@ const translations: Record<Locale, TranslationMap> = {
       idealPartnerPlaceholder: "Describe the partner you are looking for…",
       editProfile: "Edit Profile",
       viewAsOthersSeeMe: "View as others see me",
+      shareProfile: "Share Profile",
+      linkCopiedSuccess: "Link copied to clipboard.",
+      saveChanges: "Save Changes",
+      saveAndReturn: "Save & Return",
       letAiWriteBioNow: "Let AI write your bio now",
       profileStrength: "Profile Strength",
       charismaRating: "Charisma Rating",
@@ -845,6 +853,10 @@ const translations: Record<Locale, TranslationMap> = {
       idealPartnerPlaceholder: "صف الشريك الذي تبحث عنه…",
       editProfile: "تعديل البيانات",
       viewAsOthersSeeMe: "عرض الصفحة كما يراها الآخرون",
+      shareProfile: "مشاركة الملف الشخصي",
+      linkCopiedSuccess: "تم نسخ الرابط بنجاح",
+      saveChanges: "حفظ التعديلات",
+      saveAndReturn: "حفظ ورجوع",
       letAiWriteBioNow: "دع الذكاء الاصطناعي يكتب سيرتك الآن",
       profileStrength: "قوة ملفك الشخصي",
       charismaRating: "تقييم الكاريزما",

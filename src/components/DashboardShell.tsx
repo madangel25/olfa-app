@@ -10,10 +10,11 @@ import {
   PROFILE_UPDATED_EVENT,
   type ProfileForCompleteness,
 } from "@/lib/profileCompleteness";
-import { Home, User, MessageCircle, Heart } from "lucide-react";
+import { Home, User, MessageCircle, Heart, UserCircle } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "الرئيسية", labelEn: "Home", icon: Home },
+  { href: "/profile", label: "الملف الشخصي", labelEn: "Profile", icon: UserCircle },
   { href: "/dashboard/discovery", label: "البحث", labelEn: "Discovery", icon: User },
   { href: "/dashboard/likes", label: "الإعجابات", labelEn: "Likes", icon: Heart },
   { href: "/dashboard/messages", label: "الرسائل", labelEn: "Messages", icon: MessageCircle },
@@ -92,7 +93,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           {NAV_ITEMS.map((item) => {
             const isActive =
               pathname === item.href ||
-              (item.href !== "/dashboard" && pathname.startsWith(item.href));
+              (item.href !== "/dashboard" && item.href !== "/profile" && pathname.startsWith(item.href)) ||
+              (item.href === "/profile" && (pathname === "/profile" || pathname.startsWith("/profile/")));
             const Icon = item.icon;
             const label = locale === "ar" ? item.label : item.labelEn;
             const textAlign = locale === "ar" ? "text-right" : "text-left";

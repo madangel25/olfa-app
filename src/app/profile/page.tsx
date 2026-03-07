@@ -6,7 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
-import { Pencil, Eye, Wand2, Star, Briefcase, GraduationCap, Ruler, Heart, MapPin, Scale, Globe, Palette, Cigarette, BookOpen, Baby, FileText, User } from "lucide-react";
+import { Pencil, Eye, Wand2, Star, Briefcase, GraduationCap, Ruler, Heart, MapPin, Scale, Globe, Palette, Cigarette, BookOpen, Baby, FileText, User, Share2 } from "lucide-react";
 
 type ProfileData = {
   full_name: string | null;
@@ -93,10 +93,12 @@ function optLabel(t: (k: string) => string, value: string | null): string | null
 export default function ProfilePage() {
   const router = useRouter();
   const { locale, dir, t } = useLanguage();
+  const [userId, setUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewAsPublic, setViewAsPublic] = useState(false);
   const [communityRating, setCommunityRating] = useState<{ avg: number; count: number } | null>(null);
+  const [shareToast, setShareToast] = useState(false);
 
   useEffect(() => {
     const run = async () => {
@@ -118,6 +120,7 @@ export default function ProfilePage() {
         setLoading(false);
         return;
       }
+      setUserId(user.id);
 
       const raw = data as Record<string, unknown>;
       let photo_urls: string[] = [];
@@ -232,6 +235,11 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] font-[family-name:var(--font-cairo)] text-zinc-900">
+      {shareToast && (
+        <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-lg" role="alert">
+          {t("profile.linkCopiedSuccess")}
+        </div>
+      )}
       <div className="mx-auto max-w-3xl px-4 py-6">
         {/* Top actions: Edit Profile, View as others see me */}
         <div className={`mb-6 flex flex-wrap items-center justify-between gap-3 ${isRtl ? "flex-row-reverse" : ""}`}>
@@ -263,8 +271,8 @@ export default function ProfilePage() {
 
         {/* Single unified master card: all user data (no email/phone), Edit at top */}
         <div className={`overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-lg ${themeBorder}`}>
-          {/* Edit button at top of card */}
-          <div className={`flex items-center justify-end border-b border-zinc-100 px-6 py-3 ${isRtl ? "flex-row-reverse" : ""}`}>
+          {/* Edit + Share at top of card — order so in RTL Edit is at start (right) */}
+          <div className={`flex items-center justify-between gap-3 border-b border-zinc-100 px-6 py-3 ${isRtl ? "flex-row-reverse" : ""}`}>
             <Link
               href="/dashboard/profile"
               className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-zinc-100 ${themeAccent}`}
@@ -272,6 +280,21 @@ export default function ProfilePage() {
               <Pencil className="h-4 w-4" />
               {t("profile.editProfile")}
             </Link>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!userId) return;
+                const url = `${typeof window !== "undefined" ? window.location.origin : ""}/profile/${userId}`;
+                await navigator.clipboard.writeText(url);
+                setShareToast(true);
+                setTimeout(() => setShareToast(false), 3000);
+              }}
+              disabled={!userId}
+              className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-zinc-100 ${themeAccent}`}
+            >
+              <Share2 className="h-4 w-4" />
+              {t("profile.shareProfile")}
+            </button>
           </div>
 
           {/* Hero */}

@@ -23,6 +23,7 @@ import {
   Baby,
   FileText,
   User,
+  Share2,
 } from "lucide-react";
 
 type ProfileData = {
@@ -122,6 +123,7 @@ export default function PublicProfilePage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [shareToast, setShareToast] = useState(false);
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -331,6 +333,11 @@ export default function PublicProfilePage() {
           {toast}
         </div>
       )}
+      {shareToast && (
+        <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-lg" role="alert">
+          {t("profile.linkCopiedSuccess")}
+        </div>
+      )}
 
       <div className="mx-auto max-w-3xl px-4 py-6">
         <Link
@@ -343,6 +350,22 @@ export default function PublicProfilePage() {
 
         {/* Single unified master card: white, rounded-3xl, soft shadow */}
         <div className={`overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-lg ${themeBorder}`}>
+          {/* Share Profile at top of card */}
+          <div className={`flex items-center justify-end border-b border-zinc-100 px-6 py-3 ${isRtl ? "flex-row-reverse" : ""}`}>
+            <button
+              type="button"
+              onClick={async () => {
+                const url = `${typeof window !== "undefined" ? window.location.origin : ""}/profile/${profileUserId}`;
+                await navigator.clipboard.writeText(url);
+                setShareToast(true);
+                setTimeout(() => setShareToast(false), 3000);
+              }}
+              className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-zinc-100 ${themeAccent}`}
+            >
+              <Share2 className="h-4 w-4" />
+              {t("profile.shareProfile")}
+            </button>
+          </div>
           {/* Hero: Avatar, Name, Age & Marital Status prominent, location, Send Message */}
           <div className={`flex flex-col gap-6 p-6 sm:flex-row sm:items-center ${isRtl ? "sm:flex-row-reverse" : ""}`}>
             <div className={`h-36 w-36 shrink-0 overflow-hidden rounded-2xl sm:h-44 sm:w-44 ${themeAvatar} flex items-center justify-center text-5xl font-semibold`}>
