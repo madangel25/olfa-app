@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -17,7 +17,6 @@ function isAllowedRedirect(path: string | null): boolean {
 }
 
 export default function LoginPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const { t, dir } = useLanguage();
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -27,14 +26,6 @@ export default function LoginPage() {
   useEffect(() => {
     getSiteSettings().then((row) => {
       if (row?.logo_url?.trim()) setLogoUrl(row.logo_url);
-    });
-  }, []);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      if (s) {
-        window.location.href = "/dashboard";
-      }
     });
   }, []);
 

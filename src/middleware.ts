@@ -24,6 +24,8 @@ export async function middleware(request: NextRequest) {
   const { data: { session }, error: sessionError } = await supabase.auth.getSession()
   if (sessionError) {
     console.error("[middleware] getSession error:", sessionError)
+    // Prevent /login <-> /dashboard loops when auth check is transiently failing.
+    return response
   }
   const path = request.nextUrl.pathname
 
