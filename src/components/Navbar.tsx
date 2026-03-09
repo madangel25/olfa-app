@@ -97,6 +97,16 @@ export function Navbar() {
           {isLoggedIn ? (
             <>
               <Link
+                href="/dashboard"
+                className={`text-sm font-medium transition ${
+                  pathname.startsWith("/dashboard")
+                    ? "text-sky-600"
+                    : "text-zinc-600 hover:text-zinc-900"
+                }`}
+              >
+                {t("nav.dashboard")}
+              </Link>
+              <Link
                 href="/dashboard/notifications"
                 className="relative rounded-lg p-2 text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
                 aria-label="Notifications"

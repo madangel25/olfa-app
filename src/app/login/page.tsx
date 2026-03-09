@@ -72,38 +72,25 @@ export default function LoginPage() {
       }
 
       const role = (profile.role as Role) || "user";
-
-      // Middleware allows only role === 'admin' on /admin; redirect admins there.
-      if (role === "admin") {
-        router.replace("/admin/dashboard");
-        return;
-      }
-
       const pledgeAccepted = (profile as { pledge_accepted?: boolean }).pledge_accepted ?? false;
-
-      if (!pledgeAccepted) {
-        router.replace("/onboarding/pledge");
-        return;
-      }
-
-      if (!profile.quiz_completed) {
-        router.replace("/onboarding/social");
-        return;
-      }
-
-      if (pledgeAccepted && profile.quiz_completed) {
-        const redirectTo = searchParams.get("redirect");
-        router.replace(isAllowedRedirect(redirectTo) ? redirectTo! : "/dashboard");
-        return;
-      }
-
-      if (!profile.verification_submitted) {
-        router.replace("/onboarding/verify");
-        return;
-      }
-
       const redirectTo = searchParams.get("redirect");
-      router.replace(isAllowedRedirect(redirectTo) ? redirectTo! : "/dashboard");
+      const defaultDest = isAllowedRedirect(redirectTo) ? redirectTo! : "/dashboard";
+
+      let destination: string;
+      if (role === "admin") {
+        destination = "/admin/dashboard";
+      } else if (!pledgeAccepted) {
+        destination = "/onboarding/pledge";
+      } else if (!profile.quiz_completed) {
+        destination = "/onboarding/social";
+      } else if (!profile.verification_submitted) {
+        destination = "/onboarding/verify";
+      } else {
+        destination = defaultDest;
+      }
+
+      router.push(destination);
+      router.refresh();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t("login.somethingWrong")

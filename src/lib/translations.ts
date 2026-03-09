@@ -291,6 +291,7 @@ type TranslationMap = {
   };
   nav: {
     home: string;
+    dashboard: string;
     login: string;
     register: string;
     profile: string;
@@ -676,6 +677,7 @@ const translations: Record<Locale, TranslationMap> = {
     },
     nav: {
       home: "Home",
+      dashboard: "Dashboard",
       login: "Login",
       register: "Register",
       profile: "Profile",
@@ -1048,6 +1050,7 @@ const translations: Record<Locale, TranslationMap> = {
     },
     nav: {
       home: "الرئيسية",
+      dashboard: "لوحة التحكم",
       login: "تسجيل الدخول",
       register: "إنشاء حساب",
       profile: "الملف الشخصي",
