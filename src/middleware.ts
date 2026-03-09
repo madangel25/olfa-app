@@ -24,8 +24,6 @@ export async function middleware(request: NextRequest) {
   const { data: { session }, error: sessionError } = await supabase.auth.getSession()
   if (sessionError) {
     console.error("[middleware] getSession error:", sessionError)
-    // Prevent /login <-> /dashboard loops when auth check is transiently failing.
-    return response
   }
   const path = request.nextUrl.pathname
 
@@ -60,7 +58,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // 3. حماية الصفحات الخاصة (Auth Required)
+  // 3. Protect private routes.
   const protectedRoutes = ['/dashboard', '/profile', '/discovery', '/settings']
   if (!session && protectedRoutes.some(route => path.startsWith(route))) {
     return NextResponse.redirect(new URL('/login', request.url))

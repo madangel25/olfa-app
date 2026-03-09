@@ -29,6 +29,27 @@ export default function LoginPage() {
     });
   }, []);
 
+  useEffect(() => {
+    const redirectIfLoggedIn = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        window.location.replace("/dashboard");
+      }
+    };
+
+    redirectIfLoggedIn();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        window.location.replace("/dashboard");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
@@ -88,7 +109,7 @@ export default function LoginPage() {
         destination = defaultDest;
       }
 
-      window.location.href = destination;
+      window.location.replace(destination);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t("login.somethingWrong")
