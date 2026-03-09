@@ -1,17 +1,8 @@
-import { createBrowserClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    "Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY."
-  );
-}
-
-// Browser client from @supabase/ssr keeps auth in cookies so middleware and client stay in sync.
-export const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey);
+/** Single browser Supabase client; uses @supabase/ssr createBrowserClient for cookie-based session consistency with middleware. */
+export const supabase = createClient();
 
 /** Auth user shape when ensuring profile exists. */
 export type AuthUserForProfile = {

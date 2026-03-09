@@ -34,17 +34,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const isFemale = userGender === "female";
   const genderKnown = userGender !== null;
   const themeActive = !genderKnown
-    ? "bg-zinc-100 text-zinc-700 border-l-2 border-l-zinc-400"
+    ? "bg-sky-100 text-sky-700 border-l-2 border-l-sky-500"
     : isFemale
       ? "bg-pink-100 text-pink-600 border-l-2 border-l-pink-500"
       : "bg-sky-100 text-sky-600 border-l-2 border-l-sky-500";
   const themeActiveRtl = !genderKnown
-    ? "bg-zinc-100 text-zinc-700 border-r-2 border-r-zinc-400"
+    ? "bg-sky-100 text-sky-700 border-r-2 border-r-sky-500"
     : isFemale
       ? "bg-pink-100 text-pink-600 border-r-2 border-r-pink-500"
       : "bg-sky-100 text-sky-600 border-r-2 border-r-sky-500";
-  const themeProgress = !genderKnown ? "bg-zinc-400" : isFemale ? "bg-pink-500" : "bg-sky-500";
-  const themeProgressText = !genderKnown ? "text-zinc-700" : isFemale ? "text-pink-600" : "text-sky-600";
+  const themeProgress = !genderKnown ? "bg-sky-500" : isFemale ? "bg-pink-500" : "bg-sky-500";
+  const themeProgressText = !genderKnown ? "text-sky-700" : isFemale ? "text-pink-600" : "text-sky-600";
 
   const fetchCompleteness = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -82,16 +82,16 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   const showProgress = profileComplete !== null && profileComplete < 100;
-  const sidebarPosition = isRtl ? "right-0 border-l border-zinc-200" : "left-0 border-r border-zinc-200";
+  const sidebarPosition = isRtl ? "right-0 border-l-2 border-sky-200" : "left-0 border-r-2 border-sky-200";
   const mainPadding = isRtl ? "pr-56" : "pl-56";
   const linkActiveClass = isRtl ? themeActiveRtl : themeActive;
 
   return (
     <div
-      className={`flex min-h-[calc(100vh-3.5rem)] bg-[#f8f9fa] font-[family-name:var(--font-cairo)] text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}
+      className={`flex min-h-[calc(100vh-3.5rem)] bg-sky-50/50 font-[family-name:var(--font-cairo)] text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}
     >
       <aside
-        className={`fixed top-14 z-40 h-[calc(100vh-3.5rem)] w-56 shrink-0 bg-white shadow-sm ${sidebarPosition}`}
+        className={`fixed top-14 z-40 h-[calc(100vh-3.5rem)] w-56 shrink-0 bg-white shadow-md ${sidebarPosition}`}
         aria-label="Dashboard navigation"
       >
         <nav className="flex flex-col gap-1 p-4">
@@ -108,7 +108,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
-                  isActive ? linkActiveClass : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
+                  isActive ? linkActiveClass : "text-zinc-700 hover:bg-sky-50 hover:text-sky-800"
                 } ${isRtl ? "flex-row-reverse" : ""}`}
               >
                 <Icon className="h-5 w-5 shrink-0" />
@@ -124,7 +124,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       <main className={`flex-1 ${mainPadding}`}>
         {showProgress && (
           <div className="mx-auto max-w-4xl px-4 pt-4">
-            <div className="rounded-2xl border border-zinc-100 bg-white p-4 shadow-sm">
+            <div className="rounded-2xl border border-sky-200 bg-white p-4 shadow-sm">
               <p className="mb-3 text-sm text-zinc-700">
                 {locale === "ar" ? (
                   <>أكمل ملفك الشخصي بنسبة <span className={`font-semibold ${themeProgressText}`}>{profileComplete}%</span> ليراك الآخرون بشكل أفضل.</>
@@ -132,7 +132,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   <>Complete your profile by <span className={`font-semibold ${themeProgressText}`}>{profileComplete}%</span> so others can see you better.</>
                 )}
               </p>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-sky-100">
                 <div
                   className={`h-full rounded-full ${themeProgress} transition-all duration-500`}
                   style={{ width: `${profileComplete}%` }}

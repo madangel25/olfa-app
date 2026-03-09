@@ -11,7 +11,7 @@ export default function DashboardLayout({
   return (
     <OnboardingGuard>
       <Navbar />
-      <div className="min-h-screen bg-[#f8f9fa] pt-14">
+      <div className="min-h-screen bg-sky-50/50 pt-14">
         <DashboardShell>{children}</DashboardShell>
       </div>
     </OnboardingGuard>
