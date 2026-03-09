@@ -9,7 +9,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-/** Browser Supabase client from @supabase/ssr — uses cookies so middleware and client share the same session. */
+/** Browser Supabase client from @supabase/ssr — uses cookies so proxy and client share the same session. */
 export function createClient() {
-  return createBrowserClient(supabaseUrl, supabaseAnonKey);
+  return createBrowserClient(supabaseUrl as string, supabaseAnonKey as string);
 }
