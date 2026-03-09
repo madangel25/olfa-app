@@ -50,8 +50,11 @@ export async function middleware(request: NextRequest) {
     // }
   }
 
-  // 2. توجيه المسجلين دخول بعيداً عن صفحات الزوار
-  if (session && (path === '/login' || path === '/register' || path === '/')) {
+  // 2. If user has session and is on /login or /register or /, redirect to dashboard (don't send back to /login)
+  if (session && path === '/login') {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+  if (session && (path === '/register' || path === '/')) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 

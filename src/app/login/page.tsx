@@ -30,6 +30,14 @@ export default function LoginPage() {
     });
   }, []);
 
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      if (s) {
+        window.location.href = "/dashboard";
+      }
+    });
+  }, []);
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
@@ -89,8 +97,7 @@ export default function LoginPage() {
         destination = defaultDest;
       }
 
-      router.push(destination);
-      router.refresh();
+      window.location.href = destination;
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t("login.somethingWrong")
