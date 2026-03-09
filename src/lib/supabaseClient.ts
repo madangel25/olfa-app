@@ -15,7 +15,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export type AuthUserForProfile = {
   id: string;
   email?: string | null;
-  user_metadata?: { full_name?: string } | null;
+  user_metadata?: { full_name?: string; role?: string; quiz_completed?: boolean; verification_submitted?: boolean; pledge_accepted?: boolean } | null;
 };
 
 /**
@@ -33,13 +33,25 @@ export async function ensureUserProfile(
   verification_submitted: boolean;
   [key: string]: unknown;
 } | null> {
-  const { data: existing } = await client
+  const fallbackProfile = {
+    role: String(authUser.user_metadata?.role ?? "user"),
+    email: authUser.email ?? null,
+    quiz_completed: Boolean(authUser.user_metadata?.quiz_completed ?? false),
+    verification_submitted: Boolean(authUser.user_metadata?.verification_submitted ?? false),
+    is_verified: false,
+    pledge_accepted: Boolean(authUser.user_metadata?.pledge_accepted ?? false),
+  };
+
+  const { data: existing, error: existingError } = await client
     .from("profiles")
     .select("role, email, quiz_completed, verification_submitted, is_verified, pledge_accepted")
     .eq("id", authUser.id)
     .maybeSingle();
 
   if (existing) return existing as { role: string; email: string | null; quiz_completed: boolean; verification_submitted: boolean; pledge_accepted?: boolean; [key: string]: unknown };
+  if (existingError) {
+    console.error("[ensureUserProfile] select existing failed:", existingError);
+  }
 
   const fullName = authUser.user_metadata?.full_name ?? null;
   const email = authUser.email ?? null;
@@ -60,20 +72,34 @@ export async function ensureUserProfile(
     .upsert(row, { onConflict: "id" });
 
   if (upsertError) {
-    const { data: fallback } = await client
+    console.error("[ensureUserProfile] upsert failed:", upsertError);
+    const { data: fallback, error: fallbackError } = await client
       .from("profiles")
       .select("role, email, quiz_completed, verification_submitted, is_verified, pledge_accepted")
       .eq("id", authUser.id)
       .maybeSingle();
-    return fallback as { role: string; email: string | null; quiz_completed: boolean; verification_submitted: boolean; pledge_accepted?: boolean; [key: string]: unknown } | null;
+    if (fallback) {
+      return fallback as { role: string; email: string | null; quiz_completed: boolean; verification_submitted: boolean; pledge_accepted?: boolean; [key: string]: unknown };
+    }
+    if (fallbackError) {
+      console.error("[ensureUserProfile] fallback select failed:", fallbackError);
+    }
+    // Degrade gracefully when RLS blocks DB access.
+    return fallbackProfile;
   }
 
-  const { data: created } = await client
+  const { data: created, error: createdError } = await client
     .from("profiles")
     .select("role, email, quiz_completed, verification_submitted, is_verified, pledge_accepted")
     .eq("id", authUser.id)
     .maybeSingle();
 
-  return created as { role: string; email: string | null; quiz_completed: boolean; verification_submitted: boolean; pledge_accepted?: boolean; [key: string]: unknown } | null;
+  if (created) {
+    return created as { role: string; email: string | null; quiz_completed: boolean; verification_submitted: boolean; pledge_accepted?: boolean; [key: string]: unknown };
+  }
+  if (createdError) {
+    console.error("[ensureUserProfile] created select failed:", createdError);
+  }
+  return fallbackProfile;
 }
 
