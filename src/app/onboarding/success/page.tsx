@@ -1,28 +1,71 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { CheckCircle } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export default function OnboardingSuccessPage() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, dir } = useLanguage();
+  const { theme } = useTheme();
+
+  const isMale = theme === "male";
+  const isFemale = theme === "female";
+  const cardBorder = isMale
+    ? "border-sky-200"
+    : isFemale
+      ? "border-pink-200"
+      : "border-violet-200";
+  const cardShadow = isMale
+    ? "shadow-sky-900/10"
+    : isFemale
+      ? "shadow-pink-900/10"
+      : "shadow-violet-900/10";
+  const accentLabel = isMale
+    ? "text-sky-600"
+    : isFemale
+      ? "text-pink-600"
+      : "text-violet-600";
+  const checkColor = isMale
+    ? "text-sky-500"
+    : isFemale
+      ? "text-pink-500"
+      : "text-violet-500";
+  const buttonPrimary = isMale
+    ? "bg-sky-500 hover:bg-sky-600 text-white shadow-lg shadow-sky-900/20"
+    : isFemale
+      ? "bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-900/20"
+      : "bg-violet-500 hover:bg-violet-600 text-white shadow-lg shadow-violet-900/20";
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-purple-900 text-slate-50 flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-xl rounded-3xl border border-slate-800/80 bg-slate-950/70 px-8 py-10 text-center shadow-2xl backdrop-blur">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-slate-300/80">
+    <div
+      className="min-h-screen w-full font-[family-name:var(--font-cairo)] flex items-center justify-center px-4 py-10"
+      style={{ background: "var(--theme-bg)" }}
+      dir={dir}
+    >
+      <div
+        className={`w-full max-w-xl rounded-2xl border ${cardBorder} bg-white p-8 text-center shadow-lg ${cardShadow} sm:p-10`}
+      >
+        <CheckCircle
+          className={`mx-auto h-14 w-14 ${checkColor}`}
+          aria-hidden
+        />
+        <p
+          className={`mt-4 text-xs font-semibold uppercase tracking-wider ${accentLabel}`}
+        >
           {t("success.label")}
         </p>
-        <h1 className="mt-3 text-2xl font-semibold tracking-tight">
+        <h1 className="mt-3 text-2xl font-semibold tracking-tight text-zinc-900">
           {t("success.title")}
         </h1>
-        <p className="mt-3 text-sm text-slate-200/80">
+        <p className="mt-3 text-sm leading-relaxed text-zinc-600">
           {t("success.body")}
         </p>
         <button
           type="button"
           onClick={() => router.push("/")}
-          className="mt-6 inline-flex items-center justify-center rounded-2xl bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-950 shadow-md shadow-black/40 transition hover:bg-white"
+          className={`mt-8 inline-flex items-center justify-center rounded-xl px-6 py-3.5 text-base font-semibold transition ${buttonPrimary}`}
         >
           {t("success.backHome")}
         </button>
@@ -30,4 +73,3 @@ export default function OnboardingSuccessPage() {
     </div>
   );
 }
-
