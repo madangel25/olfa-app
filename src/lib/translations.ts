@@ -126,6 +126,16 @@ type TranslationMap = {
     body: string;
     backHome: string;
   };
+  pendingVerification: {
+    title: string;
+    body: string;
+    contactSupport: string;
+    backToHome: string;
+  };
+  support: {
+    title: string;
+    body: string;
+  };
   pledge: {
     title: string;
     agreeButton: string;
@@ -519,6 +529,16 @@ const translations: Record<Locale, TranslationMap> = {
       body: "Your answers and photos have been securely submitted to the Olfa team. We will notify you once your profile is reviewed and approved. Until then, parts of the platform will stay limited to protect the community.",
       backHome: "Return to home",
     },
+    pendingVerification: {
+      title: "Profile under review",
+      body: "Your profile has been submitted and is being reviewed by the Olfa team. You will not be able to access Discovery or Dashboard until an admin approves your account. We will notify you once the review is complete. If you have questions, please contact support.",
+      contactSupport: "Contact support",
+      backToHome: "Back to home",
+    },
+    support: {
+      title: "Support",
+      body: "For questions about your account or verification, please contact the Olfa team. We typically respond within 1–2 business days.",
+    },
     pledge: {
       title: "Ethical Pledge",
       agreeButton: "I Agree and Commit",
@@ -897,6 +917,16 @@ const translations: Record<Locale, TranslationMap> = {
       title: "شكراً! ملفك قيد المراجعة.",
       body: "تم إرسال إجاباتك وصورك بشكل آمن إلى فريق أولفا. سنخبرك عند مراجعة واعتماد ملفك. حتى ذلك الحين، أجزاء من المنصة ستظل محدودة لحماية المجتمع.",
       backHome: "العودة للرئيسية",
+    },
+    pendingVerification: {
+      title: "الملف قيد المراجعة",
+      body: "تم إرسال ملفك وهو قيد المراجعة من فريق أولفا. لن تتمكن من الدخول إلى الاكتشاف أو لوحة التحكم حتى تتم الموافقة على حسابك من الإدارة. سنخبرك عند انتهاء المراجعة. إن كان لديك استفسار، يرجى التواصل مع الدعم.",
+      contactSupport: "التواصل مع الدعم",
+      backToHome: "العودة للرئيسية",
+    },
+    support: {
+      title: "الدعم",
+      body: "للاستفسارات حول حسابك أو التحقق، يرجى التواصل مع فريق أولفا. نرد عادة خلال يوم إلى يومي عمل.",
     },
     pledge: {
       title: "تعهد الجدية",

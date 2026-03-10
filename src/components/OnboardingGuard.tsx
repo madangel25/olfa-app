@@ -47,6 +47,13 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
         router.replace("/onboarding/social");
         return;
       }
+
+      const isVerified = (profile as { is_verified?: boolean }).is_verified ?? false;
+      if (!isVerified) {
+        router.replace("/pending-verification");
+        return;
+      }
+
       setChecking(false);
     };
 
