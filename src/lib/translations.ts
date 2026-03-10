@@ -61,6 +61,8 @@ type TranslationMap = {
       title: string;
       subtitle: string;
       signingIn: string;
+      checkingAccess: string;
+      redirecting: string;
       noProfile: string;
       enterEmailPassword: string;
       failed: string;
@@ -386,6 +388,8 @@ const translations: Record<Locale, TranslationMap> = {
       title: "Log in to Olfa",
       subtitle: "Sign in with your email to continue. We'll take you to the right place based on your account.",
       signingIn: "Signing in…",
+      checkingAccess: "Checking access…",
+      redirecting: "Redirecting…",
       noProfile: "Could not load or create your profile. Please try again.",
       enterEmailPassword: "Please enter your email and password.",
       failed: "Login failed. Please try again.",
@@ -760,6 +764,8 @@ const translations: Record<Locale, TranslationMap> = {
       title: "تسجيل الدخول إلى أولفا",
       subtitle: "سجّل الدخول بريدك للمتابعة. سنوجّهك إلى المكان المناسب حسب حسابك.",
       signingIn: "جاري تسجيل الدخول…",
+      checkingAccess: "جاري التحقق من الصلاحية…",
+      redirecting: "جاري التوجيه…",
       noProfile: "تعذر تحميل أو إنشاء ملفك. يرجى المحاولة مرة أخرى.",
       enterEmailPassword: "يرجى إدخال بريدك الإلكتروني وكلمة المرور.",
       failed: "فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.",

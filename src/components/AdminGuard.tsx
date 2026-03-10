@@ -41,8 +41,8 @@ export function AdminGuard({ children }: AdminGuardProps) {
 
       const role = profile.role as Role;
 
-      if (role !== "admin" && role !== "moderator") {
-        window.location.href = "/dashboard";
+      if (role !== "admin") {
+        router.replace("/");
         return;
       }
 

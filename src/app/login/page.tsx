@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -18,9 +18,11 @@ function isAllowedRedirect(path: string | null): boolean {
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { t, dir } = useLanguage();
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -35,7 +37,7 @@ export default function LoginPage() {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        window.location.replace("/dashboard");
+        router.replace("/dashboard");
       }
     };
 
@@ -43,12 +45,12 @@ export default function LoginPage() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        window.location.replace("/dashboard");
+        router.replace("/dashboard");
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [router]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -64,6 +66,7 @@ export default function LoginPage() {
     }
 
     setLoading(true);
+    setLoadingMessage(t("login.signingIn") ?? "Signing in…");
 
     try {
       const { data: signInData, error: signInError } =
@@ -71,12 +74,29 @@ export default function LoginPage() {
 
       if (signInError) {
         setError(signInError.message);
+        setLoading(false);
+        setLoadingMessage(null);
         return;
       }
 
       const user = signInData.user;
       if (!user) {
         setError(t("login.failed"));
+        setLoading(false);
+        setLoadingMessage(null);
+        return;
+      }
+
+      setLoadingMessage(t("login.checkingAccess") ?? "Checking access…");
+
+      const res = await fetch("/api/auth/role", { credentials: "include" });
+      const serverRole: string | undefined = res.ok
+        ? (await res.json()).role
+        : undefined;
+
+      if (serverRole === "admin") {
+        setLoadingMessage(t("login.redirecting") ?? "Redirecting…");
+        router.push("/admin/dashboard");
         return;
       }
 
@@ -88,18 +108,17 @@ export default function LoginPage() {
 
       if (!profile) {
         setError(t("login.noProfile"));
+        setLoading(false);
+        setLoadingMessage(null);
         return;
       }
 
-      const role = (profile.role as Role) || "user";
       const pledgeAccepted = (profile as { pledge_accepted?: boolean }).pledge_accepted ?? false;
       const redirectTo = searchParams.get("redirect");
       const defaultDest = isAllowedRedirect(redirectTo) ? redirectTo! : "/dashboard";
 
       let destination: string;
-      if (role === "admin") {
-        destination = "/admin/dashboard";
-      } else if (!pledgeAccepted) {
+      if (!pledgeAccepted) {
         destination = "/onboarding/pledge";
       } else if (!profile.quiz_completed) {
         destination = "/onboarding/social";
@@ -109,13 +128,14 @@ export default function LoginPage() {
         destination = defaultDest;
       }
 
-      window.location.replace(destination);
+      setLoadingMessage(t("login.redirecting") ?? "Redirecting…");
+      router.push(destination);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t("login.somethingWrong")
       );
-    } finally {
       setLoading(false);
+      setLoadingMessage(null);
     }
   };
 
@@ -199,7 +219,7 @@ export default function LoginPage() {
             disabled={loading}
             className="mt-2 inline-flex w-full items-center justify-center rounded-xl bg-sky-500 px-4 py-3.5 text-base font-semibold text-white shadow-md transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {loading ? t("login.signingIn") : t("common.login")}
+            {loading ? (loadingMessage ?? t("login.signingIn")) : t("common.login")}
           </button>
         </form>
 
