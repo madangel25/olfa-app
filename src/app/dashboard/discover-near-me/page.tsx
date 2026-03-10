@@ -403,6 +403,8 @@ export default function DiscoverNearMePage() {
           const ignored = ignoredIds.has(u.id);
           const compat = computeCompatibility(myQuizAnswers, u.quiz_answers);
           const rating = ratings[u.id];
+          const hasRating = !!rating && rating.count > 0;
+          const starsFilled = hasRating ? Math.round(rating.avg) : 0;
 
           return (
             <Link
@@ -469,12 +471,17 @@ export default function DiscoverNearMePage() {
                       {compat}% match
                     </span>
                   )}
-                  {rating && rating.count > 0 && (
-                    <span className="flex items-center gap-0.5 text-amber-600">
-                      <Star className="h-3.5 w-3.5 fill-current" />
-                      <span className="text-xs font-medium">{rating.avg.toFixed(1)}</span>
-                    </span>
-                  )}
+                  <span className="flex items-center gap-0.5 text-amber-600">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star
+                        key={i}
+                        className={`h-3.5 w-3.5 ${i <= starsFilled ? "fill-current" : "text-zinc-300"}`}
+                      />
+                    ))}
+                  </span>
+                  <span className="text-xs text-zinc-500">
+                    {hasRating ? rating.avg.toFixed(1) : (locale === "ar" ? "جديد" : "New")}
+                  </span>
                 </div>
               </div>
             </Link>

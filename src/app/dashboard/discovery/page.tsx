@@ -6,7 +6,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
-import { Search, Heart, MessageCircle, BadgeCheck } from "lucide-react";
+import { Search, Heart, MessageCircle, BadgeCheck, Star } from "lucide-react";
 
 type UserCard = {
   id: string;
@@ -63,6 +63,7 @@ export default function DiscoveryPage() {
   const [loading, setLoading] = useState(true);
   const [likingId, setLikingId] = useState<string | null>(null);
   const [matchToast, setMatchToast] = useState<string | null>(null);
+  const [ratings, setRatings] = useState<Record<string, { avg: number; count: number }>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
   const [ageMin, setAgeMin] = useState<number | "">("");
@@ -171,6 +172,24 @@ export default function DiscoveryPage() {
         };
       });
       setUsers(cards);
+
+      // Ratings from public.ratings via RPC.
+      const ratingMap: Record<string, { avg: number; count: number }> = {};
+      await Promise.all(
+        cards.map(async (u) => {
+          const { data, error } = await supabase.rpc("get_profile_rating", { p_to_user_id: u.id });
+          if (error) {
+            console.error("get_profile_rating failed:", error.message ?? error);
+            return;
+          }
+          const row = Array.isArray(data) ? data[0] : data;
+          if (row && typeof (row as { avg_rating?: number }).avg_rating === "number") {
+            const x = row as { avg_rating: number; count_ratings: number };
+            ratingMap[u.id] = { avg: x.avg_rating, count: Number(x.count_ratings) || 0 };
+          }
+        })
+      );
+      setRatings(ratingMap);
       } catch (err) {
         console.error("Discovery fetch failed:", err);
         setUsers([]);
@@ -429,6 +448,9 @@ export default function DiscoveryPage() {
           const blurPhoto = u.photo_privacy_blur && !u.is_match;
           const maritalKey = u.marital_status ? MARITAL_KEYS[u.marital_status.toLowerCase()] : null;
           const maritalLabel = maritalKey ? t(`profile.${maritalKey}`) : null;
+          const rating = ratings[u.id];
+          const hasRating = !!rating && rating.count > 0;
+          const starsFilled = hasRating ? Math.round(rating.avg) : 0;
 
           return (
             <li
@@ -481,6 +503,21 @@ export default function DiscoveryPage() {
                       ? t("discovery.online")
                       : formatLastSeen(u.last_seen_at, t, locale) || t("discovery.offline")}
                   </p>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-zinc-500">
+                      {hasRating
+                        ? (locale === "ar" ? `${rating.avg.toFixed(1)} تقييم` : `${rating.avg.toFixed(1)} rating`)
+                        : (locale === "ar" ? "جديد" : "New")}
+                    </span>
+                    <span className="flex items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Star
+                          key={i}
+                          className={`h-3.5 w-3.5 ${i <= starsFilled ? "text-amber-500 fill-current" : "text-zinc-300"}`}
+                        />
+                      ))}
+                    </span>
+                  </div>
                 </div>
               </Link>
               <div className="border-t border-zinc-100 p-3">
