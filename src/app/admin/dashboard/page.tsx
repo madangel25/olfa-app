@@ -21,10 +21,35 @@ import {
   X,
   ShieldBan,
   AlertTriangle,
+  ListOrdered,
+  ChevronUp,
+  ChevronDown,
+  Plus,
+  GripVertical,
 } from "lucide-react";
 import { logAdminAction } from "@/lib/adminLog";
+import { QuizEditorModal } from "@/components/admin/QuizEditorModal";
 
-type TabId = "overview" | "verifications" | "users";
+type TabId = "overview" | "verifications" | "users" | "quiz";
+
+type QuizOptionRow = {
+  value: string;
+  label_en: string;
+  label_ar: string;
+  helper_en: string;
+  helper_ar: string;
+};
+
+type QuizQuestionRow = {
+  id: string;
+  order_index: number;
+  category: string;
+  title_en: string;
+  title_ar: string;
+  subtitle_en: string;
+  subtitle_ar: string;
+  options: QuizOptionRow[];
+};
 
 type VerificationPhotos = {
   photo1: string | null;
@@ -111,6 +136,13 @@ export default function AdminDashboardPage() {
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [banningDeviceId, setBanningDeviceId] = useState<string | null>(null);
+
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestionRow[]>([]);
+  const [loadingQuiz, setLoadingQuiz] = useState(false);
+  const [quizModal, setQuizModal] = useState<
+    null | { type: "add" } | { type: "edit"; question: QuizQuestionRow }
+  >(null);
+  const [savingQuiz, setSavingQuiz] = useState(false);
 
   // Admin access is enforced by AdminGuard (role === 'admin' only).
 
@@ -380,6 +412,125 @@ export default function AdminDashboardPage() {
     if (activeTab === "verifications") loadPendingVerifications();
   }, [activeTab, loadPendingVerifications]);
 
+  const loadQuizQuestions = useCallback(async () => {
+    setLoadingQuiz(true);
+    setError(null);
+    try {
+      const { data, error: err } = await supabase
+        .from("quiz_questions")
+        .select("id, order_index, category, title_en, title_ar, subtitle_en, subtitle_ar, options")
+        .order("order_index", { ascending: true });
+      if (err) {
+        setError(err.message || "Failed to load quiz questions.");
+        setQuizQuestions([]);
+        return;
+      }
+      setQuizQuestions(
+        (data ?? []).map((row: Record<string, unknown>) => ({
+          id: row.id as string,
+          order_index: Number(row.order_index) ?? 0,
+          category: (row.category as string) ?? "",
+          title_en: (row.title_en as string) ?? "",
+          title_ar: (row.title_ar as string) ?? "",
+          subtitle_en: (row.subtitle_en as string) ?? "",
+          subtitle_ar: (row.subtitle_ar as string) ?? "",
+          options: Array.isArray(row.options)
+            ? (row.options as QuizOptionRow[])
+            : [],
+        }))
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load quiz.");
+      setQuizQuestions([]);
+    } finally {
+      setLoadingQuiz(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "quiz") loadQuizQuestions();
+  }, [activeTab, loadQuizQuestions]);
+
+  const saveQuizQuestion = async (data: {
+    category: string;
+    title_en: string;
+    title_ar: string;
+    subtitle_en: string;
+    subtitle_ar: string;
+    options: QuizOptionRow[];
+  }) => {
+    setSavingQuiz(true);
+    setError(null);
+    try {
+      const payload = {
+        category: data.category.trim() || "uncategorized",
+        title_en: data.title_en,
+        title_ar: data.title_ar,
+        subtitle_en: data.subtitle_en,
+        subtitle_ar: data.subtitle_ar,
+        options: data.options,
+        updated_at: new Date().toISOString(),
+      };
+      if (quizModal?.type === "edit") {
+        const { error: err } = await supabase
+          .from("quiz_questions")
+          .update(payload)
+          .eq("id", quizModal.question.id);
+        if (err) throw err;
+        setSuccess("تم تحديث السؤال.");
+      } else {
+        const maxOrder =
+          quizQuestions.length > 0
+            ? Math.max(...quizQuestions.map((q) => q.order_index), -1) + 1
+            : 0;
+        const { error: err } = await supabase.from("quiz_questions").insert({
+          ...payload,
+          order_index: maxOrder,
+        });
+        if (err) throw err;
+        setSuccess("تمت إضافة السؤال.");
+      }
+      setQuizModal(null);
+      loadQuizQuestions();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save question.");
+    } finally {
+      setSavingQuiz(false);
+    }
+  };
+
+  const deleteQuizQuestion = async (id: string) => {
+    setError(null);
+    try {
+      const { error: err } = await supabase.from("quiz_questions").delete().eq("id", id);
+      if (err) throw err;
+      setSuccess("تم حذف السؤال.");
+      setQuizQuestions((prev) => prev.filter((q) => q.id !== id));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete.");
+    }
+  };
+
+  const moveQuizQuestion = async (id: string, direction: "up" | "down") => {
+    const idx = quizQuestions.findIndex((q) => q.id === id);
+    if (idx < 0) return;
+    const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= quizQuestions.length) return;
+    const a = quizQuestions[idx];
+    const b = quizQuestions[swapIdx];
+    setError(null);
+    try {
+      await Promise.all([
+        supabase.from("quiz_questions").update({ order_index: b.order_index, updated_at: new Date().toISOString() }).eq("id", a.id),
+        supabase.from("quiz_questions").update({ order_index: a.order_index, updated_at: new Date().toISOString() }).eq("id", b.id),
+      ]);
+      setSuccess("تم تغيير الترتيب.");
+      loadQuizQuestions();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to reorder.");
+    }
+  };
+
   const filteredUsers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return users;
@@ -431,6 +582,7 @@ export default function AdminDashboardPage() {
     { id: "overview", label: "نظرة عامة", icon: BarChart3 },
     { id: "verifications", label: "قيد الموافقة", icon: ImageIcon },
     { id: "users", label: "المستخدمون", icon: Users },
+    { id: "quiz", label: "إدارة الأسئلة", icon: ListOrdered },
   ];
 
   return (
@@ -685,6 +837,91 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
+        {/* Quiz Editor */}
+        {activeTab === "quiz" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-zinc-800">إدارة الأسئلة</h2>
+              <button
+                type="button"
+                onClick={() => setQuizModal({ type: "add" })}
+                className="inline-flex items-center gap-2 rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-sky-600"
+              >
+                <Plus className="h-4 w-4" />
+                إضافة سؤال
+              </button>
+            </div>
+            {loadingQuiz ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-10 w-10 animate-spin text-sky-500" />
+              </div>
+            ) : (
+              <div className={SKY.card + " overflow-hidden"}>
+                <table className="w-full text-sm text-right border-collapse">
+                  <thead>
+                    <tr className="bg-zinc-50/80">
+                      <th className="px-4 py-3 font-semibold text-zinc-600 w-16">#</th>
+                      <th className="px-4 py-3 font-semibold text-zinc-600">الفئة</th>
+                      <th className="px-4 py-3 font-semibold text-zinc-600">النص (EN)</th>
+                      <th className="px-4 py-3 font-semibold text-zinc-600 w-44">إجراءات</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-100">
+                    {quizQuestions.map((q, i) => (
+                      <tr key={q.id} className="hover:bg-sky-50/50">
+                        <td className="px-4 py-3 text-zinc-600">{i + 1}</td>
+                        <td className="px-4 py-3 font-mono text-zinc-700">{q.category}</td>
+                        <td className="px-4 py-3 text-zinc-800 max-w-xs truncate">{q.title_en || "—"}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1 flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() => moveQuizQuestion(q.id, "up")}
+                              disabled={i === 0}
+                              className="p-1.5 rounded-lg hover:bg-zinc-100 disabled:opacity-40"
+                              title="تحريك لأعلى"
+                            >
+                              <ChevronUp className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveQuizQuestion(q.id, "down")}
+                              disabled={i === quizQuestions.length - 1}
+                              className="p-1.5 rounded-lg hover:bg-zinc-100 disabled:opacity-40"
+                              title="تحريك لأسفل"
+                            >
+                              <ChevronDown className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setQuizModal({ type: "edit", question: q })}
+                              className="p-1.5 rounded-lg hover:bg-sky-100 text-sky-600"
+                              title="تعديل"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteQuizQuestion(q.id)}
+                              className="p-1.5 rounded-lg hover:bg-red-50 text-red-600"
+                              title="حذف"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {quizQuestions.length === 0 && (
+                  <p className="p-8 text-center text-zinc-500 text-sm">لا توجد أسئلة. أضف سؤالاً من الجدول في الترجمة أو من الزر أعلاه.</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Users table */}
         {activeTab === "users" && (
           <div className={SKY.card + " overflow-hidden"}>
@@ -835,6 +1072,27 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Quiz Editor Modal */}
+      {quizModal && (
+        <QuizEditorModal
+          initial={
+            quizModal.type === "edit"
+              ? {
+                  category: quizModal.question.category,
+                  title_en: quizModal.question.title_en,
+                  title_ar: quizModal.question.title_ar,
+                  subtitle_en: quizModal.question.subtitle_en,
+                  subtitle_ar: quizModal.question.subtitle_ar,
+                  options: quizModal.question.options,
+                }
+              : null
+          }
+          onSave={saveQuizQuestion}
+          onClose={() => setQuizModal(null)}
+          saving={savingQuiz}
+        />
+      )}
 
       {/* Modals */}
       {modal?.type === "edit" && (

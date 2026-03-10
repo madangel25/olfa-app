@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -8,28 +8,40 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-type QuestionId =
-  | "financial_views"
-  | "social_roles"
-  | "anger_management"
-  | "lifestyle"
-  | "interests";
+type QuizQuestionDisplay = {
+  id: string;
+  title: string;
+  subtitle: string;
+  options: { value: string; label: string; helper?: string }[];
+};
 
-type QuizAnswerMap = Partial<Record<QuestionId, string>>;
-
-const TOTAL_STEPS = 5;
+type QuizAnswerMap = Partial<Record<string, string>>;
 
 export default function OnboardingQuizPage() {
   const router = useRouter();
-  const { t, getQuizQuestions, dir } = useLanguage();
+  const { t, getQuizQuestions, locale, dir } = useLanguage();
   const { theme } = useTheme();
-  const questions = getQuizQuestions();
+  const [questionsFromDb, setQuestionsFromDb] = useState<QuizQuestionDisplay[]>([]);
+  const [questionsLoading, setQuestionsLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswerMap>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
+
+  const questions = useMemo(() => {
+    if (questionsFromDb.length > 0) return questionsFromDb;
+    const fallback = getQuizQuestions();
+    return fallback.map((q) => ({
+      id: q.id,
+      title: q.title,
+      subtitle: q.subtitle,
+      options: q.options.map((o) => ({ value: o.value, label: o.label, helper: o.helper })),
+    }));
+  }, [questionsFromDb, getQuizQuestions]);
+
+  const totalSteps = questions.length;
 
   useEffect(() => {
     const ensureAuthenticated = async () => {
@@ -63,11 +75,46 @@ export default function OnboardingQuizPage() {
     ensureAuthenticated();
   }, [router]);
 
+  useEffect(() => {
+    if (!checkingSession) {
+      const fetchQuestions = async () => {
+        setQuestionsLoading(true);
+        try {
+          const { data, error: err } = await supabase
+            .from("quiz_questions")
+            .select("category, title_en, title_ar, subtitle_en, subtitle_ar, options")
+            .order("order_index", { ascending: true });
+          if (!err && data && data.length > 0) {
+            const isAr = locale === "ar";
+            setQuestionsFromDb(
+              data.map((row: Record<string, unknown>) => {
+                const opts = (row.options as { value: string; label_en?: string; label_ar?: string; helper_en?: string; helper_ar?: string }[]) ?? [];
+                return {
+                  id: (row.category as string) ?? "",
+                  title: (isAr ? row.title_ar : row.title_en) as string,
+                  subtitle: (isAr ? row.subtitle_ar : row.subtitle_en) as string,
+                  options: opts.map((o) => ({
+                    value: o.value ?? "",
+                    label: (isAr ? o.label_ar : o.label_en) ?? "",
+                    helper: (isAr ? o.helper_ar : o.helper_en) ?? undefined,
+                  })),
+                };
+              })
+            );
+          }
+        } finally {
+          setQuestionsLoading(false);
+        }
+      };
+      fetchQuestions();
+    }
+  }, [checkingSession, locale]);
+
   const handleSubmit = async () => {
     setError(null);
     setSuccess(null);
 
-    const missing = questions.filter((q) => !answers[q.id as QuestionId]);
+    const missing = questions.filter((q) => !answers[q.id]);
     if (missing.length > 0) {
       setError(t("quiz.answerAll"));
       return;
@@ -95,7 +142,7 @@ export default function OnboardingQuizPage() {
       const { error: updateError } = await supabase
         .from("profiles")
         .update({
-          quiz_answers: answers,
+          quiz_answers: answers as Record<string, string>,
           quiz_completed: true,
         })
         .eq("id", user.id);
@@ -121,7 +168,7 @@ export default function OnboardingQuizPage() {
     }
   };
 
-  if (checkingSession) {
+  if (checkingSession || questionsLoading) {
     return (
       <LoadingScreen
         message={t("common.loading")}
@@ -131,7 +178,7 @@ export default function OnboardingQuizPage() {
   }
 
   const question = questions[currentStep];
-  const progress = ((currentStep + 1) / TOTAL_STEPS) * 100;
+  const progress = totalSteps > 0 ? ((currentStep + 1) / totalSteps) * 100 : 0;
 
   const isMale = theme === "male";
   const isFemale = theme === "female";
@@ -173,7 +220,7 @@ export default function OnboardingQuizPage() {
         {/* Step progress bar */}
         <div className="mb-8">
           <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">
-            {t("quiz.questionLabel")} {currentStep + 1} of {TOTAL_STEPS}
+            {t("quiz.questionLabel")} {currentStep + 1} of {totalSteps}
           </p>
           <div className="h-2 w-full rounded-full bg-zinc-200 overflow-hidden">
             <div
@@ -204,7 +251,7 @@ export default function OnboardingQuizPage() {
               <p className="text-sm text-zinc-600">{question.subtitle}</p>
               <div className="mt-4 space-y-3">
                 {question.options.map((option) => {
-                  const checked = answers[question.id as QuestionId] === option.value;
+                  const checked = answers[question.id] === option.value;
                   return (
                     <label
                       key={option.value}
@@ -222,7 +269,7 @@ export default function OnboardingQuizPage() {
                         onChange={() =>
                           setAnswers((prev) => ({
                             ...prev,
-                            [question.id as QuestionId]: option.value,
+                            [question.id]: option.value,
                           }))
                         }
                         className={`mt-0.5 h-4 w-4 ${
@@ -276,11 +323,11 @@ export default function OnboardingQuizPage() {
               <ChevronLeft className="h-4 w-4" />
               {t("common.back")}
             </button>
-            {currentStep < TOTAL_STEPS - 1 ? (
+            {currentStep < totalSteps - 1 ? (
               <button
                 type="button"
                 onClick={() => setCurrentStep((s) => s + 1)}
-                disabled={!answers[question?.id as QuestionId] || loading}
+                disabled={!answers[question?.id] || loading}
                 className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed ${buttonPrimary}`}
               >
                 {t("common.next")}
