@@ -67,6 +67,7 @@ type UserRow = {
   verification_submitted: boolean;
   banned_at: string | null;
   is_vip: boolean;
+  profile_completion: number;
   country_code?: string | null;
   rating?: number | null;
 };
@@ -140,6 +141,9 @@ export default function AdminDashboardPage() {
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [banningDeviceId, setBanningDeviceId] = useState<string | null>(null);
   const [togglingVipId, setTogglingVipId] = useState<string | null>(null);
+  const [completionDraft, setCompletionDraft] = useState<Record<string, number>>({});
+  const [updatingCompletionId, setUpdatingCompletionId] = useState<string | null>(null);
+  const [updatingVerifiedId, setUpdatingVerifiedId] = useState<string | null>(null);
 
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestionRow[]>([]);
   const [loadingQuiz, setLoadingQuiz] = useState(false);
@@ -200,7 +204,7 @@ export default function AdminDashboardPage() {
       const { data, error: err } = await supabase
         .from("profiles")
         .select(
-          "id, full_name, email, gender, created_at, is_verified, verification_submitted, banned_at, is_vip"
+          "id, full_name, email, gender, created_at, is_verified, verification_submitted, banned_at, is_vip, profile_completion"
         )
         .order("created_at", { ascending: false });
 
@@ -216,10 +220,13 @@ export default function AdminDashboardPage() {
           email: (row.email as string | null) ?? null,
           gender: (row.gender as string | null) ?? null,
           created_at: (row.created_at as string | null) ?? null,
-          is_verified: Boolean(row.is_verified),
+          is_verified: row.is_verified === true,
           verification_submitted: Boolean(row.verification_submitted),
           banned_at: (row.banned_at as string | null) ?? null,
           is_vip: row.is_vip === true,
+          profile_completion: typeof row.profile_completion === "number" && row.profile_completion >= 0 && row.profile_completion <= 100
+            ? row.profile_completion
+            : 0,
         }))
       );
     } catch (e) {
@@ -237,7 +244,7 @@ export default function AdminDashboardPage() {
         supabase
           .from("profiles")
           .select(
-            "id, full_name, email, gender, created_at, is_verified, verification_submitted, banned_at, device_id, is_vip"
+            "id, full_name, email, gender, created_at, is_verified, verification_submitted, banned_at, device_id, is_vip, profile_completion"
           )
           .eq("verification_submitted", true)
           .eq("is_verified", false)
@@ -259,10 +266,13 @@ export default function AdminDashboardPage() {
         email: (row.email as string | null) ?? null,
         gender: (row.gender as string | null) ?? null,
         created_at: (row.created_at as string | null) ?? null,
-        is_verified: Boolean(row.is_verified),
+        is_verified: row.is_verified === true,
         verification_submitted: Boolean(row.verification_submitted),
         banned_at: (row.banned_at as string | null) ?? null,
         is_vip: row.is_vip === true,
+        profile_completion: typeof row.profile_completion === "number" && row.profile_completion >= 0 && row.profile_completion <= 100
+          ? row.profile_completion
+          : 0,
         device_id: (row.device_id as string | null) ?? null,
       }));
       setPendingUsers(list);
@@ -552,6 +562,68 @@ export default function AdminDashboardPage() {
     );
   }, [users, searchQuery]);
 
+  const handleUpdateCompletion = async (user: UserRow, value: number) => {
+    const clamped = Math.min(100, Math.max(0, value));
+    setUpdatingCompletionId(user.id);
+    setError(null);
+    setSuccess(null);
+    try {
+      const { error: err } = await supabase
+        .from("profiles")
+        .update({ profile_completion: clamped })
+        .eq("id", user.id);
+      if (err) throw err;
+      setUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, profile_completion: clamped } : u))
+      );
+      setPendingUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, profile_completion: clamped } : u))
+      );
+      setCompletionDraft((prev) => {
+        const next = { ...prev };
+        delete next[user.id];
+        return next;
+      });
+      setSuccess("تم تحديث نسبة الإكمال.");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update completion.");
+    } finally {
+      setUpdatingCompletionId(null);
+    }
+  };
+
+  const handleToggleVerified = async (user: UserRow) => {
+    setUpdatingVerifiedId(user.id);
+    setError(null);
+    setSuccess(null);
+    try {
+      const newVerified = !user.is_verified;
+      const { error: err } = await supabase
+        .from("profiles")
+        .update({ is_verified: newVerified })
+        .eq("id", user.id);
+      if (err) throw err;
+      setUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, is_verified: newVerified } : u))
+      );
+      if (newVerified) {
+        setPendingUsers((prev) => prev.filter((u) => u.id !== user.id));
+      } else {
+        setPendingUsers((prev) =>
+          prev.map((u) => (u.id === user.id ? { ...u, is_verified: newVerified } : u))
+        );
+      }
+      setSuccess(newVerified ? "تم توثيق المستخدم." : "تم إلغاء التوثيق.");
+      setTimeout(() => setSuccess(null), 3000);
+      if (newVerified) loadStats();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update verification.");
+    } finally {
+      setUpdatingVerifiedId(null);
+    }
+  };
+
   const handleToggleVip = async (user: UserRow) => {
     setTogglingVipId(user.id);
     try {
@@ -785,6 +857,56 @@ export default function AdminDashboardPage() {
                         <p className="text-xs text-zinc-400">
                           {formatDate(user.created_at)}
                         </p>
+                        {/* Manual completion & verify – compact */}
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <span className="text-xs text-zinc-500">إكمال %:</span>
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={completionDraft[user.id] ?? user.profile_completion ?? 0}
+                            onChange={(e) =>
+                              setCompletionDraft((prev) => ({
+                                ...prev,
+                                [user.id]: Math.min(100, Math.max(0, Number(e.target.value) || 0)),
+                              }))
+                            }
+                            className="w-11 rounded border border-zinc-200 px-1 py-0.5 text-xs text-right text-zinc-900"
+                          />
+                          <button
+                            type="button"
+                            disabled={updatingCompletionId === user.id}
+                            onClick={() =>
+                              handleUpdateCompletion(user, completionDraft[user.id] ?? user.profile_completion ?? 0)
+                            }
+                            className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                              user.gender === "male" ? "bg-sky-500 hover:bg-sky-600 text-white" : "bg-pink-500 hover:bg-pink-600 text-white"
+                            } disabled:opacity-60`}
+                          >
+                            {updatingCompletionId === user.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "تحديث"}
+                          </button>
+                          <span className="text-xs text-zinc-500 mr-1">توثيق:</span>
+                          <button
+                            type="button"
+                            disabled={updatingVerifiedId === user.id}
+                            onClick={() => handleToggleVerified(user)}
+                            className={`rounded-lg px-2 py-0.5 text-xs font-medium ${
+                              user.is_verified
+                                ? user.gender === "male"
+                                  ? "bg-sky-500 text-white"
+                                  : "bg-pink-500 text-white"
+                                : "bg-zinc-200 text-zinc-600"
+                            } disabled:opacity-60`}
+                          >
+                            {updatingVerifiedId === user.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : user.is_verified ? (
+                              "موثق"
+                            ) : (
+                              "توثيق الآن"
+                            )}
+                          </button>
+                        </div>
                       </div>
                       {/* Photos */}
                       <div className="flex items-center gap-3 flex-wrap order-2">
@@ -998,6 +1120,8 @@ export default function AdminDashboardPage() {
                       <th className="px-4 py-3 font-semibold text-zinc-600 text-right">الجنس</th>
                       <th className="px-4 py-3 font-semibold text-zinc-600 text-right">تاريخ الانضمام</th>
                       <th className="px-4 py-3 font-semibold text-zinc-600 text-right">الحالة</th>
+                      <th className="px-2 py-3 font-semibold text-zinc-600 text-right whitespace-nowrap">% إكمال</th>
+                      <th className="px-2 py-3 font-semibold text-zinc-600 text-right whitespace-nowrap">توثيق</th>
                       <th className="px-4 py-3 font-semibold text-zinc-600 text-right">VIP</th>
                       <th className="px-3 py-3 font-semibold text-zinc-600 text-right rounded-tl-lg w-20">إجراءات</th>
                     </tr>
@@ -1031,6 +1155,68 @@ export default function AdminDashboardPage() {
                           >
                             {statusLabel(user)}
                           </span>
+                        </td>
+                        <td className="px-2 py-3">
+                          {(() => {
+                            const isMale = user.gender === "male";
+                            const themeBtn = isMale ? "bg-sky-500 hover:bg-sky-600 text-white" : "bg-pink-500 hover:bg-pink-600 text-white";
+                            const val = completionDraft[user.id] ?? user.profile_completion ?? 0;
+                            return (
+                              <div className="flex items-center gap-1 flex-wrap">
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={100}
+                                  value={val}
+                                  onChange={(e) =>
+                                    setCompletionDraft((prev) => ({
+                                      ...prev,
+                                      [user.id]: Math.min(100, Math.max(0, Number(e.target.value) || 0)),
+                                    }))
+                                  }
+                                  className="w-12 rounded border border-zinc-200 px-1 py-0.5 text-xs text-right text-zinc-900"
+                                />
+                                <button
+                                  type="button"
+                                  disabled={updatingCompletionId === user.id}
+                                  onClick={() => handleUpdateCompletion(user, val)}
+                                  className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${themeBtn} disabled:opacity-60`}
+                                >
+                                  {updatingCompletionId === user.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    "تحديث"
+                                  )}
+                                </button>
+                              </div>
+                            );
+                          })()}
+                        </td>
+                        <td className="px-2 py-3">
+                          {(() => {
+                            const isMale = user.gender === "male";
+                            const themeOn = isMale ? "bg-sky-500 text-white" : "bg-pink-500 text-white";
+                            const themeOff = "bg-zinc-200 text-zinc-600";
+                            return (
+                              <button
+                                type="button"
+                                disabled={updatingVerifiedId === user.id}
+                                onClick={() => handleToggleVerified(user)}
+                                className={`rounded-lg px-2 py-1 text-xs font-medium transition ${
+                                  user.is_verified ? themeOn : themeOff
+                                } hover:opacity-90 disabled:opacity-60`}
+                                title={user.is_verified ? "إلغاء التوثيق" : "توثيق"}
+                              >
+                                {updatingVerifiedId === user.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : user.is_verified ? (
+                                  "موثق"
+                                ) : (
+                                  "غير موثق"
+                                )}
+                              </button>
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-3">
                           <button
