@@ -134,38 +134,34 @@ export function Navbar() {
       aria-label="Main"
     >
       <div className="mx-auto w-full max-w-7xl px-4 py-2.5 sm:px-6">
-        {/* Main wrapper flip: Logo (first child) → far left in EN, far right in AR. */}
+        {/* Top-level: use dir="ltr" so flex order is only from our flex-row / flex-row-reverse, not from page dir. */}
         <div
-          className={`flex w-full items-center justify-between gap-4 ${
-            locale === "ar" ? "flex-row-reverse" : "flex-row"
-          }`}
+          dir="ltr"
+          className={`flex items-center justify-between w-full ${locale === "ar" ? "flex-row-reverse" : "flex-row"}`}
         >
-          {/* Logo: first in DOM → EN = far left, AR = far right */}
-          <Link
-            href="/"
-            className={`flex items-center gap-2 text-lg font-semibold text-zinc-900 transition ${accentClass} hover:opacity-90`}
-            aria-label="Home"
-          >
-            {logoUrl ? (
-              <img src={logoUrl} alt="Olfa" className="h-8 w-auto object-contain" />
-            ) : (
-              "Olfa"
-            )}
-          </Link>
+          {/* First div: Logo only. flex-row-reverse in AR moves this to far right (above sidebar). */}
+          <div>
+            <Link
+              href="/"
+              className={`flex items-center gap-2 text-lg font-semibold text-zinc-900 transition ${accentClass} hover:opacity-90`}
+              aria-label="Home"
+            >
+              {logoUrl ? (
+                <img src={logoUrl} alt="Olfa" className="h-8 w-auto object-contain" />
+              ) : (
+                "Olfa"
+              )}
+            </Link>
+          </div>
 
-          {/* Control group: also flex-row-reverse in AR so Globe, Bell, User line up correctly on the left. */}
+          {/* Second div: Globe, Notifications, User. In AR this block is on the far left. */}
           <div
-            className={`flex items-center gap-2 sm:gap-3 ${
-              locale === "ar" ? "flex-row-reverse" : ""
-            }`}
+            className={`flex items-center gap-2 sm:gap-3 ${locale === "ar" ? "flex-row-reverse" : ""}`}
           >
-            {/* Notifications - order: LTR 1st, RTL 2nd */}
             {isLoggedIn && (
               <Link
                 href="/dashboard/notifications"
-                className={`relative rounded-xl border ${borderClass} bg-white p-2 text-[var(--theme-primary)] transition ${hoverBgClass} hover:opacity-90 ${
-                  isRtl ? "order-2" : "order-1"
-                }`}
+                className={`relative rounded-xl border ${borderClass} bg-white p-2 text-[var(--theme-primary)] transition ${hoverBgClass} hover:opacity-90`}
                 aria-label="Notifications"
               >
                 <Bell className="h-5 w-5" />
@@ -178,9 +174,8 @@ export function Navbar() {
               </Link>
             )}
 
-            {/* User dropdown - order: LTR 2nd, RTL 3rd */}
             {isLoggedIn && (
-              <div className={`relative ${isRtl ? "order-3" : "order-2"}`}>
+              <div className="relative">
                 <button
                   type="button"
                   onClick={() => setDropdownOpen((o) => !o)}
@@ -204,10 +199,9 @@ export function Navbar() {
                       aria-hidden
                       onClick={() => setDropdownOpen(false)}
                     />
+                    {/* User dropdown: left-0 in AR so it aligns with left side of button and opens right into the screen. */}
                     <div
-                      className={`absolute top-full z-50 mt-2 w-72 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl ${
-                        locale === "ar" ? "left-0" : "right-0"
-                      }`}
+                      className={`absolute top-full z-50 mt-2 w-72 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl ${locale === "ar" ? "left-0" : "right-0"}`}
                       role="menu"
                       aria-orientation="vertical"
                       aria-labelledby="user-menu-button"
@@ -282,8 +276,7 @@ export function Navbar() {
               </div>
             )}
 
-            {/* Language switcher (Globe dropdown): LTR = 3rd (far right), RTL = 1st (far left) */}
-            <div className={`relative ${isRtl ? "order-1" : "order-3"}`}>
+            <div className="relative">
               <button
                 type="button"
                 onClick={() => setLangDropdownOpen((o) => !o)}
@@ -301,10 +294,9 @@ export function Navbar() {
                     aria-hidden
                     onClick={() => setLangDropdownOpen(false)}
                   />
+                  {/* Language dropdown: left-0 in AR so it stays on screen. */}
                   <div
-                    className={`absolute top-full z-50 mt-2 min-w-[10rem] overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-xl ${
-                      locale === "ar" ? "left-0" : "right-0"
-                    }`}
+                    className={`absolute top-full z-50 mt-2 min-w-[10rem] overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-xl ${locale === "ar" ? "left-0" : "right-0"}`}
                     role="menu"
                     aria-label={locale === "ar" ? "Language" : "اللغة"}
                   >
