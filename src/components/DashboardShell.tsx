@@ -119,10 +119,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       style={{ background: "var(--theme-bg)" }}
     >
       <div
-        className="flex min-h-screen flex-row"
+        className={`flex min-h-screen flex-row ${isRtl ? "flex-row-reverse" : ""}`}
         dir={isRtl ? "rtl" : "ltr"}
       >
-        {/* Sidebar: fixed width, first in DOM so it appears on the edge (right in RTL, left in LTR) */}
+        {/* Sidebar: first in DOM. flex-row-reverse in RTL puts it on the right edge; flex-row in LTR puts it on the left. */}
         <aside
           className={`hidden w-72 shrink-0 xl:block bg-white ${sidebarBorder}`}
           aria-label="Dashboard navigation"

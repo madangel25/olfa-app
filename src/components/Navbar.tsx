@@ -134,13 +134,13 @@ export function Navbar() {
       aria-label="Main"
     >
       <div className="mx-auto w-full max-w-7xl px-4 py-2.5 sm:px-6">
-        {/* Main row: flex-row LTR (Logo left, Controls right) | flex-row-reverse RTL (Logo right, Controls left). justify-between pushes them to opposite edges. */}
+        {/* Main wrapper flip: Logo (first child) → far left in EN, far right in AR. */}
         <div
-          className={`flex items-center justify-between gap-4 ${
-            isRtl ? "flex-row-reverse" : "flex-row"
+          className={`flex w-full items-center justify-between gap-4 ${
+            locale === "ar" ? "flex-row-reverse" : "flex-row"
           }`}
         >
-          {/* Logo: first in DOM → LTR = far left, RTL = far right (first thing Arabic user sees) */}
+          {/* Logo: first in DOM → EN = far left, AR = far right */}
           <Link
             href="/"
             className={`flex items-center gap-2 text-lg font-semibold text-zinc-900 transition ${accentClass} hover:opacity-90`}
@@ -153,8 +153,12 @@ export function Navbar() {
             )}
           </Link>
 
-          {/* Control group: LTR = far right (Notifications, User, Language). RTL = far left (Language, Notifications, User). Order classes set visual order. */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Control group: also flex-row-reverse in AR so Globe, Bell, User line up correctly on the left. */}
+          <div
+            className={`flex items-center gap-2 sm:gap-3 ${
+              locale === "ar" ? "flex-row-reverse" : ""
+            }`}
+          >
             {/* Notifications - order: LTR 1st, RTL 2nd */}
             {isLoggedIn && (
               <Link
@@ -201,8 +205,8 @@ export function Navbar() {
                       onClick={() => setDropdownOpen(false)}
                     />
                     <div
-                      className={`absolute top-full z-20 mt-2 w-72 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl ${
-                        isRtl ? "left-0" : "right-0"
+                      className={`absolute top-full z-50 mt-2 w-72 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl ${
+                        locale === "ar" ? "left-0" : "right-0"
                       }`}
                       role="menu"
                       aria-orientation="vertical"
@@ -298,8 +302,8 @@ export function Navbar() {
                     onClick={() => setLangDropdownOpen(false)}
                   />
                   <div
-                    className={`absolute top-full z-20 mt-2 min-w-[10rem] overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-xl ${
-                      isRtl ? "left-0" : "right-0"
+                    className={`absolute top-full z-50 mt-2 min-w-[10rem] overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-xl ${
+                      locale === "ar" ? "left-0" : "right-0"
                     }`}
                     role="menu"
                     aria-label={locale === "ar" ? "Language" : "اللغة"}
