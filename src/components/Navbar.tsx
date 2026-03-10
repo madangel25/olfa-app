@@ -16,8 +16,6 @@ import {
   Globe,
   LogOut,
   Settings,
-  Shield,
-  Trash2,
 } from "lucide-react";
 
 export function Navbar() {
@@ -137,7 +135,11 @@ export function Navbar() {
           isRtl ? "flex-row-reverse" : ""
         }`}
       >
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div
+          className={`flex items-center gap-2 sm:gap-3 ${
+            isRtl ? "flex-row-reverse" : ""
+          }`}
+        >
           <div
             className="flex items-center gap-0.5 rounded-xl border border-zinc-200 bg-transparent p-0.5"
             role="group"
@@ -214,9 +216,7 @@ export function Navbar() {
                       onClick={() => setDropdownOpen(false)}
                     />
                     <div
-                      className={`absolute top-full z-20 mt-2 w-72 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl ${
-                        isRtl ? "right-0" : "left-0"
-                      }`}
+                      className="absolute top-full z-20 mt-2 w-72 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl [inset-inline-start:0]"
                       role="menu"
                       aria-orientation="vertical"
                       aria-labelledby="user-menu-button"
@@ -273,31 +273,6 @@ export function Navbar() {
                         {locale === "ar"
                           ? "الإعدادات والخصوصية"
                           : "Settings & privacy"}
-                      </Link>
-                      <Link
-                        href="/settings?tab=security"
-                        className={`mt-1 flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-zinc-700 transition ${hoverBgClass} ${
-                          isRtl ? "flex-row-reverse text-right" : "text-left"
-                        }`}
-                        role="menuitem"
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        <Shield className="h-4 w-4 shrink-0 text-zinc-500" />
-                        {locale === "ar"
-                          ? "تغيير كلمة المرور"
-                          : "Change password"}
-                      </Link>
-                      <div className="my-2 h-px bg-zinc-100" aria-hidden />
-                      <Link
-                        href="/settings?tab=account"
-                        className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50 hover:text-red-700 ${
-                          isRtl ? "flex-row-reverse text-right" : "text-left"
-                        }`}
-                        role="menuitem"
-                        onClick={() => setDropdownOpen(false)}
-                      >
-                        <Trash2 className="h-4 w-4 shrink-0 text-red-500" />
-                        {locale === "ar" ? "حذف الحساب" : "Delete account"}
                       </Link>
                       <button
                         type="button"

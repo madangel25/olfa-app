@@ -168,7 +168,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Main content: flexible area that fills remaining space */}
-        <main className="flex-1 w-full px-3 py-4 sm:px-5 lg:px-8">
+        <main className="min-w-0 flex-1 w-full px-3 py-4 sm:px-5 lg:px-8">
           {showProgress && (
             <div className="mb-4">
               <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
