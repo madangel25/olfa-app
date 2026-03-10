@@ -28,6 +28,7 @@ export function Navbar() {
   const [userName, setUserName] = useState<string | null>(null);
   const [accountStatus, setAccountStatus] = useState<"active" | "hidden" | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [hasNewNotifications] = useState(false);
 
   useEffect(() => {
@@ -93,10 +94,12 @@ export function Navbar() {
 
   useEffect(() => {
     setDropdownOpen(false);
+    setLangDropdownOpen(false);
   }, [pathname, locale]);
 
   const switchLocale = (next: Locale) => {
     if (next === locale) return;
+    setLangDropdownOpen(false);
     setDropdownOpen(false);
     setLocale(next);
   };
@@ -130,57 +133,34 @@ export function Navbar() {
       role="navigation"
       aria-label="Main"
     >
-      <div
-        className={`flex w-full items-center justify-between gap-4 px-4 py-2.5 sm:px-6 ${
-          isRtl ? "flex-row-reverse" : ""
-        }`}
-      >
+      <div className="mx-auto w-full max-w-7xl px-4 py-2.5 sm:px-6">
         <div
-          className={`flex items-center gap-2 sm:gap-3 ${
-            isRtl ? "flex-row-reverse" : ""
+          className={`flex items-center justify-between gap-4 ${
+            isRtl ? "flex-row-reverse" : "flex-row"
           }`}
         >
-          <div
-            className="flex items-center gap-0.5 rounded-xl border border-zinc-200 bg-transparent p-0.5"
-            role="group"
-            aria-label={locale === "ar" ? "Language" : "اللغة"}
+          {/* Logo: LTR = far left, RTL = far right (start of eye-path) */}
+          <Link
+            href="/"
+            className={`flex items-center gap-2 text-lg font-semibold text-zinc-900 transition ${accentClass} hover:opacity-90`}
+            aria-label="Home"
           >
-            <span className="flex items-center px-2 text-zinc-500" aria-hidden>
-              <Globe className="h-4 w-4 shrink-0" />
-            </span>
-            <button
-              type="button"
-              onClick={() => switchLocale("en")}
-              className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition sm:px-3 sm:py-2 sm:text-sm ${
-                locale === "en"
-                  ? `bg-white/80 ${accentClass} border ${borderClass} shadow-sm`
-                  : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 border border-transparent"
-              }`}
-              aria-pressed={locale === "en"}
-              aria-label="English"
-            >
-              EN
-            </button>
-            <button
-              type="button"
-              onClick={() => switchLocale("ar")}
-              className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition sm:px-3 sm:py-2 sm:text-sm ${
-                locale === "ar"
-                  ? `bg-white/80 ${accentClass} border ${borderClass} shadow-sm`
-                  : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 border border-transparent"
-              }`}
-              aria-pressed={locale === "ar"}
-              aria-label="العربية"
-            >
-              AR
-            </button>
-          </div>
+            {logoUrl ? (
+              <img src={logoUrl} alt="Olfa" className="h-8 w-auto object-contain" />
+            ) : (
+              "Olfa"
+            )}
+          </Link>
 
-          {isLoggedIn ? (
-            <>
+          {/* Controls: LTR = Notifications, User, Language (far right). RTL = Language, Notifications, User (far left) */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Notifications - order: LTR 1st, RTL 2nd */}
+            {isLoggedIn && (
               <Link
                 href="/dashboard/notifications"
-                className={`relative rounded-xl border ${borderClass} bg-white p-2 text-zinc-600 transition ${hoverBgClass} hover:text-zinc-900`}
+                className={`relative rounded-xl border ${borderClass} bg-white p-2 text-[var(--theme-primary)] transition ${hoverBgClass} hover:opacity-90 ${
+                  isRtl ? "order-2" : "order-1"
+                }`}
                 aria-label="Notifications"
               >
                 <Bell className="h-5 w-5" />
@@ -191,11 +171,15 @@ export function Navbar() {
                   />
                 )}
               </Link>
-              <div className="relative">
+            )}
+
+            {/* User dropdown - order: LTR 2nd, RTL 3rd */}
+            {isLoggedIn && (
+              <div className={`relative ${isRtl ? "order-3" : "order-2"}`}>
                 <button
                   type="button"
                   onClick={() => setDropdownOpen((o) => !o)}
-                  className={`flex items-center gap-2 rounded-xl border ${borderClass} bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition ${hoverBgClass} focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-current focus:opacity-80`}
+                  className={`flex items-center gap-2 rounded-xl border ${borderClass} bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition ${hoverBgClass} focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--theme-primary)] focus:opacity-80`}
                   aria-expanded={dropdownOpen}
                   aria-haspopup="true"
                   id="user-menu-button"
@@ -206,7 +190,7 @@ export function Navbar() {
                   <span className="max-w-[120px] truncate">
                     {userName ?? "Profile"}
                   </span>
-                  <ChevronDown className={`h-4 w-4 transition ${dropdownOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown className={`h-4 w-4 shrink-0 text-[var(--theme-primary)] transition ${dropdownOpen ? "rotate-180" : ""}`} />
                 </button>
                 {dropdownOpen && (
                   <>
@@ -216,7 +200,7 @@ export function Navbar() {
                       onClick={() => setDropdownOpen(false)}
                     />
                     <div
-                      className="absolute top-full z-20 mt-2 w-72 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl [inset-inline-start:0]"
+                      className="absolute top-full z-20 mt-2 w-72 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl [inset-inline-end:0]"
                       role="menu"
                       aria-orientation="vertical"
                       aria-labelledby="user-menu-button"
@@ -258,7 +242,7 @@ export function Navbar() {
                         role="menuitem"
                         onClick={() => setDropdownOpen(false)}
                       >
-                        <UserIcon className="h-4 w-4 shrink-0 text-zinc-500" />
+                        <UserIcon className="h-4 w-4 shrink-0 text-[var(--theme-primary)]" />
                         {t("nav.profile")}
                       </Link>
                       <Link
@@ -269,7 +253,7 @@ export function Navbar() {
                         role="menuitem"
                         onClick={() => setDropdownOpen(false)}
                       >
-                        <Settings className="h-4 w-4 shrink-0 text-zinc-500" />
+                        <Settings className="h-4 w-4 shrink-0 text-[var(--theme-primary)]" />
                         {locale === "ar"
                           ? "الإعدادات والخصوصية"
                           : "Settings & privacy"}
@@ -289,10 +273,65 @@ export function Navbar() {
                   </>
                 )}
               </div>
-            </>
-          ) : (
-            <>
-              {pathname !== "/login" && pathname !== "/register" && (
+            )}
+
+            {/* Language switcher (Globe dropdown): LTR = 3rd (far right), RTL = 1st (far left) */}
+            <div className={`relative ${isRtl ? "order-1" : "order-3"}`}>
+              <button
+                type="button"
+                onClick={() => setLangDropdownOpen((o) => !o)}
+                className={`flex items-center justify-center rounded-xl border ${borderClass} bg-white p-2 text-[var(--theme-primary)] transition ${hoverBgClass} hover:opacity-90`}
+                aria-expanded={langDropdownOpen}
+                aria-haspopup="true"
+                aria-label={locale === "ar" ? "Language" : "اللغة"}
+              >
+                <Globe className="h-5 w-5" />
+              </button>
+              {langDropdownOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    aria-hidden
+                    onClick={() => setLangDropdownOpen(false)}
+                  />
+                  <div
+                    className="absolute top-full z-20 mt-2 min-w-[10rem] overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-xl [inset-inline-end:0]"
+                    role="menu"
+                    aria-label={locale === "ar" ? "Language" : "اللغة"}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => switchLocale("ar")}
+                      className={`flex w-full items-center gap-2 px-4 py-2.5 text-sm transition ${
+                        locale === "ar"
+                          ? `font-semibold ${accentClass} bg-[color:var(--theme-bg)]`
+                          : `text-zinc-700 ${hoverBgClass}`
+                      } ${isRtl ? "flex-row-reverse justify-end" : "text-left"}`}
+                      role="menuitem"
+                    >
+                      العربية
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => switchLocale("en")}
+                      className={`flex w-full items-center gap-2 px-4 py-2.5 text-sm transition ${
+                        locale === "en"
+                          ? `font-semibold ${accentClass} bg-[color:var(--theme-bg)]`
+                          : `text-zinc-700 ${hoverBgClass}`
+                      } ${isRtl ? "flex-row-reverse justify-end" : "text-left"}`}
+                      role="menuitem"
+                    >
+                      English
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Logged out: Login / Register */}
+            {!isLoggedIn &&
+              pathname !== "/login" &&
+              pathname !== "/register" && (
                 <>
                   <Link
                     href="/login"
@@ -308,21 +347,8 @@ export function Navbar() {
                   </Link>
                 </>
               )}
-            </>
-          )}
+          </div>
         </div>
-
-        <Link
-          href="/"
-          className={`flex items-center gap-2 text-lg font-semibold text-zinc-900 transition ${accentClass} hover:opacity-90`}
-          aria-label="Home"
-        >
-          {logoUrl ? (
-            <img src={logoUrl} alt="Olfa" className="h-8 w-auto object-contain" />
-          ) : (
-            "Olfa"
-          )}
-        </Link>
       </div>
     </nav>
   );
