@@ -83,10 +83,12 @@ export default function DiscoveryPage() {
 
       const { data: myProfile } = await supabase
         .from("profiles")
-        .select("gender")
+        .select("gender, role")
         .eq("id", user.id)
         .maybeSingle();
       const myGender = (myProfile as { gender?: string } | null)?.gender ?? null;
+      const myRole = (myProfile as { role?: string } | null)?.role ?? null;
+      const isAdminOrMod = myRole === "admin" || myRole === "moderator";
       setCurrentUserGender(myGender);
 
       await supabase
@@ -103,10 +105,22 @@ export default function DiscoveryPage() {
         .eq("is_verified", true)
         .is("banned_at", null);
 
-      if (myGender === "male") query = query.eq("gender", "female");
-      else if (myGender === "female") query = query.eq("gender", "male");
+      if (!isAdminOrMod && myGender === "male") query = query.eq("gender", "female");
+      else if (!isAdminOrMod && myGender === "female") query = query.eq("gender", "male");
 
-      const { data: profiles } = await query;
+      let { data: profiles } = await query;
+
+      // Fallback for empty datasets during testing: show any non-banned users.
+      if (!profiles || profiles.length === 0) {
+        const { data: fallbackProfiles } = await supabase
+          .from("profiles")
+          .select(
+            "id, full_name, gender, age, job_title, last_seen_at, city, marital_status, photo_urls, primary_photo_index, photo_privacy_blur"
+          )
+          .neq("id", user.id)
+          .is("banned_at", null);
+        profiles = fallbackProfiles ?? [];
+      }
 
       const { data: likesFrom } = await supabase
         .from("likes")

@@ -175,7 +175,19 @@ export default function DiscoverNearMePage() {
         query = query.eq("country_code", countryFilter.trim().toUpperCase());
       }
 
-      const { data: profiles, error: queryError } = await query;
+      let { data: profiles, error: queryError } = await query;
+
+      // Fallback for empty datasets during testing: show any non-banned users.
+      if ((!profiles || profiles.length === 0) && !countryFilter.trim()) {
+        const { data: fallbackProfiles, error: fallbackError } = await supabase
+          .from("profiles")
+          .select(
+            "id, full_name, gender, age, country, country_code, city, photo_urls, primary_photo_index, photo_privacy_blur, is_vip, quiz_answers, last_seen_at"
+          )
+          .neq("id", user.id)
+          .is("banned_at", null);
+        if (!fallbackError) profiles = fallbackProfiles ?? [];
+      }
 
       console.log("Users fetched:", profiles);
       console.log("Current User Filters:", {
