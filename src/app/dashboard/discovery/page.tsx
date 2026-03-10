@@ -13,6 +13,8 @@ type UserCard = {
   full_name: string | null;
   gender: string | null;
   age: number | null;
+  country_code: string | null;
+  is_vip: boolean;
   job_title: string | null;
   city: string | null;
   marital_status: string | null;
@@ -72,6 +74,7 @@ export default function DiscoveryPage() {
   // Fetch profiles: opposite gender only, verified, not banned, exclude self
   useEffect(() => {
     const run = async () => {
+      try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -99,7 +102,7 @@ export default function DiscoveryPage() {
       let query = supabase
         .from("profiles")
         .select(
-          "id, full_name, gender, age, job_title, last_seen_at, city, marital_status, photo_urls, primary_photo_index, photo_privacy_blur"
+          "id, full_name, gender, age, city, photo_urls, primary_photo_index, photo_privacy_blur, is_vip, country_code"
         )
         .neq("id", user.id)
         .eq("is_verified", true)
@@ -108,14 +111,19 @@ export default function DiscoveryPage() {
       if (!isAdminOrMod && myGender === "male") query = query.eq("gender", "female");
       else if (!isAdminOrMod && myGender === "female") query = query.eq("gender", "male");
 
-      let { data: profiles } = await query;
+      let { data: profiles, error: profilesError } = await query;
+      if (profilesError) {
+        console.error("Discovery profiles query failed:", profilesError.message ?? profilesError);
+        profiles = [];
+      }
+      console.log("Users fetched:", profiles);
 
       // Fallback for empty datasets during testing: show any non-banned users.
       if (!profiles || profiles.length === 0) {
         const { data: fallbackProfiles } = await supabase
           .from("profiles")
           .select(
-            "id, full_name, gender, age, job_title, last_seen_at, city, marital_status, photo_urls, primary_photo_index, photo_privacy_blur"
+            "id, full_name, gender, age, city, photo_urls, primary_photo_index, photo_privacy_blur, is_vip, country_code"
           )
           .neq("id", user.id)
           .is("banned_at", null);
@@ -147,9 +155,12 @@ export default function DiscoveryPage() {
           full_name: (raw.full_name as string) ?? null,
           gender: (raw.gender as string) ?? null,
           age: typeof raw.age === "number" ? raw.age : raw.age != null ? Number(raw.age) : null,
-          job_title: (raw.job_title as string) ?? null,
+          country_code: (raw.country_code as string) ?? null,
+          is_vip: raw.is_vip === true,
+          job_title: null,
           city: (raw.city as string) ?? null,
-          marital_status: (raw.marital_status as string) ?? null,
+          marital_status: null,
+          // Keep null-safe so missing column never breaks UI.
           last_seen_at: (raw.last_seen_at as string) ?? null,
           photo_urls,
           primary_photo_index: typeof raw.primary_photo_index === "number" ? raw.primary_photo_index : 0,
@@ -160,7 +171,12 @@ export default function DiscoveryPage() {
         };
       });
       setUsers(cards);
-      setLoading(false);
+      } catch (err) {
+        console.error("Discovery fetch failed:", err);
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
     };
     run();
   }, [router]);
