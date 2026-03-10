@@ -49,7 +49,7 @@ const THEME_PROGRESS_TEXT = {
   neutral: "text-violet-700",
 } as const;
 
-const SIDEBAR_BORDER = {
+const SIDEBAR_BORDER_LTR = {
   male: "border-r-2 border-sky-200",
   female: "border-r-2 border-pink-200",
   neutral: "border-r-2 border-violet-200",
@@ -111,24 +111,21 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   const showProgress = profileComplete !== null && profileComplete < 100;
-  const sidebarBorder = isRtl ? SIDEBAR_BORDER_RTL[theme] : SIDEBAR_BORDER[theme];
+  const sidebarBorder = isRtl ? SIDEBAR_BORDER_RTL[theme] : SIDEBAR_BORDER_LTR[theme];
 
   return (
     <div
       className="min-h-screen font-[family-name:var(--font-cairo)] text-zinc-900"
       style={{ background: "var(--theme-bg)" }}
     >
-      <div
-        className={`flex min-h-screen flex-row ${isRtl ? "flex-row-reverse" : ""}`}
-        dir={isRtl ? "rtl" : "ltr"}
-      >
-        {/* Sidebar: first in DOM. flex-row-reverse in RTL puts it on the right edge; flex-row in LTR puts it on the left. */}
+      <div className="relative min-h-screen">
+        {/* Sidebar: fixed by language — right for Arabic, left for English. No hardcoded left-0/right-0. */}
         <aside
-          className={`hidden w-72 shrink-0 xl:block bg-white ${sidebarBorder}`}
+          className={`fixed top-0 z-40 hidden h-screen w-64 border-t-0 bg-white xl:block ${locale === "ar" ? "right-0 border-l" : "left-0 border-r"} ${sidebarBorder}`}
           aria-label="Dashboard navigation"
         >
           <div className="sticky top-4 px-3 py-4">
-            <nav className="flex flex-col gap-1">
+            <nav className="flex flex-col gap-1" dir={locale === "ar" ? "rtl" : "ltr"}>
               {NAV_ITEMS.map((item) => {
                 const isActive =
                   pathname === item.href ||
@@ -141,8 +138,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 const Icon = item.icon;
                 const label =
                   locale === "ar" ? item.label : item.labelEn;
-                const textAlign =
-                  locale === "ar" ? "text-right" : "text-left";
                 return (
                   <Link
                     key={item.href}
@@ -151,13 +146,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                       isActive
                         ? linkActiveClass
                         : `text-zinc-700 ${hoverSidebar}`
-                    } ${isRtl ? "flex-row-reverse" : ""}`}
+                    } ${locale === "ar" ? "flex-row-reverse text-right" : "text-left"}`}
                   >
                     <Icon className="h-5 w-5 shrink-0" />
-                    <span
-                      className={`flex-1 ${textAlign}`}
-                      lang={locale === "ar" ? "ar" : "en"}
-                    >
+                    <span className="flex-1" lang={locale === "ar" ? "ar" : "en"}>
                       {label}
                     </span>
                   </Link>
@@ -167,8 +159,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        {/* Main content: flexible area that fills remaining space */}
-        <main className="min-w-0 flex-1 w-full px-3 py-4 sm:px-5 lg:px-8">
+        {/* Main content: padding on the side where the sidebar sits — pl-64 EN, pr-64 AR */}
+        <main
+          className={`min-w-0 w-full flex-1 px-3 py-4 sm:px-5 lg:px-8 ${locale === "ar" ? "xl:pr-64" : "xl:pl-64"}`}
+        >
           {showProgress && (
             <div className="mb-4">
               <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
