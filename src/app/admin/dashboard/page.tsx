@@ -15,9 +15,20 @@ import {
   BarChart3,
   Loader2,
   RotateCw,
+  CheckCircle,
+  XCircle,
+  ImageIcon,
+  X,
 } from "lucide-react";
+import { logAdminAction } from "@/lib/adminLog";
 
-type TabId = "overview" | "users";
+type TabId = "overview" | "verifications" | "users";
+
+type VerificationPhotos = {
+  photo1: string | null;
+  photo2: string | null;
+  photo3: string | null;
+};
 
 type UserRow = {
   id: string;
@@ -84,7 +95,15 @@ export default function AdminDashboardPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [usersError, setUsersError] = useState<string | null>(null);
 
-  // Admin access is enforced by middleware (role === 'admin' only). Non-admins are redirected to /dashboard.
+  const [pendingUsers, setPendingUsers] = useState<UserRow[]>([]);
+  const [loadingPending, setLoadingPending] = useState(false);
+  const [verificationPhotos, setVerificationPhotos] = useState<
+    Record<string, VerificationPhotos>
+  >({});
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const [actioningId, setActioningId] = useState<string | null>(null);
+
+  // Admin access is enforced by AdminGuard (role === 'admin' only).
 
   const loadStats = useCallback(async () => {
     setLoadingStats(true);
@@ -159,6 +178,122 @@ export default function AdminDashboardPage() {
     }
   }, []);
 
+  const loadPendingVerifications = useCallback(async () => {
+    setLoadingPending(true);
+    setError(null);
+    try {
+      const { data, error: err } = await supabase
+        .from("profiles")
+        .select(
+          "id, full_name, email, gender, created_at, is_verified, verification_submitted, banned_at"
+        )
+        .eq("verification_submitted", true)
+        .eq("is_verified", false)
+        .is("banned_at", null)
+        .order("created_at", { ascending: false });
+
+      if (err) {
+        setError(err.message || "Failed to load pending verifications.");
+        setPendingUsers([]);
+        return;
+      }
+
+      const list = (data ?? []).map((row: Record<string, unknown>) => ({
+        id: row.id as string,
+        full_name: (row.full_name as string | null) ?? null,
+        email: (row.email as string | null) ?? null,
+        gender: (row.gender as string | null) ?? null,
+        created_at: (row.created_at as string | null) ?? null,
+        is_verified: Boolean(row.is_verified),
+        verification_submitted: Boolean(row.verification_submitted),
+        banned_at: (row.banned_at as string | null) ?? null,
+      }));
+      setPendingUsers(list);
+
+      const photoMap: Record<string, VerificationPhotos> = {};
+      await Promise.all(
+        list.map(async (u) => {
+          const res = await fetch(
+            `/api/admin/verification-photos?userId=${encodeURIComponent(u.id)}`,
+            { credentials: "include" }
+          );
+          if (res.ok) {
+            const json = await res.json();
+            photoMap[u.id] = {
+              photo1: json.photo1 ?? null,
+              photo2: json.photo2 ?? null,
+              photo3: json.photo3 ?? null,
+            };
+          } else {
+            photoMap[u.id] = { photo1: null, photo2: null, photo3: null };
+          }
+        })
+      );
+      setVerificationPhotos(photoMap);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load pending.");
+      setPendingUsers([]);
+    } finally {
+      setLoadingPending(false);
+    }
+  }, []);
+
+  const handleApprove = async (user: UserRow) => {
+    setError(null);
+    setSuccess(null);
+    setActioningId(user.id);
+    try {
+      const { data: { user: adminUser } } = await supabase.auth.getUser();
+      const { error: err } = await supabase
+        .from("profiles")
+        .update({ is_verified: true })
+        .eq("id", user.id);
+      if (err) throw err;
+      await logAdminAction(
+        adminUser?.id ?? "",
+        adminUser?.email ?? null,
+        "verification_approve",
+        user.id,
+        `Approved verification for ${user.full_name ?? user.email ?? user.id}`
+      );
+      setPendingUsers((prev) => prev.filter((u) => u.id !== user.id));
+      setSuccess("تمت الموافقة على التوثيق.");
+      loadStats();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to approve.");
+    } finally {
+      setActioningId(null);
+    }
+  };
+
+  const handleReject = async (user: UserRow) => {
+    setError(null);
+    setSuccess(null);
+    setActioningId(user.id);
+    try {
+      const { data: { user: adminUser } } = await supabase.auth.getUser();
+      const { error: err } = await supabase
+        .from("profiles")
+        .update({ verification_submitted: false })
+        .eq("id", user.id);
+      if (err) throw err;
+      await logAdminAction(
+        adminUser?.id ?? "",
+        adminUser?.email ?? null,
+        "verification_reject",
+        user.id,
+        `Rejected verification for ${user.full_name ?? user.email ?? user.id}`
+      );
+      setPendingUsers((prev) => prev.filter((u) => u.id !== user.id));
+      setSuccess("تم رفض التوثيق. يمكن للمستخدم إعادة التقديم.");
+      loadStats();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to reject.");
+    } finally {
+      setActioningId(null);
+    }
+  };
+
   useEffect(() => {
     loadStats();
   }, [loadStats]);
@@ -166,6 +301,10 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     if (activeTab === "users") loadUsers();
   }, [activeTab, loadUsers]);
+
+  useEffect(() => {
+    if (activeTab === "verifications") loadPendingVerifications();
+  }, [activeTab, loadPendingVerifications]);
 
   const filteredUsers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -216,6 +355,7 @@ export default function AdminDashboardPage() {
 
   const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
     { id: "overview", label: "نظرة عامة", icon: BarChart3 },
+    { id: "verifications", label: "قيد الموافقة", icon: ImageIcon },
     { id: "users", label: "المستخدمون", icon: Users },
   ];
 
@@ -328,6 +468,103 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Pending Verifications */}
+        {activeTab === "verifications" && (
+          <div className="space-y-6">
+            <h2 className="text-lg font-semibold text-zinc-800">قيد الموافقة على التوثيق</h2>
+            {loadingPending ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <Loader2 className="h-10 w-10 animate-spin text-sky-500" />
+                <p className="text-sm text-zinc-500">جاري تحميل طلبات التوثيق...</p>
+              </div>
+            ) : pendingUsers.length === 0 ? (
+              <div className={SKY.card + " p-8 text-center"}>
+                <p className="text-sm text-zinc-500">لا توجد طلبات قيد المراجعة.</p>
+              </div>
+            ) : (
+              <div className="grid gap-6">
+                {pendingUsers.map((user) => {
+                  const photos = verificationPhotos[user.id];
+                  const thumbClass =
+                    "aspect-square w-20 rounded-lg border border-zinc-200 bg-zinc-50 object-cover cursor-pointer hover:ring-2 hover:ring-sky-400 transition";
+                  return (
+                    <div
+                      key={user.id}
+                      className={SKY.card + " p-5 flex flex-col md:flex-row md:items-center gap-4 flex-wrap"}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-zinc-900 truncate">
+                          {user.full_name || user.email || "—"}
+                        </p>
+                        {user.email && user.full_name && (
+                          <p className="text-sm text-zinc-500 truncate">{user.email}</p>
+                        )}
+                        <p className="text-xs text-zinc-400 mt-0.5">
+                          {formatDate(user.created_at)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        {[
+                          { label: "Photo 1", url: photos?.photo1 },
+                          { label: "Photo 2", url: photos?.photo2 },
+                          { label: "Photo 3", url: photos?.photo3 },
+                        ].map(({ label, url }) => (
+                          <div key={label} className="flex flex-col items-center gap-1">
+                            <span className="text-[10px] font-medium text-zinc-500">{label}</span>
+                            {url ? (
+                              <button
+                                type="button"
+                                onClick={() => setLightboxImage(url)}
+                                className={thumbClass}
+                              >
+                                <img
+                                  src={url}
+                                  alt={label}
+                                  className="w-full h-full object-cover rounded-lg"
+                                />
+                              </button>
+                            ) : (
+                              <div
+                                className={thumbClass + " flex items-center justify-center text-zinc-400"}
+                              >
+                                <ImageIcon className="h-6 w-6" />
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex gap-2 flex-row-reverse shrink-0">
+                        <button
+                          type="button"
+                          disabled={actioningId === user.id}
+                          onClick={() => handleApprove(user)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          {actioningId === user.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle className="h-4 w-4" />
+                          )}
+                          موافقة
+                        </button>
+                        <button
+                          type="button"
+                          disabled={actioningId === user.id}
+                          onClick={() => handleReject(user)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-100 disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          {actioningId === user.id ? null : <XCircle className="h-4 w-4" />}
+                          رفض
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -563,6 +800,33 @@ export default function AdminDashboardPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Lightbox for verification photo */}
+      {lightboxImage && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setLightboxImage(null)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => e.key === "Escape" && setLightboxImage(null)}
+          aria-label="إغلاق"
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxImage(null)}
+            className="absolute top-4 left-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 transition z-10"
+            aria-label="إغلاق"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={lightboxImage}
+            alt="Verification photo"
+            className="max-h-[90vh] max-w-full object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>
