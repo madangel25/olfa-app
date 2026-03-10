@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { dispatchProfileUpdated, getProfileCompleteness } from "@/lib/profileCompleteness";
+import {
+  dispatchProfileUpdated,
+  getProfileCompleteness,
+  type ProfileForCompleteness,
+} from "@/lib/profileCompleteness";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { COUNTRIES, getFlagEmoji } from "@/lib/countries";
@@ -390,7 +394,14 @@ export default function ProfilePage() {
       photo_urls: Array.isArray(profile.photo_urls) ? profile.photo_urls : [],
       primary_photo_index: typeof profile.primary_photo_index === "number" ? profile.primary_photo_index : 0,
       photo_privacy_blur: profile.photo_privacy_blur === true,
-      profile_completion: getProfileCompleteness(profile as import("@/lib/profileCompleteness").ProfileForCompleteness),
+      profile_completion: getProfileCompleteness({
+        ...profile,
+        age: Number(profile.age) || 0,
+        height_cm: toNum(profile.height_cm) ?? undefined,
+        weight_kg: toNum(profile.weight_kg) ?? undefined,
+        primary_photo_index: typeof profile.primary_photo_index === "number" ? profile.primary_photo_index : 0,
+        photo_privacy_blur: profile.photo_privacy_blur === true,
+      } as unknown as ProfileForCompleteness),
     };
     const { error } = await supabase.from("profiles").update(payload).eq("id", userId);
     if (error) throw error;
