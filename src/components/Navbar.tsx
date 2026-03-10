@@ -9,7 +9,16 @@ import { getSiteSettings } from "@/lib/siteSettings";
 import { supabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 import type { Locale } from "@/lib/translations";
-import { Bell, ChevronDown, User as UserIcon, Globe, LogOut } from "lucide-react";
+import {
+  Bell,
+  ChevronDown,
+  User as UserIcon,
+  Globe,
+  LogOut,
+  Settings,
+  Shield,
+  Trash2,
+} from "lucide-react";
 
 export function Navbar() {
   const pathname = usePathname();
@@ -19,6 +28,7 @@ export function Navbar() {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  const [accountStatus, setAccountStatus] = useState<"active" | "hidden" | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [hasNewNotifications] = useState(false);
 
@@ -29,6 +39,34 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
+    const loadAccountStatus = async (userId: string | null | undefined) => {
+      if (!userId) {
+        setAccountStatus(null);
+        return;
+      }
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("is_incognito, status")
+          .eq("id", userId)
+          .maybeSingle();
+        if (error) {
+          console.error("[Navbar] loadAccountStatus error", error);
+          setAccountStatus(null);
+          return;
+        }
+        const profile = data as { is_incognito?: boolean | null; status?: string | null } | null;
+        const isHidden =
+          !!profile?.is_incognito ||
+          profile?.status === "paused" ||
+          profile?.status === "deleted";
+        setAccountStatus(isHidden ? "hidden" : "active");
+      } catch (err) {
+        console.error("[Navbar] loadAccountStatus unexpected error", err);
+        setAccountStatus(null);
+      }
+    };
+
     const loadUser = async () => {
       const { data: { user: u } } = await supabase.auth.getUser();
       setUser(u ?? null);
@@ -39,15 +77,19 @@ export function Navbar() {
       } else {
         setUserName(null);
       }
+      await loadAccountStatus(u?.id ?? null);
     };
     loadUser();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      const u = session?.user ?? null;
-      setUser(u);
-      if (u?.user_metadata?.full_name) setUserName(String(u.user_metadata.full_name));
-      else if (u?.email) setUserName(u.email);
-      else setUserName(null);
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        const u = session?.user ?? null;
+        setUser(u);
+        if (u?.user_metadata?.full_name) setUserName(String(u.user_metadata.full_name));
+        else if (u?.email) setUserName(u.email);
+        else setUserName(null);
+        void loadAccountStatus(u?.id ?? null);
+      }
+    );
     return () => subscription.unsubscribe();
   }, []);
 
@@ -70,6 +112,19 @@ export function Navbar() {
   const isLoggedIn = !!user;
   const isRtl = dir === "rtl";
   const initials = (userName ?? "U").trim().charAt(0).toUpperCase();
+
+  const statusLabel =
+    accountStatus === "hidden"
+      ? locale === "ar"
+        ? "مخفي عن الآخرين"
+        : "Hidden from others"
+      : accountStatus === "active"
+      ? locale === "ar"
+        ? "مرئي للجميع"
+        : "Visible to others"
+      : locale === "ar"
+      ? "جار التحقق من الحالة..."
+      : "Checking status...";
 
   return (
     <nav
@@ -167,20 +222,85 @@ export function Navbar() {
                           {userName ?? t("nav.profile")}
                         </p>
                         <p className="truncate text-xs text-zinc-500">{user?.email ?? ""}</p>
+                        <div
+                          className={`mt-2 flex items-center gap-2 text-xs ${
+                            isRtl ? "flex-row-reverse text-right" : "text-left"
+                          }`}
+                        >
+                          <span
+                            className={`inline-flex h-2.5 w-2.5 rounded-full ${
+                              accountStatus === "hidden"
+                                ? "bg-zinc-400"
+                                : "bg-emerald-500"
+                            }`}
+                            aria-hidden
+                          />
+                          <span
+                            className={
+                              accountStatus === "hidden"
+                                ? "text-zinc-600"
+                                : "text-emerald-700"
+                            }
+                          >
+                            {statusLabel}
+                          </span>
+                        </div>
                       </div>
                       <Link
                         href="/profile"
-                        className={`mt-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-zinc-700 transition ${hoverBgClass}`}
+                        className={`mt-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-zinc-700 transition ${hoverBgClass} ${
+                          isRtl ? "flex-row-reverse text-right" : "text-left"
+                        }`}
                         role="menuitem"
                         onClick={() => setDropdownOpen(false)}
                       >
                         <UserIcon className="h-4 w-4 shrink-0 text-zinc-500" />
                         {t("nav.profile")}
                       </Link>
+                      <Link
+                        href="/settings"
+                        className={`mt-1 flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-zinc-700 transition ${hoverBgClass} ${
+                          isRtl ? "flex-row-reverse text-right" : "text-left"
+                        }`}
+                        role="menuitem"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <Settings className="h-4 w-4 shrink-0 text-zinc-500" />
+                        {locale === "ar"
+                          ? "الإعدادات والخصوصية"
+                          : "Settings & privacy"}
+                      </Link>
+                      <Link
+                        href="/settings/security"
+                        className={`mt-1 flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-zinc-700 transition ${hoverBgClass} ${
+                          isRtl ? "flex-row-reverse text-right" : "text-left"
+                        }`}
+                        role="menuitem"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <Shield className="h-4 w-4 shrink-0 text-zinc-500" />
+                        {locale === "ar"
+                          ? "تغيير كلمة المرور"
+                          : "Change password"}
+                      </Link>
+                      <div className="my-2 h-px bg-zinc-100" aria-hidden />
+                      <Link
+                        href="/settings/delete-account"
+                        className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50 hover:text-red-700 ${
+                          isRtl ? "flex-row-reverse text-right" : "text-left"
+                        }`}
+                        role="menuitem"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <Trash2 className="h-4 w-4 shrink-0 text-red-500" />
+                        {locale === "ar" ? "حذف الحساب" : "Delete account"}
+                      </Link>
                       <button
                         type="button"
                         onClick={handleLogout}
-                        className="mt-2 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-zinc-700 transition hover:bg-red-50 hover:text-red-600"
+                        className={`mt-2 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-zinc-700 transition hover:bg-zinc-50 hover:text-zinc-900 ${
+                          isRtl ? "flex-row-reverse text-right" : "text-left"
+                        }`}
                         role="menuitem"
                       >
                         <LogOut className="h-4 w-4 shrink-0 text-zinc-500" />
