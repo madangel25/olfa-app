@@ -7,7 +7,7 @@ export default function ProfileLayout({ children }: { children: ReactNode }) {
   return (
     <OnboardingGuard>
       <Navbar />
-      <div className="min-h-screen bg-[#f8f9fa] pt-14">
+      <div className="min-h-screen pt-14" style={{ background: "var(--theme-bg)" }}>
         <DashboardShell>{children}</DashboardShell>
       </div>
     </OnboardingGuard>

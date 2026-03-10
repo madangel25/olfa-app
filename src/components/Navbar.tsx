@@ -190,18 +190,22 @@ export function Navbar() {
             </>
           ) : (
             <>
-              <Link
-                href="/login"
-                className={`rounded-lg px-2 py-1 text-sm font-medium transition ${pathname === "/login" ? accentClass : `text-zinc-600 ${hoverBgClass} hover:opacity-90`}`}
-              >
-                {t("nav.login")}
-              </Link>
-              <Link
-                href="/register"
-                className={`rounded-lg px-2 py-1 text-sm font-medium transition ${pathname === "/register" ? accentClass : `text-zinc-600 ${hoverBgClass} hover:opacity-90`}`}
-              >
-                {t("nav.register")}
-              </Link>
+              {pathname !== "/login" && pathname !== "/register" && (
+                <>
+                  <Link
+                    href="/login"
+                    className={`rounded-lg px-2 py-1 text-sm font-medium transition ${pathname === "/login" ? accentClass : `text-zinc-600 ${hoverBgClass} hover:opacity-90`}`}
+                  >
+                    {t("nav.login")}
+                  </Link>
+                  <Link
+                    href="/register"
+                    className={`rounded-lg px-2 py-1 text-sm font-medium transition ${pathname === "/register" ? accentClass : `text-zinc-600 ${hoverBgClass} hover:opacity-90`}`}
+                  >
+                    {t("nav.register")}
+                  </Link>
+                </>
+              )}
             </>
           )}
         </div>
