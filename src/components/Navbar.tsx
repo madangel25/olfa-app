@@ -271,7 +271,7 @@ export function Navbar() {
                           : "Settings & privacy"}
                       </Link>
                       <Link
-                        href="/settings/security"
+                        href="/settings?tab=security"
                         className={`mt-1 flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-zinc-700 transition ${hoverBgClass} ${
                           isRtl ? "flex-row-reverse text-right" : "text-left"
                         }`}
@@ -285,7 +285,7 @@ export function Navbar() {
                       </Link>
                       <div className="my-2 h-px bg-zinc-100" aria-hidden />
                       <Link
-                        href="/settings/delete-account"
+                        href="/settings?tab=account"
                         className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 transition hover:bg-red-50 hover:text-red-700 ${
                           isRtl ? "flex-row-reverse text-right" : "text-left"
                         }`}
