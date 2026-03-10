@@ -25,7 +25,7 @@ export function LoadingScreen({
   const borderClass = spinnerBorderClass[theme];
   return (
     <div
-      className={`min-h-screen w-full bg-[#f8f9fa] font-[family-name:var(--font-cairo)] flex flex-col items-center justify-center gap-4 px-4 ${className}`}
+      className={`min-h-screen w-full bg-[var(--theme-bg)] font-[family-name:var(--font-cairo)] flex flex-col items-center justify-center gap-4 px-4 ${className}`}
       role="status"
       aria-live="polite"
       aria-label={message ?? "Loading"}

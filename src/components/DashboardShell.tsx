@@ -116,12 +116,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className={`min-h-screen font-[family-name:var(--font-cairo)] text-zinc-900`} style={{ background: "var(--theme-bg)" }}>
-      <div className={`grid min-h-screen grid-cols-1 ${gridCols}`}>
+      <div className={`grid min-h-screen grid-cols-1 ${gridCols}`} dir={isRtl ? "rtl" : "ltr"}>
       <aside
         className={`hidden xl:block bg-white ${sidebarBorder}`}
         aria-label="Dashboard navigation"
       >
-        <div className="sticky top-16 px-3 py-4">
+        <div className="sticky top-4 px-3 py-4">
         <nav className="flex flex-col gap-1">
           {NAV_ITEMS.map((item) => {
             const isActive =

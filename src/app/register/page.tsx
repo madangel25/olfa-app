@@ -107,7 +107,7 @@ export default function RegisterPage() {
 
   return (
     <div
-      className="min-h-screen w-full bg-[#f8f9fa] font-[family-name:var(--font-cairo)] flex items-center justify-center px-4 py-10"
+      className="min-h-screen w-full bg-[var(--theme-bg)] font-[family-name:var(--font-cairo)] flex items-center justify-center px-4 py-10"
       dir={dir}
     >
       <div className="w-full max-w-xl rounded-3xl border border-zinc-200/80 bg-white px-8 py-10 shadow-xl">

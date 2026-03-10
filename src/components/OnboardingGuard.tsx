@@ -64,7 +64,7 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
 
   if (error) {
     return (
-      <div className="min-h-screen w-full bg-[#f8f9fa] font-[family-name:var(--font-cairo)] flex items-center justify-center px-4 text-center">
+      <div className="min-h-screen w-full bg-[var(--theme-bg)] font-[family-name:var(--font-cairo)] flex items-center justify-center px-4 text-center">
         <div className="rounded-2xl border border-red-200 bg-red-50 p-6 max-w-sm">
           <p className="text-sm font-medium text-red-800">
             We couldn&apos;t verify your onboarding status:

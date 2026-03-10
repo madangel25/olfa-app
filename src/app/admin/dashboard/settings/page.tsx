@@ -209,7 +209,7 @@ export default function SiteSettingsPage() {
   ];
 
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] w-full bg-[#f8f9fa] font-[family-name:var(--font-cairo)] text-zinc-900" dir="rtl">
+    <div className="min-h-screen w-full bg-[var(--theme-bg)] font-[family-name:var(--font-cairo)] text-zinc-900" dir="rtl">
       <div className="mx-auto max-w-4xl px-4 py-6">
         <header className="mb-6 flex flex-wrap items-center gap-3">
           <Link

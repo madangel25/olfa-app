@@ -14,7 +14,7 @@ import { Bell, ChevronDown, User as UserIcon, Globe, LogOut } from "lucide-react
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { locale, setLocale, t } = useLanguage();
+  const { locale, dir, setLocale, t } = useLanguage();
   const { accentClass, hoverBgClass, borderClass } = useTheme();
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -68,6 +68,7 @@ export function Navbar() {
   };
 
   const isLoggedIn = !!user;
+  const isRtl = dir === "rtl";
   const initials = (userName ?? "U").trim().charAt(0).toUpperCase();
 
   return (
@@ -154,7 +155,9 @@ export function Navbar() {
                       onClick={() => setDropdownOpen(false)}
                     />
                     <div
-                      className="absolute left-0 top-full z-20 mt-2 w-72 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl"
+                      className={`absolute top-full z-20 mt-2 w-72 max-w-[calc(100vw-1rem)] overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl ${
+                        isRtl ? "right-0" : "left-0"
+                      }`}
                       role="menu"
                       aria-orientation="vertical"
                       aria-labelledby="user-menu-button"

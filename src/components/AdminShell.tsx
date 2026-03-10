@@ -16,14 +16,14 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div
-      className="flex min-h-[calc(100vh-3.5rem)] bg-[#f8f9fa] font-[family-name:var(--font-cairo)] text-zinc-900"
+      className="flex min-h-screen bg-[var(--theme-bg)] font-[family-name:var(--font-cairo)] text-zinc-900"
       dir="rtl"
     >
       {/* Mobile menu button */}
       <button
         type="button"
         onClick={() => setSidebarOpen((o) => !o)}
-        className="fixed top-20 right-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white shadow-sm text-zinc-600 hover:bg-zinc-50 md:hidden"
+        className="fixed top-4 right-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white shadow-sm text-zinc-600 hover:bg-zinc-50 md:hidden"
         aria-label={sidebarOpen ? "إغلاق القائمة" : "فتح القائمة"}
       >
         {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -39,7 +39,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       )}
 
       <aside
-        className={`fixed top-14 right-0 z-40 h-[calc(100vh-3.5rem)] w-56 shrink-0 border-l border-zinc-200 bg-white shadow-sm transition-transform md:translate-x-0 ${
+        className={`fixed top-0 right-0 z-40 h-screen w-56 shrink-0 border-l border-zinc-200 bg-white shadow-sm transition-transform md:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"
         }`}
         aria-label="Admin navigation"

@@ -322,7 +322,7 @@ export default function PublicProfilePage() {
   }, [profile, t, educationLabel]);
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] font-[family-name:var(--font-cairo)] text-zinc-900">
+    <div className="min-h-screen bg-[var(--theme-bg)] font-[family-name:var(--font-cairo)] text-zinc-900">
       {toast && (
         <div
           className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 shadow-lg"

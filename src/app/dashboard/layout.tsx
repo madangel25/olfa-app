@@ -11,7 +11,7 @@ export default function DashboardLayout({
   return (
     <OnboardingGuard>
       <Navbar />
-      <div className="min-h-screen pt-14" style={{ background: "var(--theme-bg)" }}>
+      <div className="min-h-screen" style={{ background: "var(--theme-bg)" }}>
         <DashboardShell>{children}</DashboardShell>
       </div>
     </OnboardingGuard>

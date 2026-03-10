@@ -690,7 +690,7 @@ export default function ProfilePage() {
     `inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium outline-none transition-all ${theme.focusRing} focus:ring-2 disabled:opacity-60`;
 
   return (
-    <div className="min-h-full space-y-6 bg-[#f8f9fa] pb-8 font-[family-name:var(--font-cairo)]" dir={dir}>
+    <div className="min-h-full space-y-6 bg-[var(--theme-bg)] pb-8 font-[family-name:var(--font-cairo)]" dir={dir}>
       {/* Page header: title and subtitle only — no Save buttons here; only "Save Changes" and "Save & Return" at bottom */}
       <header className={`mb-8 ${dir === "rtl" ? "text-right" : "text-left"}`}>
         <h1 className="text-2xl font-semibold text-zinc-900">{t("profile.title")}</h1>

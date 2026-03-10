@@ -221,7 +221,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div
-      className="min-h-[calc(100vh-3.5rem)] p-4 md:p-6 font-[family-name:var(--font-cairo)]"
+      className="min-h-screen p-4 md:p-6 font-[family-name:var(--font-cairo)]"
       dir="rtl"
     >
       <div className="mx-auto max-w-6xl">
