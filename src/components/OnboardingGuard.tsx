@@ -25,6 +25,19 @@ export function OnboardingGuard({ children }: OnboardingGuardProps) {
         return;
       }
 
+      const accessRes = await fetch("/api/auth/access", { credentials: "include" });
+      const accessData = accessRes.ok ? await accessRes.json() : null;
+      if (accessData?.allowed === false) {
+        if (accessData.reason === "device_banned") {
+          router.replace("/device-blocked");
+          return;
+        }
+        if (accessData.reason === "unverified") {
+          router.replace("/pending-verification");
+          return;
+        }
+      }
+
       const profile = await ensureUserProfile(supabase, {
         id: user.id,
         email: user.email,

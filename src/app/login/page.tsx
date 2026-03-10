@@ -3,9 +3,20 @@
 import { FormEvent, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getSiteSettings } from "@/lib/siteSettings";
+
+async function getDeviceId(): Promise<string | null> {
+  try {
+    const fp = await FingerprintJS.load();
+    const result = await fp.get();
+    return result.visitorId;
+  } catch {
+    return null;
+  }
+}
 
 type Role = "admin" | "moderator" | "user";
 
@@ -95,6 +106,10 @@ export default function LoginPage() {
         : undefined;
 
       if (serverRole === "admin") {
+        const deviceId = await getDeviceId();
+        if (deviceId) {
+          await supabase.from("profiles").update({ device_id: deviceId }).eq("id", user.id);
+        }
         setLoadingMessage(t("login.redirecting") ?? "Redirecting…");
         router.push("/admin/dashboard");
         return;
@@ -114,6 +129,7 @@ export default function LoginPage() {
       }
 
       const pledgeAccepted = (profile as { pledge_accepted?: boolean }).pledge_accepted ?? false;
+      const isVerified = (profile as { is_verified?: boolean }).is_verified ?? false;
       const redirectTo = searchParams.get("redirect");
       const defaultDest = isAllowedRedirect(redirectTo) ? redirectTo! : "/dashboard";
 
@@ -124,8 +140,15 @@ export default function LoginPage() {
         destination = "/onboarding/social";
       } else if (!profile.verification_submitted) {
         destination = "/onboarding/verify";
+      } else if (!isVerified) {
+        destination = "/pending-verification";
       } else {
         destination = defaultDest;
+      }
+
+      const deviceId = await getDeviceId();
+      if (deviceId) {
+        await supabase.from("profiles").update({ device_id: deviceId }).eq("id", user.id);
       }
 
       setLoadingMessage(t("login.redirecting") ?? "Redirecting…");

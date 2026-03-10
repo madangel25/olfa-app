@@ -19,6 +19,7 @@ import {
   XCircle,
   ImageIcon,
   X,
+  ShieldBan,
 } from "lucide-react";
 import { logAdminAction } from "@/lib/adminLog";
 
@@ -40,6 +41,8 @@ type UserRow = {
   verification_submitted: boolean;
   banned_at: string | null;
 };
+
+type PendingUserRow = UserRow & { device_id: string | null };
 
 type Stats = {
   totalUsers: number;
@@ -95,13 +98,18 @@ export default function AdminDashboardPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [usersError, setUsersError] = useState<string | null>(null);
 
-  const [pendingUsers, setPendingUsers] = useState<UserRow[]>([]);
+  const [pendingUsers, setPendingUsers] = useState<PendingUserRow[]>([]);
   const [loadingPending, setLoadingPending] = useState(false);
   const [verificationPhotos, setVerificationPhotos] = useState<
     Record<string, VerificationPhotos>
   >({});
+  const [deviceChecks, setDeviceChecks] = useState<{
+    bannedDeviceIds: string[];
+    deviceIdCounts: Record<string, number>;
+  }>({ bannedDeviceIds: [], deviceIdCounts: {} });
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [actioningId, setActioningId] = useState<string | null>(null);
+  const [banningDeviceId, setBanningDeviceId] = useState<string | null>(null);
 
   // Admin access is enforced by AdminGuard (role === 'admin' only).
 
@@ -182,16 +190,20 @@ export default function AdminDashboardPage() {
     setLoadingPending(true);
     setError(null);
     try {
-      const { data, error: err } = await supabase
-        .from("profiles")
-        .select(
-          "id, full_name, email, gender, created_at, is_verified, verification_submitted, banned_at"
-        )
-        .eq("verification_submitted", true)
-        .eq("is_verified", false)
-        .is("banned_at", null)
-        .order("created_at", { ascending: false });
+      const [pendingRes, checksRes] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select(
+            "id, full_name, email, gender, created_at, is_verified, verification_submitted, banned_at, device_id"
+          )
+          .eq("verification_submitted", true)
+          .eq("is_verified", false)
+          .is("banned_at", null)
+          .order("created_at", { ascending: false }),
+        fetch("/api/admin/device-checks", { credentials: "include" }),
+      ]);
 
+      const { data, error: err } = pendingRes;
       if (err) {
         setError(err.message || "Failed to load pending verifications.");
         setPendingUsers([]);
@@ -207,8 +219,19 @@ export default function AdminDashboardPage() {
         is_verified: Boolean(row.is_verified),
         verification_submitted: Boolean(row.verification_submitted),
         banned_at: (row.banned_at as string | null) ?? null,
+        device_id: (row.device_id as string | null) ?? null,
       }));
       setPendingUsers(list);
+
+      if (checksRes.ok) {
+        const checks = await checksRes.json();
+        setDeviceChecks({
+          bannedDeviceIds: checks.bannedDeviceIds ?? [],
+          deviceIdCounts: checks.deviceIdCounts ?? {},
+        });
+      } else {
+        setDeviceChecks({ bannedDeviceIds: [], deviceIdCounts: {} });
+      }
 
       const photoMap: Record<string, VerificationPhotos> = {};
       await Promise.all(
@@ -291,6 +314,45 @@ export default function AdminDashboardPage() {
       setError(e instanceof Error ? e.message : "Failed to reject.");
     } finally {
       setActioningId(null);
+    }
+  };
+
+  const handleBanDevice = async (deviceId: string) => {
+    if (!deviceId) return;
+    setError(null);
+    setSuccess(null);
+    setBanningDeviceId(deviceId);
+    try {
+      const res = await fetch("/api/admin/ban-device", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ device_id: deviceId }),
+      });
+      const data = res.ok ? await res.json() : null;
+      if (!res.ok) {
+        setError(data?.error ?? "Failed to ban device.");
+        return;
+      }
+      const { data: { user: adminUser } } = await supabase.auth.getUser();
+      await logAdminAction(
+        adminUser?.id ?? "",
+        adminUser?.email ?? null,
+        "device_ban",
+        null,
+        `Banned device_id: ${deviceId}`
+      );
+      setDeviceChecks((prev) => ({
+        ...prev,
+        bannedDeviceIds: prev.bannedDeviceIds.includes(deviceId)
+          ? prev.bannedDeviceIds
+          : [...prev.bannedDeviceIds, deviceId],
+      }));
+      setSuccess("تم حظر الجهاز. لن يتمكن أي حساب يستخدمه من الدخول.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to ban device.");
+    } finally {
+      setBanningDeviceId(null);
     }
   };
 
@@ -490,6 +552,11 @@ export default function AdminDashboardPage() {
                   const photos = verificationPhotos[user.id];
                   const thumbClass =
                     "aspect-square w-20 rounded-lg border border-zinc-200 bg-zinc-50 object-cover cursor-pointer hover:ring-2 hover:ring-sky-400 transition";
+                  const deviceId = user.device_id ?? null;
+                  const isDeviceBanned = deviceId ? deviceChecks.bannedDeviceIds.includes(deviceId) : false;
+                  const deviceCount = deviceId ? (deviceChecks.deviceIdCounts[deviceId] ?? 0) : 0;
+                  const isDeviceDuplicate = deviceCount > 1;
+                  const deviceHighlight = isDeviceBanned || isDeviceDuplicate;
                   return (
                     <div
                       key={user.id}
@@ -499,9 +566,16 @@ export default function AdminDashboardPage() {
                         <p className="font-medium text-zinc-900 truncate">
                           {user.full_name || user.email || "—"}
                         </p>
-                        {user.email && user.full_name && (
-                          <p className="text-sm text-zinc-500 truncate">{user.email}</p>
-                        )}
+                        <p className="text-sm text-zinc-600 truncate">
+                          <span className="text-zinc-500">Email: </span>
+                          {user.email || "—"}
+                        </p>
+                        <p className={`text-xs mt-1 font-mono truncate max-w-xs ${deviceHighlight ? "text-red-600 font-semibold bg-red-50 px-1.5 py-0.5 rounded" : "text-zinc-500"}`}>
+                          <span className="text-zinc-500">Device ID: </span>
+                          {deviceId || "—"}
+                          {isDeviceBanned && " (محظور)"}
+                          {isDeviceDuplicate && !isDeviceBanned && " (مكرر)"}
+                        </p>
                         <p className="text-xs text-zinc-400 mt-0.5">
                           {formatDate(user.created_at)}
                         </p>
@@ -536,7 +610,23 @@ export default function AdminDashboardPage() {
                           </div>
                         ))}
                       </div>
-                      <div className="flex gap-2 flex-row-reverse shrink-0">
+                      <div className="flex flex-wrap gap-2 flex-row-reverse shrink-0">
+                        {deviceId && (
+                          <button
+                            type="button"
+                            disabled={banningDeviceId === deviceId || deviceChecks.bannedDeviceIds.includes(deviceId)}
+                            onClick={() => handleBanDevice(deviceId)}
+                            className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-60 disabled:cursor-not-allowed"
+                            title="Ban this device (blocks all accounts using it)"
+                          >
+                            {banningDeviceId === deviceId ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <ShieldBan className="h-4 w-4" />
+                            )}
+                            حظر الجهاز
+                          </button>
+                        )}
                         <button
                           type="button"
                           disabled={actioningId === user.id}

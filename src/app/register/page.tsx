@@ -3,10 +3,21 @@
 import { FormEvent, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import FingerprintJS from "@fingerprintjs/fingerprintjs";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { User, UserCircle } from "lucide-react";
+
+async function getDeviceId(): Promise<string | null> {
+  try {
+    const fp = await FingerprintJS.load();
+    const result = await fp.get();
+    return result.visitorId;
+  } catch {
+    return null;
+  }
+}
 
 type Gender = "male" | "female";
 
@@ -85,6 +96,14 @@ export default function RegisterPage() {
       if (profileError) {
         setError(profileError.message);
         return;
+      }
+
+      const deviceId = await getDeviceId();
+      if (deviceId) {
+        await supabase
+          .from("profiles")
+          .update({ device_id: deviceId })
+          .eq("id", user.id);
       }
 
       setMessage(t("register.successMessage"));

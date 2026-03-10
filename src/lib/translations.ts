@@ -136,6 +136,11 @@ type TranslationMap = {
     title: string;
     body: string;
   };
+  deviceBlocked: {
+    title: string;
+    body: string;
+    signOut: string;
+  };
   pledge: {
     title: string;
     agreeButton: string;
@@ -539,6 +544,11 @@ const translations: Record<Locale, TranslationMap> = {
       title: "Support",
       body: "For questions about your account or verification, please contact the Olfa team. We typically respond within 1–2 business days.",
     },
+    deviceBlocked: {
+      title: "Device restricted",
+      body: "This device has been restricted from Olfa. You cannot access the platform from this device. If you believe this is an error, please contact support.",
+      signOut: "Sign out",
+    },
     pledge: {
       title: "Ethical Pledge",
       agreeButton: "I Agree and Commit",
@@ -927,6 +937,11 @@ const translations: Record<Locale, TranslationMap> = {
     support: {
       title: "الدعم",
       body: "للاستفسارات حول حسابك أو التحقق، يرجى التواصل مع فريق أولفا. نرد عادة خلال يوم إلى يومي عمل.",
+    },
+    deviceBlocked: {
+      title: "الجهاز مقيد",
+      body: "تم تقييد هذا الجهاز من أولفا. لا يمكنك الوصول إلى المنصة من هذا الجهاز. إن كنت تعتقد أن هذا خطأ، يرجى التواصل مع الدعم.",
+      signOut: "تسجيل الخروج",
     },
     pledge: {
       title: "تعهد الجدية",

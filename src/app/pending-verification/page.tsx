@@ -25,6 +25,13 @@ export default function PendingVerificationPage() {
         return;
       }
 
+      const accessRes = await fetch("/api/auth/access", { credentials: "include" });
+      const accessData = accessRes.ok ? await accessRes.json() : null;
+      if (accessData?.allowed === false && accessData.reason === "device_banned") {
+        router.replace("/device-blocked");
+        return;
+      }
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("is_verified")

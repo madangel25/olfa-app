@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabaseClient";
 export type AdminActionType =
   | "verification_approve"
   | "verification_reject"
+  | "device_ban"
   | "role_change"
   | "message_flag"
   | "message_unflag"
