@@ -68,9 +68,12 @@ type UserRow = {
   banned_at: string | null;
   is_vip: boolean;
   profile_completion: number;
-  country_code?: string | null;
+  country_code: string | null;
   rating?: number | null;
 };
+
+/** 2-letter country codes for admin dropdown. */
+const COUNTRY_CODES = ["", "EG", "SA", "AE", "KW", "QA", "BH", "OM", "JO", "LB", "PS", "IQ", "YE", "SY", "MA", "TN", "DZ", "LY", "SD", "US", "GB", "CA", "FR", "DE", "TR", "MY", "PK", "IN"];
 
 type PendingUserRow = UserRow & { device_id: string | null };
 
@@ -144,6 +147,7 @@ export default function AdminDashboardPage() {
   const [completionDraft, setCompletionDraft] = useState<Record<string, number>>({});
   const [updatingCompletionId, setUpdatingCompletionId] = useState<string | null>(null);
   const [updatingVerifiedId, setUpdatingVerifiedId] = useState<string | null>(null);
+  const [updatingCountryCodeId, setUpdatingCountryCodeId] = useState<string | null>(null);
 
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestionRow[]>([]);
   const [loadingQuiz, setLoadingQuiz] = useState(false);
@@ -204,7 +208,7 @@ export default function AdminDashboardPage() {
       const { data, error: err } = await supabase
         .from("profiles")
         .select(
-          "id, full_name, email, gender, created_at, is_verified, verification_submitted, banned_at, is_vip, profile_completion"
+          "id, full_name, email, gender, created_at, is_verified, verification_submitted, banned_at, is_vip, profile_completion, country_code"
         )
         .order("created_at", { ascending: false });
 
@@ -227,6 +231,7 @@ export default function AdminDashboardPage() {
           profile_completion: typeof row.profile_completion === "number" && row.profile_completion >= 0 && row.profile_completion <= 100
             ? row.profile_completion
             : 0,
+          country_code: typeof row.country_code === "string" ? row.country_code : null,
         }))
       );
     } catch (e) {
@@ -244,7 +249,7 @@ export default function AdminDashboardPage() {
         supabase
           .from("profiles")
           .select(
-            "id, full_name, email, gender, created_at, is_verified, verification_submitted, banned_at, device_id, is_vip, profile_completion"
+            "id, full_name, email, gender, created_at, is_verified, verification_submitted, banned_at, device_id, is_vip, profile_completion, country_code"
           )
           .eq("verification_submitted", true)
           .eq("is_verified", false)
@@ -273,6 +278,7 @@ export default function AdminDashboardPage() {
         profile_completion: typeof row.profile_completion === "number" && row.profile_completion >= 0 && row.profile_completion <= 100
           ? row.profile_completion
           : 0,
+        country_code: typeof row.country_code === "string" ? row.country_code : null,
         device_id: (row.device_id as string | null) ?? null,
       }));
       setPendingUsers(list);
@@ -621,6 +627,32 @@ export default function AdminDashboardPage() {
       setError(e instanceof Error ? e.message : "Failed to update verification.");
     } finally {
       setUpdatingVerifiedId(null);
+    }
+  };
+
+  const handleUpdateCountryCode = async (user: UserRow, code: string | null) => {
+    const value = code?.trim() || null;
+    setUpdatingCountryCodeId(user.id);
+    setError(null);
+    setSuccess(null);
+    try {
+      const { error: err } = await supabase
+        .from("profiles")
+        .update({ country_code: value })
+        .eq("id", user.id);
+      if (err) throw err;
+      setUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, country_code: value } : u))
+      );
+      setPendingUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, country_code: value } : u))
+      );
+      setSuccess("تم تحديث رمز البلد.");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to update country code.");
+    } finally {
+      setUpdatingCountryCodeId(null);
     }
   };
 
@@ -1118,6 +1150,7 @@ export default function AdminDashboardPage() {
                     <tr className="bg-zinc-50/80">
                       <th className="px-4 py-3 font-semibold text-zinc-600 text-right rounded-tr-lg">الاسم</th>
                       <th className="px-4 py-3 font-semibold text-zinc-600 text-right">الجنس</th>
+                      <th className="px-2 py-3 font-semibold text-zinc-600 text-right whitespace-nowrap">البلد</th>
                       <th className="px-4 py-3 font-semibold text-zinc-600 text-right">تاريخ الانضمام</th>
                       <th className="px-4 py-3 font-semibold text-zinc-600 text-right">الحالة</th>
                       <th className="px-2 py-3 font-semibold text-zinc-600 text-right whitespace-nowrap">% إكمال</th>
@@ -1137,6 +1170,22 @@ export default function AdminDashboardPage() {
                         </td>
                         <td className="px-4 py-3 text-zinc-600">
                           {user.gender === "male" ? "ذكر" : user.gender === "female" ? "أنثى" : "—"}
+                        </td>
+                        <td className="px-2 py-3">
+                          <select
+                            value={user.country_code ?? ""}
+                            disabled={updatingCountryCodeId === user.id}
+                            onChange={(e) => handleUpdateCountryCode(user, e.target.value || null)}
+                            className="rounded border border-zinc-200 bg-white px-1.5 py-0.5 text-xs text-zinc-900 min-w-[3rem]"
+                          >
+                            <option value="">لم يحدد</option>
+                            {COUNTRY_CODES.filter(Boolean).map((code) => (
+                              <option key={code} value={code}>{code}</option>
+                            ))}
+                          </select>
+                          {updatingCountryCodeId === user.id && (
+                            <Loader2 className="h-3 w-3 animate-spin inline-block mr-1" />
+                          )}
                         </td>
                         <td className="px-4 py-3 text-zinc-600">
                           {formatDate(user.created_at)}

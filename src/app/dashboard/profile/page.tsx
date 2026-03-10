@@ -179,6 +179,7 @@ type ProfileState = {
   job_title: string;
   education_level: string;
   country: string;
+  country_code: string;
   city: string;
   about_me: string;
   ideal_partner: string;
@@ -205,6 +206,7 @@ const initialProfile: ProfileState = {
   job_title: "",
   education_level: "",
   country: "",
+  country_code: "",
   city: "",
   about_me: "",
   ideal_partner: "",
@@ -293,7 +295,7 @@ export default function ProfilePage() {
         const { data, error } = await supabase
           .from("profiles")
           .select(
-            "full_name, gender, email, phone_verified, nationality, age, marital_status, height_cm, weight_kg, skin_tone, smoking_status, religious_commitment, desire_children, job_title, education_level, country, city, about_me, ideal_partner, photo_urls, primary_photo_index, photo_privacy_blur"
+            "full_name, gender, email, phone_verified, nationality, age, marital_status, height_cm, weight_kg, skin_tone, smoking_status, religious_commitment, desire_children, job_title, education_level, country, country_code, city, about_me, ideal_partner, photo_urls, primary_photo_index, photo_privacy_blur"
           )
           .eq("id", user.id)
           .maybeSingle();
@@ -336,6 +338,7 @@ export default function ProfilePage() {
             job_title: safeStr(raw.job_title),
             education_level: safeStr(raw.education_level),
             country: safeStr(raw.country),
+            country_code: safeStr(raw.country_code),
             city: safeStr(raw.city),
             about_me: safeStr(raw.about_me),
             ideal_partner: safeStr(raw.ideal_partner),
@@ -388,6 +391,7 @@ export default function ProfilePage() {
       job_title: profile.job_title?.trim() || null,
       education_level: profile.education_level?.trim() || null,
       country: profile.country?.trim() || null,
+      country_code: profile.country_code?.trim() || null,
       city: profile.city?.trim() || null,
       about_me: profile.about_me?.trim() || null,
       ideal_partner: profile.ideal_partner?.trim() || null,
@@ -991,7 +995,11 @@ export default function ProfilePage() {
                     <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.country")}</label>
                     <SearchableCountrySelect
                       value={profile.country}
-                      onChange={(name) => updateField("country", name)}
+                      onChange={(name) => {
+                        const c = COUNTRIES.find((x) => x.name === name);
+                        updateField("country", name);
+                        updateField("country_code", c ? c.code : "");
+                      }}
                       locale={locale ?? "en"}
                       placeholder={t("profile.selectOption")}
                       inputClass={inputClass}

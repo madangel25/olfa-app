@@ -26,6 +26,7 @@ type UserRow = {
   gender: string | null;
   age: number | null;
   country: string | null;
+  country_code: string | null;
   city: string | null;
   photo_urls: string[];
   primary_photo_index: number;
@@ -36,69 +37,41 @@ type UserRow = {
   is_match: boolean;
 };
 
-function countryToFlagEmoji(country: string | null): string {
-  if (!country || !country.trim()) return "";
-  const name = country.trim().toLowerCase();
-  const map: Record<string, string> = {
-    egypt: "EG",
-    "المغرب": "MA",
-    morocco: "MA",
-    "السعودية": "SA",
-    "saudi arabia": "SA",
-    "الإمارات": "AE",
-    "united arab emirates": "AE",
-    "الكويت": "KW",
-    kuwait: "KW",
-    "عمان": "OM",
-    oman: "OM",
-    "قطر": "QA",
-    qatar: "QA",
-    "البحرين": "BH",
-    bahrain: "BH",
-    "العراق": "IQ",
-    iraq: "IQ",
-    "الأردن": "JO",
-    jordan: "JO",
-    "لبنان": "LB",
-    lebanon: "LB",
-    "فلسطين": "PS",
-    palestine: "PS",
-    "اليمن": "YE",
-    yemen: "YE",
-    "سوريا": "SY",
-    syria: "SY",
-    "تونس": "TN",
-    tunisia: "TN",
-    "الجزائر": "DZ",
-    algeria: "DZ",
-    "ليبيا": "LY",
-    libya: "LY",
-    "السودان": "SD",
-    sudan: "SD",
-    "الولايات المتحدة": "US",
-    "united states": "US",
-    "بريطانيا": "GB",
-    "united kingdom": "GB",
-    "كندا": "CA",
-    canada: "CA",
-    "فرنسا": "FR",
-    france: "FR",
-    "ألمانيا": "DE",
-    germany: "DE",
-    "تركيا": "TR",
-    turkey: "TR",
-    "ماليزيا": "MY",
-    malaysia: "MY",
-    "إندونيسيا": "ID",
-    indonesia: "ID",
-    "باكستان": "PK",
-    pakistan: "PK",
-    "الهند": "IN",
-    india: "IN",
-  };
-  const code = map[name] || (name.length >= 2 ? name.slice(0, 2).toUpperCase() : "");
-  if (!code || code.length !== 2) return "";
-  return [...code].map((c) => String.fromCodePoint(0x1f1e6 - 65 + c.charCodeAt(0))).join("");
+/** 2-letter ISO codes for country filter dropdown; value sent to DB. */
+const COUNTRY_CODE_OPTIONS: { code: string; labelEn: string; labelAr: string }[] = [
+  { code: "EG", labelEn: "Egypt", labelAr: "مصر" },
+  { code: "SA", labelEn: "Saudi Arabia", labelAr: "السعودية" },
+  { code: "AE", labelEn: "UAE", labelAr: "الإمارات" },
+  { code: "KW", labelEn: "Kuwait", labelAr: "الكويت" },
+  { code: "QA", labelEn: "Qatar", labelAr: "قطر" },
+  { code: "BH", labelEn: "Bahrain", labelAr: "البحرين" },
+  { code: "OM", labelEn: "Oman", labelAr: "عمان" },
+  { code: "JO", labelEn: "Jordan", labelAr: "الأردن" },
+  { code: "LB", labelEn: "Lebanon", labelAr: "لبنان" },
+  { code: "PS", labelEn: "Palestine", labelAr: "فلسطين" },
+  { code: "IQ", labelEn: "Iraq", labelAr: "العراق" },
+  { code: "YE", labelEn: "Yemen", labelAr: "اليمن" },
+  { code: "SY", labelEn: "Syria", labelAr: "سوريا" },
+  { code: "MA", labelEn: "Morocco", labelAr: "المغرب" },
+  { code: "TN", labelEn: "Tunisia", labelAr: "تونس" },
+  { code: "DZ", labelEn: "Algeria", labelAr: "الجزائر" },
+  { code: "LY", labelEn: "Libya", labelAr: "ليبيا" },
+  { code: "SD", labelEn: "Sudan", labelAr: "السودان" },
+  { code: "US", labelEn: "USA", labelAr: "الولايات المتحدة" },
+  { code: "GB", labelEn: "UK", labelAr: "بريطانيا" },
+  { code: "CA", labelEn: "Canada", labelAr: "كندا" },
+  { code: "FR", labelEn: "France", labelAr: "فرنسا" },
+  { code: "DE", labelEn: "Germany", labelAr: "ألمانيا" },
+  { code: "TR", labelEn: "Turkey", labelAr: "تركيا" },
+  { code: "MY", labelEn: "Malaysia", labelAr: "ماليزيا" },
+  { code: "PK", labelEn: "Pakistan", labelAr: "باكستان" },
+  { code: "IN", labelEn: "India", labelAr: "الهند" },
+];
+
+function countryCodeToFlagEmoji(code: string | null): string {
+  if (!code || typeof code !== "string" || code.trim().length !== 2) return "";
+  const c = code.trim().toUpperCase();
+  return [...c].map((char) => String.fromCodePoint(0x1f1e6 - 65 + char.charCodeAt(0))).join("");
 }
 
 function computeCompatibility(
@@ -165,10 +138,10 @@ export default function DiscoverNearMePage() {
 
       const { data: myProfile } = await supabase
         .from("profiles")
-        .select("quiz_answers")
+        .select("quiz_answers, gender, role")
         .eq("id", user.id)
         .maybeSingle();
-      const raw = myProfile as { quiz_answers?: unknown } | null;
+      const raw = myProfile as { quiz_answers?: unknown; gender?: string; role?: string } | null;
       setMyQuizAnswers(
         raw?.quiz_answers && typeof raw.quiz_answers === "object" && !Array.isArray(raw.quiz_answers)
           ? (raw.quiz_answers as Record<string, string>)
@@ -180,21 +153,39 @@ export default function DiscoverNearMePage() {
         .update({ last_seen_at: new Date().toISOString() })
         .eq("id", user.id);
 
+      const myGender = raw?.gender ?? null;
+      const isAdminOrMod = raw?.role === "admin" || raw?.role === "moderator";
+
+      // Fetch from public.profiles: is_verified required; filter by country_code (2-letter) when set.
       let query = supabase
         .from("profiles")
         .select(
-          "id, full_name, gender, age, country, city, photo_urls, primary_photo_index, photo_privacy_blur, is_vip, quiz_answers, last_seen_at"
+          "id, full_name, gender, age, country, country_code, city, photo_urls, primary_photo_index, photo_privacy_blur, is_vip, quiz_answers, last_seen_at"
         )
         .neq("id", user.id)
         .eq("is_verified", true)
-        .eq("profile_completion", 100)
         .is("banned_at", null);
 
-      if (countryFilter.trim()) {
-        query = query.ilike("country", `%${countryFilter.trim()}%`);
+      // Admin/moderator: see both genders for testing. Others: opposite gender only.
+      if (!isAdminOrMod && myGender === "male") query = query.eq("gender", "female");
+      else if (!isAdminOrMod && myGender === "female") query = query.eq("gender", "male");
+
+      // Country filter: 2-letter code (e.g. SA, EG). When empty (All), no filter so users with null country_code still show.
+      if (countryFilter.trim().length === 2) {
+        query = query.eq("country_code", countryFilter.trim().toUpperCase());
       }
 
-      const { data: profiles } = await query;
+      const { data: profiles, error: queryError } = await query;
+
+      console.log("Users fetched:", profiles);
+      console.log("Current User Filters:", {
+        gender: myGender,
+        country: countryFilter || "(all)",
+        completion: "any (filter relaxed)",
+        isAdminOrMod,
+        count: profiles?.length ?? 0,
+      });
+      if (queryError) console.error("Discover near me query error:", queryError);
 
       const { data: likesFrom } = await supabase.from("likes").select("to_user_id").eq("from_user_id", user.id);
       const { data: likesTo } = await supabase.from("likes").select("from_user_id").eq("to_user_id", user.id);
@@ -222,6 +213,7 @@ export default function DiscoverNearMePage() {
           gender: (raw.gender as string) ?? null,
           age: typeof raw.age === "number" ? raw.age : raw.age != null ? Number(raw.age) : null,
           country: (raw.country as string) ?? null,
+          country_code: (raw.country_code as string) ?? null,
           city: (raw.city as string) ?? null,
           photo_urls,
           primary_photo_index: typeof raw.primary_photo_index === "number" ? raw.primary_photo_index : 0,
@@ -281,9 +273,10 @@ export default function DiscoverNearMePage() {
     let list = users;
     if (tab === "female") list = list.filter((u) => u.gender === "female");
     else if (tab === "male") list = list.filter((u) => u.gender === "male");
-    list = list.filter((u) => onlineUserIds.has(u.id) || isActive(u.last_seen_at));
+    // Temporarily show all fetched users (online filter disabled so list can populate for debugging)
+    // list = list.filter((u) => onlineUserIds.has(u.id) || isActive(u.last_seen_at));
     return list;
-  }, [users, tab, onlineUserIds]);
+  }, [users, tab]);
 
   const isRtl = dir === "rtl";
   const pageTitle = locale === "ar" ? "الأقرب لك" : "Discover Near Me";
@@ -336,18 +329,23 @@ export default function DiscoverNearMePage() {
           : "Online members with complete profiles. Use tabs and country to filter."}
       </p>
 
-      {/* Country filter */}
+      {/* Country filter: dropdown sends 2-letter codes (SA, EG, AE...) to match DB */}
       <div className={`mb-4 flex items-center gap-2 ${isRtl ? "flex-row-reverse" : ""}`}>
         <label className="text-xs font-medium text-zinc-600">
           {locale === "ar" ? "البلد" : "Country"}
         </label>
-        <input
-          type="text"
+        <select
           value={countryFilter}
           onChange={(e) => setCountryFilter(e.target.value)}
-          placeholder={locale === "ar" ? "جميع البلدان" : "All countries"}
-          className="w-48 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-        />
+          className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+        >
+          <option value="">{locale === "ar" ? "جميع البلدان" : "All countries"}</option>
+          {COUNTRY_CODE_OPTIONS.map((opt) => (
+            <option key={opt.code} value={opt.code}>
+              {locale === "ar" ? opt.labelAr : opt.labelEn} ({opt.code})
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Tabs: الكل / إناث / ذكور */}
@@ -416,9 +414,15 @@ export default function DiscoverNearMePage() {
                   </div>
                 )}
                 <div className="absolute left-2 top-2 flex items-center gap-1">
-                  <span className="text-2xl leading-none" title={u.country ?? ""}>
-                    {countryToFlagEmoji(u.country)}
-                  </span>
+                  {u.country_code ? (
+                    <span className="text-2xl leading-none" title={u.country ?? u.country_code}>
+                      {countryCodeToFlagEmoji(u.country_code)}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-medium text-zinc-500" title={locale === "ar" ? "لم يحدد" : "Not set"}>
+                      {locale === "ar" ? "لم يحدد" : "—"}
+                    </span>
+                  )}
                   {u.is_vip && (
                     <span className="rounded-full bg-amber-400/90 p-0.5" title="VIP">
                       <Crown className="h-4 w-4 text-amber-900" />
