@@ -118,37 +118,35 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     <div className={`min-h-screen font-[family-name:var(--font-cairo)] text-zinc-900`} style={{ background: "var(--theme-bg)" }}>
       <div className={`grid min-h-screen grid-cols-1 ${gridCols}`} dir={isRtl ? "rtl" : "ltr"}>
       <aside
-        className={`hidden xl:block bg-[var(--theme-bg)] ${sidebarBorder}`}
+        className={`hidden xl:block bg-white ${sidebarBorder}`}
         aria-label="Dashboard navigation"
       >
-        <div className="sticky top-0 px-4 py-6">
-          <div className="rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm">
-            <nav className="flex flex-col gap-1">
-              {NAV_ITEMS.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== "/dashboard" && item.href !== "/profile" && pathname.startsWith(item.href)) ||
-                  (item.href === "/profile" && (pathname === "/profile" || pathname.startsWith("/profile/")));
-                const Icon = item.icon;
-                const label = locale === "ar" ? item.label : item.labelEn;
-                const textAlign = locale === "ar" ? "text-right" : "text-left";
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
-                      isActive ? linkActiveClass : `text-zinc-700 ${hoverSidebar}`
-                    } ${isRtl ? "flex-row-reverse" : ""}`}
-                  >
-                    <Icon className="h-5 w-5 shrink-0" />
-                    <span className={`flex-1 ${textAlign}`} lang={locale === "ar" ? "ar" : "en"}>
-                      {label}
-                    </span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
+        <div className="sticky top-4 px-3 py-4">
+        <nav className="flex flex-col gap-1">
+          {NAV_ITEMS.map((item) => {
+            const isActive =
+              pathname === item.href ||
+              (item.href !== "/dashboard" && item.href !== "/profile" && pathname.startsWith(item.href)) ||
+              (item.href === "/profile" && (pathname === "/profile" || pathname.startsWith("/profile/")));
+            const Icon = item.icon;
+            const label = locale === "ar" ? item.label : item.labelEn;
+            const textAlign = locale === "ar" ? "text-right" : "text-left";
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                  isActive ? linkActiveClass : `text-zinc-700 ${hoverSidebar}`
+                } ${isRtl ? "flex-row-reverse" : ""}`}
+              >
+                <Icon className="h-5 w-5 shrink-0" />
+                <span className={`flex-1 ${textAlign}`} lang={locale === "ar" ? "ar" : "en"}>
+                  {label}
+                </span>
+              </Link>
+            );
+          })}
+        </nav>
         </div>
       </aside>
 
