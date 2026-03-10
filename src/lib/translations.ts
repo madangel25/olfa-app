@@ -328,10 +328,18 @@ type TranslationMap = {
     like: string;
     liked: string;
     chat: string;
+    message: string;
     online: string;
     offline: string;
+    onlineNow: string;
+    activeMinutesAgo: string;
+    activeHoursAgo: string;
     noUsers: string;
     matchToast: string;
+    verified: string;
+    filterAgeRange: string;
+    filterCity: string;
+    filterMaritalStatus: string;
   };
 };
 
@@ -735,10 +743,18 @@ const translations: Record<Locale, TranslationMap> = {
       like: "Like",
       liked: "Liked",
       chat: "Chat",
+      message: "Message",
       online: "Online",
       offline: "Offline",
+      onlineNow: "Online now",
+      activeMinutesAgo: "Active {n} min ago",
+      activeHoursAgo: "Active {n} hr ago",
       noUsers: "No other verified users right now.",
       matchToast: "It's a match with {name}! You can chat now.",
+      verified: "Verified",
+      filterAgeRange: "Age",
+      filterCity: "City",
+      filterMaritalStatus: "Status",
     },
   },
   ar: {
@@ -1129,10 +1145,18 @@ const translations: Record<Locale, TranslationMap> = {
       like: "إعجاب",
       liked: "تم الإعجاب",
       chat: "محادثة",
+      message: "رسالة",
       online: "متصل",
       offline: "غير متصل",
+      onlineNow: "متصلون الآن",
+      activeMinutesAgo: "نشط منذ {n} د",
+      activeHoursAgo: "نشط منذ {n} س",
       noUsers: "لا يوجد أعضاء آخرون موثقون حالياً.",
       matchToast: "توافق مع {name}! يمكنك المحادثة الآن.",
+      verified: "موثق",
+      filterAgeRange: "العمر",
+      filterCity: "المدينة",
+      filterMaritalStatus: "الحالة",
     },
   },
 };
