@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -111,8 +111,15 @@ function optLabel(t: (k: string) => string, value: string | null): string | null
 export default function PublicProfilePage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const profileUserId = typeof params.id === "string" ? params.id : null;
   const { locale, dir, t } = useLanguage();
+  const fromDiscoverNearMe = searchParams.get("from") === "discover-near-me";
+  const backTab = searchParams.get("tab") || "all";
+  const backCountry = searchParams.get("country") || "";
+  const backHref = fromDiscoverNearMe
+    ? `/dashboard/discover-near-me?tab=${backTab}&country=${encodeURIComponent(backCountry)}`
+    : "/dashboard/discovery";
 
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -291,8 +298,8 @@ export default function PublicProfilePage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12 font-[family-name:var(--font-cairo)] text-center">
         <p className="text-zinc-900">Profile not found.</p>
-        <Link href="/dashboard/discovery" className="mt-4 inline-block text-sky-600 hover:underline">
-          Back to Discovery
+        <Link href={backHref} className="mt-4 inline-block text-sky-600 hover:underline">
+          {fromDiscoverNearMe ? "Back to Discover Near Me" : "Back to Discovery"}
         </Link>
       </div>
     );
@@ -339,11 +346,13 @@ export default function PublicProfilePage() {
 
       <div className="mx-auto max-w-3xl px-4 py-6">
         <Link
-          href="/dashboard/discovery"
+          href={backHref}
           className={`mb-6 inline-flex items-center gap-2 text-sm font-medium text-zinc-900 ${themeAccent} ${themeAccentHover} transition ${isRtl ? "flex-row-reverse" : ""}`}
         >
           <ArrowLeft className="h-4 w-4" />
-          {locale === "ar" ? "العودة للبحث" : "Back to Discovery"}
+          {fromDiscoverNearMe
+            ? (locale === "ar" ? "العودة إلى الأقرب لك" : "Back to Discover Near Me")
+            : (locale === "ar" ? "العودة للبحث" : "Back to Discovery")}
         </Link>
 
         {/* Single unified master card: white, rounded-3xl, soft shadow */}

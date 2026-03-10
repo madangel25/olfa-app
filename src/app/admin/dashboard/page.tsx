@@ -66,6 +66,7 @@ type UserRow = {
   is_verified: boolean;
   verification_submitted: boolean;
   banned_at: string | null;
+  is_vip: boolean;
 };
 
 type PendingUserRow = UserRow & { device_id: string | null };
@@ -136,6 +137,7 @@ export default function AdminDashboardPage() {
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [banningDeviceId, setBanningDeviceId] = useState<string | null>(null);
+  const [togglingVipId, setTogglingVipId] = useState<string | null>(null);
 
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestionRow[]>([]);
   const [loadingQuiz, setLoadingQuiz] = useState(false);
@@ -154,7 +156,7 @@ export default function AdminDashboardPage() {
       todayStart.setHours(0, 0, 0, 0);
       const todayIso = todayStart.toISOString();
 
-      const [totalRes, newTodayRes, pendingRes] = await Promise.all([
+      const [totalRes, newTodayRes, pendingRes, vipRes] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase
           .from("profiles")
@@ -165,16 +167,21 @@ export default function AdminDashboardPage() {
           .select("id", { count: "exact", head: true })
           .eq("verification_submitted", true)
           .eq("is_verified", false),
+        supabase
+          .from("profiles")
+          .select("id", { count: "exact", head: true })
+          .eq("is_vip", true),
       ]);
 
       const totalUsers = totalRes.count ?? 0;
       const newToday = newTodayRes.count ?? 0;
       const pendingApprovals = pendingRes.count ?? 0;
+      const premiumUsers = vipRes.count ?? 0;
 
       setStats({
         totalUsers,
         newToday,
-        premiumUsers: 0,
+        premiumUsers,
         pendingApprovals,
       });
     } catch (e) {
@@ -191,7 +198,7 @@ export default function AdminDashboardPage() {
       const { data, error: err } = await supabase
         .from("profiles")
         .select(
-          "id, full_name, email, gender, created_at, is_verified, verification_submitted, banned_at"
+          "id, full_name, email, gender, created_at, is_verified, verification_submitted, banned_at, is_vip"
         )
         .order("created_at", { ascending: false });
 
@@ -210,6 +217,7 @@ export default function AdminDashboardPage() {
           is_verified: Boolean(row.is_verified),
           verification_submitted: Boolean(row.verification_submitted),
           banned_at: (row.banned_at as string | null) ?? null,
+          is_vip: Boolean(row.is_vip),
         }))
       );
     } catch (e) {
@@ -540,6 +548,26 @@ export default function AdminDashboardPage() {
         (u.email ?? "").toLowerCase().includes(q)
     );
   }, [users, searchQuery]);
+
+  const handleToggleVip = async (user: UserRow) => {
+    setTogglingVipId(user.id);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_vip: !user.is_vip })
+        .eq("id", user.id);
+      if (error) throw error;
+      setUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, is_vip: !u.is_vip } : u))
+      );
+      setSuccess("تم تحديث حالة VIP.");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to toggle VIP.");
+    } finally {
+      setTogglingVipId(null);
+    }
+  };
 
   const handleBan = async (user: UserRow) => {
     setError(null);
@@ -967,6 +995,7 @@ export default function AdminDashboardPage() {
                       <th className="px-4 py-3 font-semibold text-zinc-600 text-right">الجنس</th>
                       <th className="px-4 py-3 font-semibold text-zinc-600 text-right">تاريخ الانضمام</th>
                       <th className="px-4 py-3 font-semibold text-zinc-600 text-right">الحالة</th>
+                      <th className="px-4 py-3 font-semibold text-zinc-600 text-right">VIP</th>
                       <th className="px-3 py-3 font-semibold text-zinc-600 text-right rounded-tl-lg w-20">إجراءات</th>
                     </tr>
                   </thead>
@@ -999,6 +1028,26 @@ export default function AdminDashboardPage() {
                           >
                             {statusLabel(user)}
                           </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            type="button"
+                            disabled={!!user.banned_at || togglingVipId === user.id}
+                            onClick={() => handleToggleVip(user)}
+                            className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium transition ${
+                              user.is_vip
+                                ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                            }`}
+                            title={user.is_vip ? "إلغاء VIP" : "تعيين VIP"}
+                          >
+                            {togglingVipId === user.id ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <Crown className="h-3.5 w-3.5" />
+                            )}
+                            {user.is_vip ? "نعم" : "لا"}
+                          </button>
                         </td>
                         <td className="px-3 py-3">
                           <div className="relative">

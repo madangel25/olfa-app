@@ -11,12 +11,13 @@ import {
   PROFILE_UPDATED_EVENT,
   type ProfileForCompleteness,
 } from "@/lib/profileCompleteness";
-import { Home, User, MessageCircle, Heart, UserCircle } from "lucide-react";
+import { Home, User, MessageCircle, Heart, UserCircle, MapPin } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "الرئيسية", labelEn: "Home", icon: Home },
   { href: "/profile", label: "الملف الشخصي", labelEn: "Profile", icon: UserCircle },
   { href: "/dashboard/discovery", label: "البحث", labelEn: "Discovery", icon: User },
+  { href: "/dashboard/discover-near-me", label: "الأقرب لك", labelEn: "Near Me", icon: MapPin },
   { href: "/dashboard/likes", label: "الإعجابات", labelEn: "Likes", icon: Heart },
   { href: "/dashboard/messages", label: "الرسائل", labelEn: "Messages", icon: MessageCircle },
 ];
