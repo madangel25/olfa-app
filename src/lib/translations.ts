@@ -14,6 +14,7 @@ type TranslationMap = {
     joinOlfa: string;
     createAccount: string;
     backToHome: string;
+    back: string;
     save: string;
     next: string;
     submit: string;
@@ -116,6 +117,8 @@ type TranslationMap = {
     sessionExpired: string;
     couldNotLoadProfile: string;
     pending: string;
+    dropHere: string;
+    orChooseFile: string;
   };
   success: {
     label: string;
@@ -129,6 +132,7 @@ type TranslationMap = {
     loading: string;
   };
   social: {
+    stepLabel: string;
     title: string;
     disclaimer: string;
     facebookLabel: string;
@@ -334,6 +338,7 @@ const translations: Record<Locale, TranslationMap> = {
       joinOlfa: "Join Olfa",
       createAccount: "Create an account",
       backToHome: "Back to home",
+      back: "Back",
       save: "Save",
       next: "Next",
       submit: "Submit",
@@ -505,6 +510,8 @@ const translations: Record<Locale, TranslationMap> = {
       sessionExpired: "Your session has expired. Please sign in again.",
       couldNotLoadProfile: "Could not load or create your profile.",
       pending: "Pending",
+      dropHere: "Drop here",
+      orChooseFile: "or choose file",
     },
     success: {
       label: "Onboarding complete",
@@ -518,6 +525,7 @@ const translations: Record<Locale, TranslationMap> = {
       loading: "Saving…",
     },
     social: {
+      stepLabel: "Step 1 of 2",
       title: "Social profile (optional)",
       disclaimer: "This is for AI interest analysis and social verification only. We will NEVER post anything.",
       facebookLabel: "Facebook profile URL",
@@ -710,6 +718,7 @@ const translations: Record<Locale, TranslationMap> = {
       joinOlfa: "انضم إلى أولفا",
       createAccount: "إنشاء حساب",
       backToHome: "العودة للرئيسية",
+      back: "رجوع",
       save: "حفظ",
       next: "التالي",
       submit: "إرسال",
@@ -880,6 +889,8 @@ const translations: Record<Locale, TranslationMap> = {
       sessionExpired: "انتهت جلستك. يرجى تسجيل الدخول مرة أخرى.",
       couldNotLoadProfile: "تعذر تحميل أو إنشاء ملفك.",
       pending: "قيد الانتظار",
+      dropHere: "أفلت هنا",
+      orChooseFile: "أو اختر ملف",
     },
     success: {
       label: "اكتمال الانضمام",
@@ -893,6 +904,7 @@ const translations: Record<Locale, TranslationMap> = {
       loading: "جاري الحفظ…",
     },
     social: {
+      stepLabel: "الخطوة ١ من ٢",
       title: "الملف الاجتماعي (اختياري)",
       disclaimer: "هذا لتحليل الاهتمامات بالذكاء الاصطناعي والتحقق الاجتماعي فقط. لن ننشر أي شيء أبداً.",
       facebookLabel: "رابط فيسبوك",

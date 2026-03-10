@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
@@ -21,7 +22,8 @@ const DEFAULT_PLEDGE_AR = `باستخدام أولفا، ألتزم ببحث ج�
 
 export default function OnboardingPledgePage() {
   const router = useRouter();
-  const { t, locale } = useLanguage();
+  const { t, locale, dir } = useLanguage();
+  const { theme } = useTheme();
   const [checking, setChecking] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -99,39 +101,81 @@ export default function OnboardingPledgePage() {
   };
 
   if (checking) {
-    return <LoadingScreen message={t("common.loading")} theme="sky" />;
+    return (
+      <LoadingScreen
+        message={t("common.loading")}
+        theme={theme === "female" ? "pink" : "sky"}
+      />
+    );
   }
 
   const showEn = locale === "en" || true;
   const showAr = locale === "ar" || true;
 
+  const cardBorder =
+    theme === "male"
+      ? "border-sky-200"
+      : theme === "female"
+        ? "border-pink-200"
+        : "border-violet-200";
+  const cardShadow =
+    theme === "male"
+      ? "shadow-sky-900/10"
+      : theme === "female"
+        ? "shadow-pink-900/10"
+        : "shadow-violet-900/10";
+  const accentLabel =
+    theme === "male"
+      ? "text-sky-600"
+      : theme === "female"
+        ? "text-pink-600"
+        : "text-violet-600";
+  const buttonPrimary =
+    theme === "male"
+      ? "bg-sky-500 hover:bg-sky-600 text-white shadow-lg shadow-sky-900/20"
+      : theme === "female"
+        ? "bg-pink-500 hover:bg-pink-600 text-white shadow-lg shadow-pink-900/20"
+        : "bg-violet-500 hover:bg-violet-600 text-white shadow-lg shadow-violet-900/20";
+
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-50">
-      <div className="mx-auto max-w-2xl px-4 py-10">
-        <h1 className="text-center text-2xl font-semibold tracking-tight text-amber-200/95 sm:text-3xl">
+    <div
+      className="min-h-screen w-full font-[family-name:var(--font-cairo)] flex items-center justify-center px-4 py-10"
+      style={{ background: "var(--theme-bg)" }}
+      dir={dir}
+    >
+      <div
+        className={`w-full max-w-2xl rounded-2xl border ${cardBorder} bg-white p-6 shadow-lg ${cardShadow} sm:p-8`}
+      >
+        <h1
+          className={`text-center text-2xl font-semibold tracking-tight sm:text-3xl ${accentLabel}`}
+        >
           {locale === "ar" ? "تعهد الجدية" : "Ethical Pledge"}
         </h1>
-        <p className="mt-2 text-center text-xs uppercase tracking-widest text-slate-400">
+        <p className="mt-2 text-center text-xs uppercase tracking-widest text-zinc-500">
           {locale === "ar" ? "Ethical Pledge" : "تعهد الجدية"}
         </p>
 
-        <div className="mt-8 space-y-8 rounded-2xl border border-slate-700/80 bg-slate-900/50 px-5 py-6 backdrop-blur">
+        <div className="mt-8 space-y-8">
           {showEn && (
-            <section className="space-y-3" lang="en">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-amber-400/90">English</h2>
-              <div className="whitespace-pre-line text-sm leading-relaxed text-slate-200/90">
+            <section className="space-y-3" lang="en" dir="ltr">
+              <h2 className={`text-sm font-semibold uppercase tracking-wider ${accentLabel}`}>
+                English
+              </h2>
+              <div className="whitespace-pre-line rounded-xl bg-zinc-50/80 px-4 py-3 text-sm leading-relaxed text-zinc-700">
                 {pledgeEn}
               </div>
             </section>
           )}
           {showAr && (
             <section
-              className={`space-y-3 ${showEn ? "border-t border-slate-700/60 pt-6" : ""}`}
+              className={`space-y-3 ${showEn ? "border-t border-zinc-200 pt-6" : ""}`}
               dir="rtl"
               lang="ar"
             >
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-amber-400/90">العربية</h2>
-              <div className="whitespace-pre-line text-sm leading-relaxed text-slate-200/90">
+              <h2 className={`text-sm font-semibold uppercase tracking-wider ${accentLabel}`}>
+                العربية
+              </h2>
+              <div className="whitespace-pre-line rounded-xl bg-zinc-50/80 px-4 py-3 text-sm leading-relaxed text-zinc-700">
                 {pledgeAr}
               </div>
             </section>
@@ -139,7 +183,7 @@ export default function OnboardingPledgePage() {
         </div>
 
         {error && (
-          <p className="mt-4 rounded-xl border border-red-500/60 bg-red-950/60 px-3 py-2 text-sm text-red-100">
+          <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </p>
         )}
@@ -149,12 +193,14 @@ export default function OnboardingPledgePage() {
             type="button"
             onClick={handleAgree}
             disabled={submitting}
-            className="w-full max-w-sm rounded-2xl bg-amber-500 px-6 py-4 text-base font-semibold text-slate-950 shadow-lg shadow-amber-900/30 transition hover:bg-amber-400 disabled:opacity-60 sm:w-auto"
+            className={`w-full max-w-sm rounded-xl px-6 py-4 text-base font-semibold transition disabled:opacity-60 sm:w-auto ${buttonPrimary}`}
           >
             {submitting ? t("pledge.loading") : t("pledge.agreeButton")}
           </button>
-          <p className="mt-3 text-xs text-slate-500">
-            {locale === "ar" ? "بالنقر فإنك تقبل التعهد وتنتقل للخطوة التالية." : "By clicking you accept the pledge and proceed to the next step."}
+          <p className="mt-3 text-xs text-zinc-500 text-center">
+            {locale === "ar"
+              ? "بالنقر فإنك تقبل التعهد وتنتقل للخطوة التالية."
+              : "By clicking you accept the pledge and proceed to the next step."}
           </p>
         </div>
       </div>

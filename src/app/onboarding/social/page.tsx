@@ -4,13 +4,16 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type SocialLinks = { facebook?: string; linkedin?: string };
 
 export default function OnboardingSocialPage() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, dir } = useLanguage();
+  const { theme } = useTheme();
   const [checking, setChecking] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,75 +104,138 @@ export default function OnboardingSocialPage() {
   };
 
   if (checking) {
-    return <LoadingScreen message={t("common.loading")} theme="sky" />;
+    return (
+      <LoadingScreen
+        message={t("common.loading")}
+        theme={theme === "female" ? "pink" : "sky"}
+      />
+    );
   }
 
-  return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-slate-50">
-      <div className="mx-auto max-w-lg px-4 py-10">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-50">
-          {t("social.title")}
-        </h1>
-        <p className="mt-3 text-sm text-slate-300/90">
-          {t("social.disclaimer")}
-        </p>
+  const isMale = theme === "male";
+  const isFemale = theme === "female";
+  const progress = 50; // Step 1 of 2
+  const inputFocus = isMale
+    ? "border-sky-300 focus:border-sky-500 focus:ring-sky-500/20"
+    : isFemale
+      ? "border-pink-300 focus:border-pink-500 focus:ring-pink-500/20"
+      : "border-violet-300 focus:border-violet-500 focus:ring-violet-500/20";
+  const buttonPrimary = isMale
+    ? "bg-sky-500 hover:bg-sky-600 text-white"
+    : isFemale
+      ? "bg-pink-500 hover:bg-pink-600 text-white"
+      : "bg-violet-500 hover:bg-violet-600 text-white";
+  const progressBar = isMale
+    ? "bg-sky-500"
+    : isFemale
+      ? "bg-pink-500"
+      : "bg-violet-500";
 
-        <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-950/20 px-4 py-3 text-sm text-amber-100/90">
-          {t("social.disclaimer")}
+  return (
+    <div
+      className="min-h-screen w-full font-[family-name:var(--font-cairo)] flex flex-col items-center px-4 py-8"
+      style={{ background: "var(--theme-bg)" }}
+      dir={dir}
+    >
+      <div className="w-full max-w-2xl">
+        {/* Step progress bar */}
+        <div className="mb-8">
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">
+            {t("social.stepLabel")}
+          </p>
+          <div className="h-2 w-full rounded-full bg-zinc-200 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${progressBar}`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-          <div>
-            <label htmlFor="facebook" className="block text-sm font-medium text-slate-200">
-              {t("social.facebookLabel")} <span className="text-slate-500">({t("social.optional")})</span>
-            </label>
-            <input
-              id="facebook"
-              type="url"
-              value={facebook}
-              onChange={(e) => setFacebook(e.target.value)}
-              placeholder="https://facebook.com/..."
-              className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
-            />
-          </div>
-          <div>
-            <label htmlFor="linkedin" className="block text-sm font-medium text-slate-200">
-              {t("social.linkedinLabel")} <span className="text-slate-500">({t("social.optional")})</span>
-            </label>
-            <input
-              id="linkedin"
-              type="url"
-              value={linkedin}
-              onChange={(e) => setLinkedin(e.target.value)}
-              placeholder="https://linkedin.com/in/..."
-              className="mt-1 w-full rounded-xl border border-slate-700 bg-slate-900/80 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-amber-500/60 focus:outline-none focus:ring-1 focus:ring-amber-500/30"
-            />
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg shadow-zinc-900/5 sm:p-8">
+          <header className="mb-6">
+            <h1 className="text-xl font-semibold text-zinc-900 sm:text-2xl">
+              {t("social.title")}
+            </h1>
+            <p className="mt-2 text-sm text-zinc-600">{t("social.disclaimer")}</p>
+          </header>
+
+          <div className="rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-800">
+            {t("social.disclaimer")}
           </div>
 
-          {error && (
-            <p className="rounded-xl border border-red-500/60 bg-red-950/60 px-3 py-2 text-sm text-red-100">
-              {error}
-            </p>
-          )}
+          <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+            <div>
+              <label
+                htmlFor="facebook"
+                className="block text-sm font-medium text-zinc-700"
+              >
+                {t("social.facebookLabel")}{" "}
+                <span className="text-zinc-500">({t("social.optional")})</span>
+              </label>
+              <input
+                id="facebook"
+                type="url"
+                value={facebook}
+                onChange={(e) => setFacebook(e.target.value)}
+                placeholder="https://facebook.com/..."
+                className={`mt-2 w-full rounded-xl border bg-white px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 ${inputFocus}`}
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="linkedin"
+                className="block text-sm font-medium text-zinc-700"
+              >
+                {t("social.linkedinLabel")}{" "}
+                <span className="text-zinc-500">({t("social.optional")})</span>
+              </label>
+              <input
+                id="linkedin"
+                type="url"
+                value={linkedin}
+                onChange={(e) => setLinkedin(e.target.value)}
+                placeholder="https://linkedin.com/in/..."
+                className={`mt-2 w-full rounded-xl border bg-white px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 ${inputFocus}`}
+              />
+            </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
-            <button
-              type="button"
-              onClick={handleSkip}
-              disabled={saving}
-              className="rounded-2xl border border-slate-600 bg-slate-900/50 px-5 py-3 text-sm font-medium text-slate-200 transition hover:bg-slate-800/70 disabled:opacity-60"
-            >
-              {t("social.skip")}
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="rounded-2xl bg-amber-500 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-amber-900/30 transition hover:bg-amber-400 disabled:opacity-60"
-            >
-              {saving ? t("social.saving") : t("social.continue")}
-            </button>
-          </div>
-        </form>
+            {error && (
+              <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </p>
+            )}
+
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <button
+                type="button"
+                onClick={() => router.push("/onboarding/pledge")}
+                disabled={saving}
+                className="inline-flex items-center gap-2 rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-60"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                {t("common.back")}
+              </button>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleSkip}
+                  disabled={saving}
+                  className="rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-medium text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-60"
+                >
+                  {t("social.skip")}
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition disabled:opacity-60 ${buttonPrimary}`}
+                >
+                  {saving ? t("social.saving") : t("social.continue")}
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

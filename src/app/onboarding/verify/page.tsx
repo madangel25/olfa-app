@@ -1,20 +1,39 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Webcam from "react-webcam";
 import FingerprintJS from "@fingerprintjs/fingerprintjs";
+import { CheckCircle, Upload } from "lucide-react";
 import { supabase, ensureUserProfile } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
 type Pose = "front" | "right" | "left";
 
-function getPoseSteps(t: (path: string) => string): { id: Pose; title: string; instruction: string; hint: string }[] {
+function getPoseSteps(
+  t: (path: string) => string
+): { id: Pose; title: string; instruction: string; hint: string }[] {
   return [
-    { id: "front", title: t("verify.front"), instruction: t("verify.frontInstruction"), hint: t("verify.frontHint") },
-    { id: "right", title: t("verify.right"), instruction: t("verify.rightInstruction"), hint: t("verify.rightHint") },
-    { id: "left", title: t("verify.left"), instruction: t("verify.leftInstruction"), hint: t("verify.leftHint") },
+    {
+      id: "front",
+      title: t("verify.front"),
+      instruction: t("verify.frontInstruction"),
+      hint: t("verify.frontHint"),
+    },
+    {
+      id: "right",
+      title: t("verify.right"),
+      instruction: t("verify.rightInstruction"),
+      hint: t("verify.rightHint"),
+    },
+    {
+      id: "left",
+      title: t("verify.left"),
+      instruction: t("verify.leftInstruction"),
+      hint: t("verify.leftHint"),
+    },
   ];
 }
 
@@ -39,22 +58,33 @@ const dataURLToBlob = (dataUrl: string): Blob => {
   return new Blob([bytes], { type: mime });
 };
 
+const PHOTO_LABELS: Record<Pose, string> = {
+  front: "Photo 1",
+  right: "Photo 2",
+  left: "Photo 3",
+};
+
 export default function OnboardingVerifyPage() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, dir } = useLanguage();
+  const { theme } = useTheme();
   const POSE_STEPS = getPoseSteps(t);
   const webcamRef = useRef<Webcam | null>(null);
+  const fileInputRefs = useRef<Record<Pose, HTMLInputElement | null>>({
+    front: null,
+    right: null,
+    left: null,
+  });
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [captures, setCaptures] = useState<CaptureMap>(initialCaptures);
   const [userId, setUserId] = useState<string | null>(null);
-  const [deviceFingerprint, setDeviceFingerprint] = useState<string | null>(
-    null
-  );
+  const [deviceFingerprint, setDeviceFingerprint] = useState<string | null>(null);
   const [loadingFingerprint, setLoadingFingerprint] = useState(true);
   const [checkingSession, setCheckingSession] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState<Pose | null>(null);
 
   useEffect(() => {
     const ensureAuthenticatedAndQuizDone = async () => {
@@ -89,7 +119,7 @@ export default function OnboardingVerifyPage() {
     };
 
     ensureAuthenticatedAndQuizDone();
-  }, [router]);
+  }, [router, t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,23 +128,15 @@ export default function OnboardingVerifyPage() {
       try {
         const fp = await FingerprintJS.load();
         const result = await fp.get();
-        if (!cancelled) {
-          setDeviceFingerprint(result.visitorId);
-        }
+        if (!cancelled) setDeviceFingerprint(result.visitorId);
       } catch (err) {
-        // If fingerprinting fails, we still allow onboarding to proceed,
-        // but we won't have a device_fingerprint to store.
-        // eslint-disable-next-line no-console
         console.error("Failed to capture device fingerprint", err);
       } finally {
-        if (!cancelled) {
-          setLoadingFingerprint(false);
-        }
+        if (!cancelled) setLoadingFingerprint(false);
       }
     };
 
     loadFingerprint();
-
     return () => {
       cancelled = true;
     };
@@ -133,18 +155,12 @@ export default function OnboardingVerifyPage() {
       setError(t("verify.unableToCapture"));
       return;
     }
-    setCaptures((prev) => ({
-      ...prev,
-      [currentPose.id]: screenshot,
-    }));
+    setCaptures((prev) => ({ ...prev, [currentPose.id]: screenshot }));
   };
 
   const handleRetake = () => {
     setError(null);
-    setCaptures((prev) => ({
-      ...prev,
-      [currentPose.id]: null,
-    }));
+    setCaptures((prev) => ({ ...prev, [currentPose.id]: null }));
   };
 
   const handleNextStep = () => {
@@ -157,6 +173,37 @@ export default function OnboardingVerifyPage() {
       setCurrentStepIndex((prev) => prev + 1);
     }
   };
+
+  const setCaptureFromFile = useCallback((pose: Pose, file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setCaptures((prev) => ({ ...prev, [pose]: dataUrl }));
+    };
+    reader.readAsDataURL(file);
+  }, []);
+
+  const handleFileInput = (pose: Pose, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setCaptureFromFile(pose, file);
+    e.target.value = "";
+  };
+
+  const handleDrop = useCallback(
+    (pose: Pose, e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(null);
+      const file = e.dataTransfer.files?.[0];
+      if (file) setCaptureFromFile(pose, file);
+    },
+    [setCaptureFromFile]
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  }, []);
 
   const handleSubmitVerification = async () => {
     setError(null);
@@ -191,35 +238,26 @@ export default function OnboardingVerifyPage() {
           upsert: true,
         });
 
-        if (uploadError) {
-          throw uploadError;
-        }
+        if (uploadError) throw uploadError;
       }
 
       const updatePayload: Record<string, unknown> = {
         verification_submitted: true,
         is_verified: false,
       };
-
-      if (deviceFingerprint) {
-        updatePayload.device_fingerprint = deviceFingerprint;
-      }
+      if (deviceFingerprint) updatePayload.device_fingerprint = deviceFingerprint;
 
       const { error: profileError } = await supabase
         .from("profiles")
         .update(updatePayload)
         .eq("id", userId);
 
-      if (profileError) {
-        throw profileError;
-      }
+      if (profileError) throw profileError;
 
       router.push("/onboarding/success");
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : t("verify.submitError")
+        err instanceof Error ? err.message : t("verify.submitError")
       );
     } finally {
       setSubmitting(false);
@@ -228,87 +266,171 @@ export default function OnboardingVerifyPage() {
 
   if (checkingSession) {
     return (
-      <LoadingScreen message={t("verify.preparing")} theme="sky" />
+      <LoadingScreen
+        message={t("verify.preparing")}
+        theme={theme === "female" ? "pink" : "sky"}
+      />
     );
   }
 
   const allCaptured =
-    captures.front && captures.right && captures.left ? true : false;
+    captures.front && captures.right && captures.left;
+
+  const isMale = theme === "male";
+  const isFemale = theme === "female";
+  const checkColor = isMale
+    ? "text-sky-500"
+    : isFemale
+      ? "text-pink-500"
+      : "text-violet-500";
+  const zoneBorder = isMale
+    ? "border-sky-300"
+    : isFemale
+      ? "border-pink-300"
+      : "border-violet-300";
+  const zoneBorderDone = isMale
+    ? "border-sky-400 bg-sky-50/50"
+    : isFemale
+      ? "border-pink-400 bg-pink-50/50"
+      : "border-violet-400 bg-violet-50/50";
+  const buttonPrimary = isMale
+    ? "bg-sky-500 hover:bg-sky-600 text-white"
+    : isFemale
+      ? "bg-pink-500 hover:bg-pink-600 text-white"
+      : "bg-violet-500 hover:bg-violet-600 text-white";
+  const buttonSecondary =
+    "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50";
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-purple-900 text-slate-50 flex items-center justify-center px-4 py-10">
-      <div className="flex w-full max-w-5xl flex-col gap-8 rounded-3xl border border-slate-800/80 bg-slate-950/70 px-6 py-8 shadow-2xl backdrop-blur md:flex-row md:px-8">
-        <section className="md:w-2/3">
-          <header className="mb-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-300/80">
-              {t("verify.stepLabel")}
-            </p>
-            <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-              {t("verify.title")}
-            </h1>
-            <p className="mt-2 text-sm text-slate-200/80">
-              {t("verify.description")}
-            </p>
-          </header>
+    <div
+      className="min-h-screen w-full font-[family-name:var(--font-cairo)] px-4 py-8"
+      style={{ background: "var(--theme-bg)" }}
+      dir={dir}
+    >
+      <div className="mx-auto max-w-4xl">
+        <header className="mb-6">
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            {t("verify.stepLabel")}
+          </p>
+          <h1 className="mt-2 text-2xl font-semibold text-zinc-900">
+            {t("verify.title")}
+          </h1>
+          <p className="mt-2 text-sm text-zinc-600">{t("verify.description")}</p>
+        </header>
 
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 text-[11px] text-slate-300/80">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-800 text-[11px] font-semibold">
-                {currentStepIndex + 1}
-              </span>
-              <div>
-                <p className="font-semibold uppercase tracking-[0.18em]">
-                  {currentPose.title}
-                </p>
-                <p className="text-[11px] text-slate-300/80">
-                  {currentPose.instruction}
-                </p>
+        {/* 3 Drop-zones */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          {POSE_STEPS.map((step) => {
+            const hasImage = !!captures[step.id];
+            const isActive = currentPose.id === step.id;
+            const isDrag = dragOver === step.id;
+
+            return (
+              <div
+                key={step.id}
+                onClick={() => setCurrentStepIndex(POSE_STEPS.indexOf(step))}
+                onDrop={(e) => handleDrop(step.id, e)}
+                onDragOver={handleDragOver}
+                onDragEnter={() => setDragOver(step.id)}
+                onDragLeave={() => setDragOver(null)}
+                className={`
+                  relative flex flex-col rounded-2xl border-2 border-dashed p-4 min-h-[180px] transition cursor-pointer
+                  ${hasImage ? zoneBorderDone : zoneBorder}
+                  ${isActive ? "ring-2 ring-offset-2 " + (isMale ? "ring-sky-500" : isFemale ? "ring-pink-500" : "ring-violet-500") : ""}
+                  ${isDrag ? "bg-zinc-100" : ""}
+                `}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-semibold text-zinc-700">
+                    {PHOTO_LABELS[step.id]}
+                  </span>
+                  {hasImage && (
+                    <CheckCircle
+                      className={`h-6 w-6 shrink-0 ${checkColor}`}
+                      aria-hidden
+                    />
+                  )}
+                </div>
+                <div className="flex-1 rounded-xl overflow-hidden bg-zinc-100 flex items-center justify-center min-h-[120px]">
+                  {captures[step.id] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={captures[step.id] as string}
+                      alt={PHOTO_LABELS[step.id]}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-zinc-500 text-center p-2">
+                      <Upload className="h-8 w-8" />
+                      <span className="text-xs">
+                        {t("verify.pending")} / {t("verify.dropHere")}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        ref={(el) => {
+                          fileInputRefs.current[step.id] = el;
+                        }}
+                        onChange={(e) => handleFileInput(step.id, e)}
+                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fileInputRefs.current[step.id]?.click();
+                        }}
+                        className="text-xs font-medium text-zinc-600 underline"
+                      >
+                        {t("verify.orChooseFile")}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-            <p className="text-[11px] text-slate-400/80">
+            );
+          })}
+        </div>
+
+        {/* Webcam for current step */}
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg shadow-zinc-900/5 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm font-medium text-zinc-700">
+              {currentPose.title} — {currentPose.instruction}
+            </p>
+            <p className="text-xs text-zinc-500">
               {currentStepIndex + 1} / {POSE_STEPS.length}
             </p>
           </div>
-
-          <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-black/40">
-            <div className="relative aspect-video w-full bg-black">
-              <Webcam
-                ref={webcamRef}
-                audio={false}
-                screenshotFormat="image/jpeg"
-                videoConstraints={{
-                  facingMode: "user",
-                }}
-                className="h-full w-full object-cover"
-              />
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <div className="relative h-40 w-40 rounded-full border-2 border-dashed border-slate-100/80 bg-slate-900/10 shadow-[0_0_40px_rgba(15,23,42,0.9)]">
-                  <div className="absolute inset-6 rounded-full border border-slate-100/40" />
-                </div>
-              </div>
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent px-4 py-3">
-                <p className="text-[11px] font-medium text-slate-50">
-                  {currentPose.hint}
-                </p>
-              </div>
+          <div className="relative overflow-hidden rounded-xl border border-zinc-200 bg-black aspect-video">
+            <Webcam
+              ref={webcamRef}
+              audio={false}
+              screenshotFormat="image/jpeg"
+              videoConstraints={{ facingMode: "user" }}
+              className="h-full w-full object-cover"
+            />
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="h-32 w-32 rounded-full border-2 border-dashed border-white/60 bg-black/20" />
+            </div>
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 py-3">
+              <p className="text-xs font-medium text-white">{currentPose.hint}</p>
             </div>
           </div>
-
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={handleCapture}
-              className="inline-flex items-center justify-center rounded-2xl bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-950 shadow-md shadow-black/40 transition hover:bg-white"
+              className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${buttonPrimary}`}
             >
               {t("verify.capture")}
             </button>
-
             {captures[currentPose.id] && (
               <>
                 <button
                   type="button"
                   onClick={handleRetake}
-                  className="inline-flex items-center justify-center rounded-2xl border border-slate-600 bg-black/30 px-3 py-2 text-[11px] font-medium text-slate-100 transition hover:border-slate-500 hover:bg-black/60"
+                  className={`rounded-xl px-4 py-3 text-sm font-medium transition ${buttonSecondary}`}
                 >
                   {t("verify.retake")}
                 </button>
@@ -316,7 +438,7 @@ export default function OnboardingVerifyPage() {
                   <button
                     type="button"
                     onClick={handleNextStep}
-                    className="inline-flex items-center justify-center rounded-2xl border border-emerald-500/80 bg-emerald-500/10 px-3 py-2 text-[11px] font-semibold text-emerald-100 transition hover:bg-emerald-500/20"
+                    className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${buttonPrimary}`}
                   >
                     {t("verify.nextAngle")}
                   </button>
@@ -324,91 +446,41 @@ export default function OnboardingVerifyPage() {
               </>
             )}
           </div>
+        </div>
 
-          {error && (
-            <p className="mt-4 rounded-xl border border-red-500/60 bg-red-950/60 px-3 py-2 text-xs text-red-100">
-              {error}
+        {error && (
+          <p className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </p>
+        )}
+
+        {/* Device note + Submit */}
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg shadow-zinc-900/5 space-y-4">
+          <div className="rounded-xl border border-zinc-100 bg-zinc-50/80 px-4 py-3">
+            <p className="text-sm font-semibold text-zinc-800">
+              {t("verify.deviceProtection")}
             </p>
-          )}
-        </section>
-
-        <section className="flex flex-1 flex-col justify-between gap-4 rounded-3xl border border-slate-800 bg-black/30 px-4 py-4">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-50">
-              {t("verify.previewTitle")}
-            </h2>
-            <p className="mt-1 text-[11px] text-slate-300/80">
-              {t("verify.previewDesc")}
-            </p>
-
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {POSE_STEPS.map((step) => (
-                <div
-                  key={step.id}
-                  className={`flex flex-col rounded-2xl border px-2 py-2 ${
-                    captures[step.id]
-                      ? "border-emerald-500/70 bg-emerald-500/10"
-                      : "border-slate-700 bg-black/40"
-                  }`}
-                >
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-200">
-                    {step.title}
-                  </p>
-                  <div className="mt-1 aspect-square overflow-hidden rounded-xl bg-slate-900">
-                    {captures[step.id] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={captures[step.id] as string}
-                        alt={`${step.title} capture`}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-[10px] text-slate-500">
-                        {t("verify.pending")}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="rounded-2xl border border-slate-700/80 bg-black/30 px-3 py-2">
-              <p className="text-[11px] font-semibold text-slate-50">
-                {t("verify.deviceProtection")}
-              </p>
-              <p className="mt-1 text-[11px] text-slate-300/80">
-                {t("verify.deviceNote")}
-              </p>
-              <p className="mt-1 text-[10px] text-slate-400/80">
-                {t("verify.deviceStatus")}{" "}
-                {loadingFingerprint
-                  ? t("verify.capturingFingerprint")
-                  : deviceFingerprint
+            <p className="mt-1 text-xs text-zinc-600">{t("verify.deviceNote")}</p>
+            <p className="mt-1 text-xs text-zinc-500">
+              {t("verify.deviceStatus")}{" "}
+              {loadingFingerprint
+                ? t("verify.capturingFingerprint")
+                : deviceFingerprint
                   ? t("verify.deviceCaptured")
                   : t("verify.deviceFailed")}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              disabled={!allCaptured || submitting}
-              onClick={handleSubmitVerification}
-              className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-950 shadow-md shadow-black/40 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {submitting
-                ? t("verify.submitting")
-                : t("verify.submitPhotos")}
-            </button>
-
-            <p className="text-[10px] text-slate-400/80">
-              {t("verify.reviewNote")}
             </p>
           </div>
-        </section>
+          <button
+            type="button"
+            disabled={!allCaptured || submitting}
+            onClick={handleSubmitVerification}
+            className={`w-full rounded-xl px-4 py-3.5 text-base font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed ${buttonPrimary}`}
+          >
+            {submitting ? t("verify.submitting") : t("verify.submitPhotos")}
+          </button>
+          <p className="text-xs text-zinc-500">{t("verify.reviewNote")}</p>
+        </div>
       </div>
     </div>
   );
 }
-

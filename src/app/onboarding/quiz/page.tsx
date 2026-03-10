@@ -1,10 +1,12 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type QuestionId =
   | "financial_views"
@@ -15,12 +17,14 @@ type QuestionId =
 
 type QuizAnswerMap = Partial<Record<QuestionId, string>>;
 
-
+const TOTAL_STEPS = 5;
 
 export default function OnboardingQuizPage() {
   const router = useRouter();
-  const { t, getQuizQuestions } = useLanguage();
+  const { t, getQuizQuestions, dir } = useLanguage();
+  const { theme } = useTheme();
   const questions = getQuizQuestions();
+  const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswerMap>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,8 +63,7 @@ export default function OnboardingQuizPage() {
     ensureAuthenticated();
   }, [router]);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSubmit = async () => {
     setError(null);
     setSuccess(null);
 
@@ -119,50 +122,96 @@ export default function OnboardingQuizPage() {
   };
 
   if (checkingSession) {
-    return <LoadingScreen message={t("common.loading")} theme="sky" />;
+    return (
+      <LoadingScreen
+        message={t("common.loading")}
+        theme={theme === "female" ? "pink" : "sky"}
+      />
+    );
   }
 
-  return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-slate-950 via-slate-900 to-purple-900 text-slate-50 flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-3xl rounded-3xl border border-slate-800/80 bg-slate-950/70 px-8 py-8 shadow-2xl backdrop-blur">
-        <header className="mb-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-300/80">
-            {t("quiz.stepLabel")}
-          </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-            {t("quiz.title")}
-          </h1>
-          <p className="mt-2 text-sm text-slate-200/80">
-            {t("quiz.description")}
-          </p>
-        </header>
+  const question = questions[currentStep];
+  const progress = ((currentStep + 1) / TOTAL_STEPS) * 100;
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {questions.map((question, index) => (
-            <section
-              key={question.id}
-              className="rounded-2xl border border-slate-800 bg-black/30 px-4 py-4"
-            >
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
-                {t("quiz.questionLabel")} {index + 1}
+  const isMale = theme === "male";
+  const isFemale = theme === "female";
+  const accentBorder = isMale
+    ? "border-sky-300"
+    : isFemale
+      ? "border-pink-300"
+      : "border-violet-300";
+  const accentBg = isMale
+    ? "bg-sky-50"
+    : isFemale
+      ? "bg-pink-50"
+      : "bg-violet-50";
+  const accentRing = isMale
+    ? "ring-sky-500/30 focus:ring-sky-500"
+    : isFemale
+      ? "ring-pink-500/30 focus:ring-pink-500"
+      : "ring-violet-500/30 focus:ring-violet-500";
+  const radioChecked = isMale
+    ? "border-sky-500 bg-sky-50"
+    : isFemale
+      ? "border-pink-500 bg-pink-50"
+      : "border-violet-500 bg-violet-50";
+  const buttonPrimary = isMale
+    ? "bg-sky-500 hover:bg-sky-600 text-white"
+    : isFemale
+      ? "bg-pink-500 hover:bg-pink-600 text-white"
+      : "bg-violet-500 hover:bg-violet-600 text-white";
+  const buttonSecondary =
+    "border border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50";
+
+  return (
+    <div
+      className="min-h-screen w-full font-[family-name:var(--font-cairo)] flex flex-col items-center px-4 py-8"
+      style={{ background: "var(--theme-bg)" }}
+      dir={dir}
+    >
+      <div className="w-full max-w-2xl">
+        {/* Step progress bar */}
+        <div className="mb-8">
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-2">
+            {t("quiz.questionLabel")} {currentStep + 1} of {TOTAL_STEPS}
+          </p>
+          <div className="h-2 w-full rounded-full bg-zinc-200 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${
+                isMale ? "bg-sky-500" : isFemale ? "bg-pink-500" : "bg-violet-500"
+              }`}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-lg shadow-zinc-900/5 sm:p-8">
+          <header className="mb-6">
+            <h1 className="text-xl font-semibold text-zinc-900 sm:text-2xl">
+              {t("quiz.title")}
+            </h1>
+            <p className="mt-2 text-sm text-zinc-600">{t("quiz.description")}</p>
+          </header>
+
+          {question && (
+            <section className="space-y-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+                {t("quiz.questionLabel")} {currentStep + 1}
               </p>
-              <h2 className="mt-1 text-sm font-medium text-slate-50">
+              <h2 className="text-base font-medium text-zinc-900">
                 {question.title}
               </h2>
-              <p className="mt-1 text-xs text-slate-300/80">
-                {question.subtitle}
-              </p>
-              <div className="mt-3 space-y-2">
+              <p className="text-sm text-zinc-600">{question.subtitle}</p>
+              <div className="mt-4 space-y-3">
                 {question.options.map((option) => {
-                  // @ts-ignore
-const checked = answers[question.id] === option.value;
+                  const checked = answers[question.id as QuestionId] === option.value;
                   return (
                     <label
                       key={option.value}
-                      className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-3 py-2 text-xs transition ${
+                      className={`flex cursor-pointer items-start gap-3 rounded-xl border-2 px-4 py-3 text-sm transition ${
                         checked
-                          ? "border-sky-400 bg-sky-500/15 text-sky-50"
-                          : "border-slate-800 bg-black/20 text-slate-100 hover:border-slate-600 hover:bg-black/40"
+                          ? `${accentBorder} ${accentBg}`
+                          : "border-zinc-200 bg-zinc-50/50 hover:border-zinc-300 hover:bg-zinc-50"
                       }`}
                     >
                       <input
@@ -176,14 +225,20 @@ const checked = answers[question.id] === option.value;
                             [question.id as QuestionId]: option.value,
                           }))
                         }
-                        className="mt-[2px] h-3 w-3 accent-sky-400"
+                        className={`mt-0.5 h-4 w-4 ${
+                          isMale
+                            ? "accent-sky-600"
+                            : isFemale
+                              ? "accent-pink-600"
+                              : "accent-violet-600"
+                        }`}
                       />
-                      <span>
-                        <span className="block text-[11px] font-semibold">
+                      <span className="flex-1">
+                        <span className="block font-medium text-zinc-900">
                           {option.label}
                         </span>
                         {option.helper && (
-                          <span className="mt-0.5 block text-[11px] text-slate-300/80">
+                          <span className="mt-0.5 block text-xs text-zinc-600">
                             {option.helper}
                           </span>
                         )}
@@ -193,35 +248,59 @@ const checked = answers[question.id] === option.value;
                 })}
               </div>
             </section>
-          ))}
+          )}
 
           {error && (
-            <p className="rounded-xl border border-red-500/60 bg-red-950/60 px-3 py-2 text-xs text-red-100">
+            <p className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
             </p>
           )}
 
           {success && (
-            <p className="rounded-xl border border-emerald-500/60 bg-emerald-950/60 px-3 py-2 text-xs text-emerald-100">
+            <p className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
               {success}
             </p>
           )}
 
-          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-[11px] text-slate-300/80">
-              {t("quiz.privacyNote")}
-            </p>
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
             <button
-              type="submit"
+              type="button"
+              onClick={() =>
+                currentStep === 0
+                  ? router.push("/onboarding/social")
+                  : setCurrentStep((s) => s - 1)
+              }
               disabled={loading}
-              className="inline-flex items-center justify-center rounded-2xl bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-950 shadow-md shadow-black/40 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-70"
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition disabled:opacity-60 ${buttonSecondary}`}
             >
-              {loading ? t("quiz.saving") : t("quiz.saveAndContinue")}
+              <ChevronLeft className="h-4 w-4" />
+              {t("common.back")}
             </button>
+            {currentStep < TOTAL_STEPS - 1 ? (
+              <button
+                type="button"
+                onClick={() => setCurrentStep((s) => s + 1)}
+                disabled={!answers[question?.id as QuestionId] || loading}
+                className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed ${buttonPrimary}`}
+              >
+                {t("common.next")}
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading}
+                className={`inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition disabled:opacity-60 ${buttonPrimary}`}
+              >
+                {loading ? t("quiz.saving") : t("quiz.saveAndContinue")}
+              </button>
+            )}
           </div>
-        </form>
+
+          <p className="mt-6 text-xs text-zinc-500">{t("quiz.privacyNote")}</p>
+        </div>
       </div>
     </div>
   );
 }
-
