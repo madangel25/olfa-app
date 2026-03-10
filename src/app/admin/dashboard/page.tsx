@@ -20,6 +20,7 @@ import {
   ImageIcon,
   X,
   ShieldBan,
+  AlertTriangle,
 } from "lucide-react";
 import { logAdminAction } from "@/lib/adminLog";
 
@@ -317,7 +318,8 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleBanDevice = async (deviceId: string) => {
+  const handleBanDevice = async (user: PendingUserRow) => {
+    const deviceId = user.device_id;
     if (!deviceId) return;
     setError(null);
     setSuccess(null);
@@ -334,13 +336,21 @@ export default function AdminDashboardPage() {
         setError(data?.error ?? "Failed to ban device.");
         return;
       }
+      const { error: banUserErr } = await supabase
+        .from("profiles")
+        .update({ banned_at: new Date().toISOString() })
+        .eq("id", user.id);
+      if (banUserErr) {
+        setError(banUserErr.message);
+        return;
+      }
       const { data: { user: adminUser } } = await supabase.auth.getUser();
       await logAdminAction(
         adminUser?.id ?? "",
         adminUser?.email ?? null,
         "device_ban",
-        null,
-        `Banned device_id: ${deviceId}`
+        user.id,
+        `Banned device_id: ${deviceId} and user ${user.email ?? user.id}`
       );
       setDeviceChecks((prev) => ({
         ...prev,
@@ -348,7 +358,9 @@ export default function AdminDashboardPage() {
           ? prev.bannedDeviceIds
           : [...prev.bannedDeviceIds, deviceId],
       }));
-      setSuccess("تم حظر الجهاز. لن يتمكن أي حساب يستخدمه من الدخول.");
+      setPendingUsers((prev) => prev.filter((u) => u.id !== user.id));
+      setSuccess("تم حظر الجهاز والمستخدم. لن يتمكن هذا الحساب أو أي حساب آخر على هذا الجهاز من الدخول.");
+      loadStats();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to ban device.");
     } finally {
@@ -560,27 +572,39 @@ export default function AdminDashboardPage() {
                   return (
                     <div
                       key={user.id}
-                      className={SKY.card + " p-5 flex flex-col md:flex-row md:items-center gap-4 flex-wrap"}
+                      className={SKY.card + " p-5 flex flex-col md:flex-row md:items-start gap-5 flex-wrap"}
+                      dir="rtl"
                     >
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-zinc-900 truncate">
-                          {user.full_name || user.email || "—"}
+                      {/* Security & user info – stacked RTL */}
+                      <div className="flex-1 min-w-0 flex flex-col gap-2 text-right order-1">
+                        <p className="font-semibold text-zinc-900 truncate">
+                          {user.full_name || "—"}
                         </p>
-                        <p className="text-sm text-zinc-600 truncate">
-                          <span className="text-zinc-500">Email: </span>
-                          {user.email || "—"}
-                        </p>
-                        <p className={`text-xs mt-1 font-mono truncate max-w-xs ${deviceHighlight ? "text-red-600 font-semibold bg-red-50 px-1.5 py-0.5 rounded" : "text-zinc-500"}`}>
+                        <div className="text-sm">
+                          <span className="text-zinc-500">البريد: </span>
+                          <span className="text-zinc-800 truncate block">{user.email || "—"}</span>
+                        </div>
+                        <div className="text-sm">
                           <span className="text-zinc-500">Device ID: </span>
-                          {deviceId || "—"}
-                          {isDeviceBanned && " (محظور)"}
-                          {isDeviceDuplicate && !isDeviceBanned && " (مكرر)"}
-                        </p>
-                        <p className="text-xs text-zinc-400 mt-0.5">
+                          <span
+                            className={`inline-flex items-center gap-1 font-mono text-xs break-all ${
+                              deviceHighlight
+                                ? "text-red-600 font-semibold bg-red-50 px-2 py-1 rounded border border-red-200"
+                                : "text-zinc-600"
+                            }`}
+                          >
+                            {deviceHighlight && <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />}
+                            {deviceId || "—"}
+                            {isDeviceBanned && " (محظور)"}
+                            {isDeviceDuplicate && !isDeviceBanned && " (مكرر)"}
+                          </span>
+                        </div>
+                        <p className="text-xs text-zinc-400">
                           {formatDate(user.created_at)}
                         </p>
                       </div>
-                      <div className="flex items-center gap-3 flex-wrap">
+                      {/* Photos */}
+                      <div className="flex items-center gap-3 flex-wrap order-2">
                         {[
                           { label: "Photo 1", url: photos?.photo1 },
                           { label: "Photo 2", url: photos?.photo2 },
@@ -610,23 +634,26 @@ export default function AdminDashboardPage() {
                           </div>
                         ))}
                       </div>
-                      <div className="flex flex-wrap gap-2 flex-row-reverse shrink-0">
-                        {deviceId && (
-                          <button
-                            type="button"
-                            disabled={banningDeviceId === deviceId || deviceChecks.bannedDeviceIds.includes(deviceId)}
-                            onClick={() => handleBanDevice(deviceId)}
-                            className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-60 disabled:cursor-not-allowed"
-                            title="Ban this device (blocks all accounts using it)"
-                          >
-                            {banningDeviceId === deviceId ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <ShieldBan className="h-4 w-4" />
-                            )}
-                            حظر الجهاز
-                          </button>
-                        )}
+                      {/* Admin actions */}
+                      <div className="flex flex-wrap gap-2 shrink-0 order-3" style={{ flexDirection: "row-reverse" }}>
+                        <button
+                          type="button"
+                          disabled={
+                            !deviceId ||
+                            banningDeviceId === deviceId ||
+                            deviceChecks.bannedDeviceIds.includes(deviceId)
+                          }
+                          onClick={() => handleBanDevice(user)}
+                          className="inline-flex items-center gap-2 rounded-xl border-2 border-red-400 bg-transparent px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={deviceId ? "حظر الجهاز والحساب (يمنع هذا الحساب وأي حساب آخر على هذا الجهاز)" : "لا يوجد Device ID"}
+                        >
+                          {banningDeviceId === deviceId ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <ShieldBan className="h-4 w-4" />
+                          )}
+                          حظر الجهاز
+                        </button>
                         <button
                           type="button"
                           disabled={actioningId === user.id}
