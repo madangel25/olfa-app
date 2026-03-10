@@ -67,6 +67,8 @@ type UserRow = {
   verification_submitted: boolean;
   banned_at: string | null;
   is_vip: boolean;
+  country_code?: string | null;
+  rating?: number | null;
 };
 
 type PendingUserRow = UserRow & { device_id: string | null };
@@ -235,7 +237,7 @@ export default function AdminDashboardPage() {
         supabase
           .from("profiles")
           .select(
-            "id, full_name, email, gender, created_at, is_verified, verification_submitted, banned_at, device_id"
+            "id, full_name, email, gender, created_at, is_verified, verification_submitted, banned_at, device_id, is_vip"
           )
           .eq("verification_submitted", true)
           .eq("is_verified", false)
@@ -260,6 +262,7 @@ export default function AdminDashboardPage() {
         is_verified: Boolean(row.is_verified),
         verification_submitted: Boolean(row.verification_submitted),
         banned_at: (row.banned_at as string | null) ?? null,
+        is_vip: row.is_vip ?? false,
         device_id: (row.device_id as string | null) ?? null,
       }));
       setPendingUsers(list);
