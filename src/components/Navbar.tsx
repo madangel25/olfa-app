@@ -132,7 +132,11 @@ export function Navbar() {
       role="navigation"
       aria-label="Main"
     >
-      <div className="flex w-full items-center justify-between gap-4 px-4 py-2.5 sm:px-6">
+      <div
+        className={`flex w-full items-center justify-between gap-4 px-4 py-2.5 sm:px-6 ${
+          isRtl ? "flex-row-reverse" : ""
+        }`}
+      >
         <div className="flex items-center gap-2 sm:gap-3">
           <div
             className="flex items-center gap-0.5 rounded-xl border border-zinc-200 bg-transparent p-0.5"
