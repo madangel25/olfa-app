@@ -77,7 +77,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const linkActiveClass = isRtl ? THEME_ACTIVE_RTL[theme] : THEME_ACTIVE_LTR[theme];
   const themeProgress = THEME_PROGRESS[theme];
   const themeProgressText = THEME_PROGRESS_TEXT[theme];
-  const sidebarPosition = isRtl ? `right-0 ${SIDEBAR_BORDER_RTL[theme]}` : `left-0 ${SIDEBAR_BORDER[theme]}`;
   const hoverSidebar = HOVER_SIDEBAR[theme];
 
   const fetchCompleteness = async () => {
@@ -112,18 +111,18 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   const showProgress = profileComplete !== null && profileComplete < 100;
-  const mainPadding = isRtl ? "pr-56" : "pl-56";
+  const gridCols = isRtl ? "xl:grid-cols-[1fr_18rem]" : "xl:grid-cols-[18rem_1fr]";
+  const sidebarBorder = isRtl ? SIDEBAR_BORDER_RTL[theme] : SIDEBAR_BORDER[theme];
 
   return (
-    <div
-      className={`flex min-h-[calc(100vh-3.5rem)] font-[family-name:var(--font-cairo)] text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}
-      style={{ background: "var(--theme-bg)" }}
-    >
+    <div className={`min-h-screen font-[family-name:var(--font-cairo)] text-zinc-900`} style={{ background: "var(--theme-bg)" }}>
+      <div className={`grid min-h-screen grid-cols-1 ${gridCols}`}>
       <aside
-        className={`fixed top-14 z-40 h-[calc(100vh-3.5rem)] w-56 shrink-0 bg-white shadow-md ${sidebarPosition}`}
+        className={`hidden xl:block bg-white ${sidebarBorder}`}
         aria-label="Dashboard navigation"
       >
-        <nav className="flex flex-col gap-1 p-4">
+        <div className="sticky top-16 px-3 py-4">
+        <nav className="flex flex-col gap-1">
           {NAV_ITEMS.map((item) => {
             const isActive =
               pathname === item.href ||
@@ -148,11 +147,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
+        </div>
       </aside>
 
-      <main className={`flex-1 ${mainPadding}`}>
+      <main className="w-full px-3 py-4 sm:px-5 lg:px-8">
         {showProgress && (
-          <div className="mx-auto max-w-4xl px-4 pt-4">
+          <div className="mb-4">
             <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
               <p className="mb-3 text-sm text-zinc-700">
                 {locale === "ar" ? (
@@ -170,8 +170,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         )}
-        <div className="mx-auto max-w-4xl px-4 py-6">{children}</div>
+        <div className="w-full">{children}</div>
       </main>
+      </div>
     </div>
   );
 }

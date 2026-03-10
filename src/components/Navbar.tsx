@@ -20,7 +20,7 @@ export function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [hasNewNotifications, setHasNewNotifications] = useState(false);
+  const [hasNewNotifications] = useState(false);
 
   useEffect(() => {
     getSiteSettings().then((row) => {
@@ -63,6 +63,7 @@ export function Navbar() {
   };
 
   const isLoggedIn = !!user;
+  const initials = (userName ?? "U").trim().charAt(0).toUpperCase();
 
   return (
     <nav
@@ -70,22 +71,14 @@ export function Navbar() {
       role="navigation"
       aria-label="Main"
     >
-      <div
-        className={`mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 font-[family-name:var(--font-cairo)] ${dir === "rtl" ? "flex-row-reverse" : ""}`}
-      >
-        {/* Left (or RTL start): User menu, Dashboard, Notifications — or Login/Register + Language */}
+      <div className={`flex w-full items-center justify-between gap-4 px-5 py-3 ${dir === "rtl" ? "flex-row-reverse" : ""}`}>
+        {/* Left side: user actions or guest links */}
         <div className={`flex items-center gap-3 ${dir === "rtl" ? "flex-row-reverse" : ""}`}>
           {isLoggedIn ? (
             <>
               <Link
-                href="/dashboard"
-                className={`text-sm font-medium transition ${pathname.startsWith("/dashboard") ? accentClass : `text-zinc-600 ${hoverBgClass} hover:opacity-90`}`}
-              >
-                {t("nav.dashboard")}
-              </Link>
-              <Link
                 href="/dashboard/notifications"
-                className={`relative rounded-lg p-2 text-zinc-600 transition ${hoverBgClass} hover:text-zinc-900`}
+                className={`relative rounded-xl border ${borderClass} bg-white p-2 text-zinc-600 transition ${hoverBgClass} hover:text-zinc-900`}
                 aria-label="Notifications"
               >
                 <Bell className="h-5 w-5" />
@@ -100,11 +93,14 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setDropdownOpen((o) => !o)}
-                  className={`flex items-center gap-2 rounded-xl border ${borderClass} bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition ${hoverBgClass} focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-current focus:opacity-80`}
+                  className={`flex items-center gap-2 rounded-xl border ${borderClass} bg-white px-3 py-2 text-sm font-medium text-zinc-700 shadow-sm transition ${hoverBgClass} focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-current focus:opacity-80`}
                   aria-expanded={dropdownOpen}
                   aria-haspopup="true"
                   id="user-menu-button"
                 >
+                  <span className={`inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white ${themeBadge()}`}>
+                    {initials}
+                  </span>
                   <span className="max-w-[120px] truncate">
                     {userName ?? "Profile"}
                   </span>
@@ -118,26 +114,27 @@ export function Navbar() {
                       onClick={() => setDropdownOpen(false)}
                     />
                     <div
-                      className={`absolute top-full z-20 mt-2 w-64 overflow-hidden rounded-2xl border border-zinc-200 bg-white py-2 shadow-xl ${dir === "rtl" ? "left-0" : "right-0"}`}
+                      className={`absolute top-full z-20 mt-2 w-72 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-xl ${dir === "rtl" ? "left-0" : "right-0"}`}
                       role="menu"
                       aria-orientation="vertical"
                       aria-labelledby="user-menu-button"
                     >
-                      <div className={`border-b border-zinc-100 px-4 py-3 ${dir === "rtl" ? "text-right" : "text-left"}`}>
-                        <p className="truncate text-sm font-medium text-zinc-900">
+                      <div className={`rounded-xl border ${borderClass} bg-zinc-50 px-4 py-3 ${dir === "rtl" ? "text-right" : "text-left"}`}>
+                        <p className="truncate text-sm font-semibold text-zinc-900">
                           {userName ?? t("nav.profile")}
                         </p>
+                        <p className="truncate text-xs text-zinc-500">{user?.email ?? ""}</p>
                       </div>
                       <Link
                         href="/profile"
-                        className={`flex items-center gap-3 px-4 py-3 text-sm text-zinc-700 transition hover:bg-zinc-50 ${dir === "rtl" ? "flex-row-reverse text-right" : "text-left"}`}
+                        className={`mt-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-zinc-700 transition ${hoverBgClass} ${dir === "rtl" ? "flex-row-reverse text-right" : "text-left"}`}
                         role="menuitem"
                         onClick={() => setDropdownOpen(false)}
                       >
                         <UserIcon className="h-4 w-4 shrink-0 text-zinc-500" />
                         {t("nav.profile")}
                       </Link>
-                      <div className={`border-t border-zinc-100 px-4 py-2 ${dir === "rtl" ? "text-right" : "text-left"}`}>
+                      <div className={`mt-2 rounded-xl border border-zinc-100 px-3 py-2 ${dir === "rtl" ? "text-right" : "text-left"}`}>
                         <p className="mb-2 flex items-center gap-3 px-2 py-1 text-xs font-medium uppercase tracking-wide text-zinc-700">
                           <Globe className="h-4 w-4 shrink-0" />
                           {t("nav.language")}
@@ -174,7 +171,7 @@ export function Navbar() {
                       <button
                         type="button"
                         onClick={handleLogout}
-                        className={`flex w-full items-center gap-3 px-4 py-3 text-sm text-zinc-700 transition hover:bg-red-50 hover:text-red-600 ${dir === "rtl" ? "flex-row-reverse text-right" : "text-left"}`}
+                        className={`mt-2 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-zinc-700 transition hover:bg-red-50 hover:text-red-600 ${dir === "rtl" ? "flex-row-reverse text-right" : "text-left"}`}
                         role="menuitem"
                       >
                         <LogOut className="h-4 w-4 shrink-0 text-zinc-500" />
@@ -187,7 +184,6 @@ export function Navbar() {
             </>
           ) : (
             <>
-              {/* Language switcher: Globe icon, transparent bg, subtle border, Sky Blue active */}
               <div
                 className={`flex items-center gap-0.5 rounded-xl border border-zinc-200 bg-transparent p-0.5 ${dir === "rtl" ? "flex-row-reverse" : ""}`}
                 role="group"
@@ -254,4 +250,8 @@ export function Navbar() {
       </div>
     </nav>
   );
+}
+
+function themeBadge() {
+  return "bg-[var(--theme-primary)]";
 }
