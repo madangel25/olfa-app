@@ -3,6 +3,26 @@
 :root {
   --background: #f8f9fa;
   --foreground: #18181b;
+  --theme-primary: #7C3AED;
+  --theme-bg: #FAF5FF;
+}
+
+/* Male: Sky Blue */
+[data-theme="male"] {
+  --theme-primary: #0EA5E9;
+  --theme-bg: #F0F9FF;
+}
+
+/* Female: Soft Pink */
+[data-theme="female"] {
+  --theme-primary: #DB2777;
+  --theme-bg: #FDF2F8;
+}
+
+/* Neutral (before gender set): Violet */
+[data-theme="neutral"] {
+  --theme-primary: #7C3AED;
+  --theme-bg: #FAF5FF;
 }
 
 @theme inline {
@@ -12,9 +32,8 @@
   --font-mono: var(--font-geist-mono);
 }
 
-/* Keep light theme for app; avoid flash of dark background during redirects */
 body {
-  background: var(--background);
+  background: var(--theme-bg);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-cairo), Arial, Helvetica, sans-serif;
 }

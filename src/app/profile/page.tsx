@@ -206,12 +206,10 @@ export default function ProfilePage() {
   const themeProgress = isFemale ? "bg-pink-500" : "bg-sky-500";
   const themeStarFill = isFemale ? "text-pink-500" : "text-sky-500";
 
-  const educationLabel = profile.education_level
-    ? t(`profile.${EDUCATION_KEYS[profile.education_level] ?? "optOther"}`)
-    : null;
-  const maritalLabel = profile.marital_status
-    ? t(`profile.${MARITAL_KEYS[profile.marital_status] ?? "optSingle"}`)
-    : null;
+  const maritalKey = profile.marital_status ? (MARITAL_KEYS[profile.marital_status] ?? "optSingle") + (isFemale ? "Female" : "Male") : null;
+  const maritalLabel = maritalKey ? t(`profile.${maritalKey}`) : null;
+  const educationKey = profile.education_level ? (EDUCATION_KEYS[profile.education_level] ?? "optOther") + (isFemale ? "Female" : "Male") : null;
+  const educationLabel = educationKey ? t(`profile.${educationKey}`) : null;
 
   const attributeRows = useMemo(() => {
     const rows: { icon: React.ReactNode; label: string; value: string }[] = [];

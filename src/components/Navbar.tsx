@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { getSiteSettings } from "@/lib/siteSettings";
 import { supabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
@@ -14,6 +15,7 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const { locale, setLocale, t, dir } = useLanguage();
+  const { accentClass, hoverBgClass, borderClass } = useTheme();
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
@@ -69,46 +71,21 @@ export function Navbar() {
       aria-label="Main"
     >
       <div
-        className={`mx-auto flex max-w-6xl items-center justify-between px-4 py-3 font-[family-name:var(--font-cairo)] ${dir === "rtl" ? "" : "flex-row-reverse"}`}
+        className={`mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 font-[family-name:var(--font-cairo)] ${dir === "rtl" ? "flex-row-reverse" : ""}`}
       >
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-lg font-semibold text-zinc-900 transition hover:text-sky-600"
-        >
-          {logoUrl ? (
-            <img src={logoUrl} alt="Olfa" className="h-8 w-auto object-contain" />
-          ) : (
-            "Olfa"
-          )}
-        </Link>
-
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className={`text-sm font-medium transition ${
-              pathname === "/"
-                ? "text-sky-600"
-                : "text-zinc-600 hover:text-zinc-900"
-            }`}
-          >
-            {t("nav.home")}
-          </Link>
-
+        {/* Left (or RTL start): User menu, Dashboard, Notifications — or Login/Register + Language */}
+        <div className={`flex items-center gap-3 ${dir === "rtl" ? "flex-row-reverse" : ""}`}>
           {isLoggedIn ? (
             <>
               <Link
                 href="/dashboard"
-                className={`text-sm font-medium transition ${
-                  pathname.startsWith("/dashboard")
-                    ? "text-sky-600"
-                    : "text-zinc-600 hover:text-zinc-900"
-                }`}
+                className={`text-sm font-medium transition ${pathname.startsWith("/dashboard") ? accentClass : `text-zinc-600 ${hoverBgClass} hover:opacity-90`}`}
               >
                 {t("nav.dashboard")}
               </Link>
               <Link
                 href="/dashboard/notifications"
-                className="relative rounded-lg p-2 text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900"
+                className={`relative rounded-lg p-2 text-zinc-600 transition ${hoverBgClass} hover:text-zinc-900`}
                 aria-label="Notifications"
               >
                 <Bell className="h-5 w-5" />
@@ -123,7 +100,7 @@ export function Navbar() {
                 <button
                   type="button"
                   onClick={() => setDropdownOpen((o) => !o)}
-                  className="flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+                  className={`flex items-center gap-2 rounded-xl border ${borderClass} bg-white px-4 py-2.5 text-sm font-medium text-zinc-700 shadow-sm transition ${hoverBgClass} focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-current focus:opacity-80`}
                   aria-expanded={dropdownOpen}
                   aria-haspopup="true"
                   id="user-menu-button"
@@ -171,7 +148,7 @@ export function Navbar() {
                             onClick={() => switchLocale("en")}
                             className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition ${
                               locale === "en"
-                                ? "bg-white text-sky-600 shadow-sm"
+                                ? `bg-white ${accentClass} shadow-sm`
                                 : "text-zinc-700 hover:text-zinc-900"
                             }`}
                             aria-pressed={locale === "en"}
@@ -184,7 +161,7 @@ export function Navbar() {
                             onClick={() => switchLocale("ar")}
                             className={`flex-1 rounded-md px-3 py-2 text-xs font-medium transition ${
                               locale === "ar"
-                                ? "bg-white text-sky-600 shadow-sm"
+                                ? `bg-white ${accentClass} shadow-sm`
                                 : "text-zinc-700 hover:text-zinc-900"
                             }`}
                             aria-pressed={locale === "ar"}
@@ -224,7 +201,7 @@ export function Navbar() {
                   onClick={() => switchLocale("en")}
                   className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
                     locale === "en"
-                      ? "bg-sky-50 text-sky-600 border border-sky-200 shadow-sm"
+                      ? `bg-white/80 ${accentClass} border ${borderClass} shadow-sm`
                       : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 border border-transparent"
                   }`}
                   aria-pressed={locale === "en"}
@@ -237,7 +214,7 @@ export function Navbar() {
                   onClick={() => switchLocale("ar")}
                   className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
                     locale === "ar"
-                      ? "bg-sky-50 text-sky-600 border border-sky-200 shadow-sm"
+                      ? `bg-white/80 ${accentClass} border ${borderClass} shadow-sm`
                       : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 border border-transparent"
                   }`}
                   aria-pressed={locale === "ar"}
@@ -248,27 +225,32 @@ export function Navbar() {
               </div>
               <Link
                 href="/login"
-                className={`text-sm font-medium transition ${
-                  pathname === "/login"
-                    ? "text-sky-600"
-                    : "text-zinc-600 hover:text-zinc-900"
-                }`}
+                className={`text-sm font-medium transition ${pathname === "/login" ? accentClass : `text-zinc-600 ${hoverBgClass} hover:opacity-90`}`}
               >
                 {t("nav.login")}
               </Link>
               <Link
                 href="/register"
-                className={`text-sm font-medium transition ${
-                  pathname === "/register"
-                    ? "text-sky-600"
-                    : "text-zinc-600 hover:text-zinc-900"
-                }`}
+                className={`text-sm font-medium transition ${pathname === "/register" ? accentClass : `text-zinc-600 ${hoverBgClass} hover:opacity-90`}`}
               >
                 {t("nav.register")}
               </Link>
             </>
           )}
         </div>
+
+        {/* Right (or RTL end): Olfa logo = main home */}
+        <Link
+          href="/"
+          className={`flex items-center gap-2 text-lg font-semibold text-zinc-900 transition ${accentClass} hover:opacity-90`}
+          aria-label="Home"
+        >
+          {logoUrl ? (
+            <img src={logoUrl} alt="Olfa" className="h-8 w-auto object-contain" />
+          ) : (
+            "Olfa"
+          )}
+        </Link>
       </div>
     </nav>
   );

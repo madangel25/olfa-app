@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Cairo } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LayoutWithNavbar } from "@/components/LayoutWithNavbar";
 
 const geistSans = Geist({
@@ -31,12 +32,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-theme="neutral" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${cairo.variable} antialiased`}
       >
         <LanguageProvider>
-          <LayoutWithNavbar>{children}</LayoutWithNavbar>
+          <ThemeProvider>
+            <LayoutWithNavbar>{children}</LayoutWithNavbar>
+          </ThemeProvider>
         </LanguageProvider>
       </body>
     </html>

@@ -23,7 +23,7 @@ export function LayoutWithNavbar({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-[#f8f9fa] pt-14">{children}</div>
+      <div className="min-h-screen pt-14" style={{ background: "var(--theme-bg)" }}>{children}</div>
     </>
   );
 }
