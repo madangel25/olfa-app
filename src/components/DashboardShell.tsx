@@ -119,9 +119,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       style={{ background: "var(--theme-bg)" }}
     >
       <div className="relative min-h-screen">
-        {/* Sidebar: fixed by language — right for Arabic, left for English. No hardcoded left-0/right-0. */}
+        {/* Sidebar: starts at top-16 (below navbar), z-40, height calc(100vh - 64px). */}
         <aside
-          className={`fixed top-0 z-40 hidden h-screen w-64 border-t-0 bg-white xl:block ${locale === "ar" ? "right-0 border-l" : "left-0 border-r"} ${sidebarBorder}`}
+          className={`fixed top-16 z-40 hidden h-[calc(100vh-4rem)] w-64 border-t-0 bg-white md:block ${locale === "ar" ? "right-0 border-l" : "left-0 border-r"} ${sidebarBorder}`}
           aria-label="Dashboard navigation"
         >
           <div className="sticky top-4 px-3 py-4">
@@ -159,9 +159,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        {/* Main content: padding on the side where the sidebar sits — pl-64 EN, pr-64 AR */}
+        {/* Main: pt-16 (below navbar), px-8 breathing room, md:pl-64/md:pr-64 for sidebar (only md+). */}
         <main
-          className={`min-w-0 w-full flex-1 px-3 py-4 sm:px-5 lg:px-8 ${locale === "ar" ? "xl:pr-64" : "xl:pl-64"}`}
+          className={`min-w-0 w-full flex-1 pt-16 px-8 py-4 ${locale === "ar" ? "md:pr-64" : "md:pl-64"}`}
         >
           {showProgress && (
             <div className="mb-4">
