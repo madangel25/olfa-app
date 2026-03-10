@@ -111,67 +111,101 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   const showProgress = profileComplete !== null && profileComplete < 100;
-  const gridCols = isRtl ? "xl:grid-cols-[1fr_18rem]" : "xl:grid-cols-[18rem_1fr]";
   const sidebarBorder = isRtl ? SIDEBAR_BORDER_RTL[theme] : SIDEBAR_BORDER[theme];
 
   return (
-    <div className={`min-h-screen font-[family-name:var(--font-cairo)] text-zinc-900`} style={{ background: "var(--theme-bg)" }}>
-      <div className={`grid min-h-screen grid-cols-1 ${gridCols}`} dir={isRtl ? "rtl" : "ltr"}>
-      <aside
-        className={`hidden xl:block bg-white ${sidebarBorder}`}
-        aria-label="Dashboard navigation"
+    <div
+      className="min-h-screen font-[family-name:var(--font-cairo)] text-zinc-900"
+      style={{ background: "var(--theme-bg)" }}
+    >
+      <div
+        className="flex min-h-screen flex-row"
+        dir={isRtl ? "rtl" : "ltr"}
       >
-        <div className="sticky top-4 px-3 py-4">
-        <nav className="flex flex-col gap-1">
-          {NAV_ITEMS.map((item) => {
-            const isActive =
-              pathname === item.href ||
-              (item.href !== "/dashboard" && item.href !== "/profile" && pathname.startsWith(item.href)) ||
-              (item.href === "/profile" && (pathname === "/profile" || pathname.startsWith("/profile/")));
-            const Icon = item.icon;
-            const label = locale === "ar" ? item.label : item.labelEn;
-            const textAlign = locale === "ar" ? "text-right" : "text-left";
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
-                  isActive ? linkActiveClass : `text-zinc-700 ${hoverSidebar}`
-                } ${isRtl ? "flex-row-reverse" : ""}`}
-              >
-                <Icon className="h-5 w-5 shrink-0" />
-                <span className={`flex-1 ${textAlign}`} lang={locale === "ar" ? "ar" : "en"}>
-                  {label}
-                </span>
-              </Link>
-            );
-          })}
-        </nav>
-        </div>
-      </aside>
+        {/* Sidebar: fixed width, first in DOM so it appears on the edge (right in RTL, left in LTR) */}
+        <aside
+          className={`hidden w-72 shrink-0 xl:block bg-white ${sidebarBorder}`}
+          aria-label="Dashboard navigation"
+        >
+          <div className="sticky top-4 px-3 py-4">
+            <nav className="flex flex-col gap-1">
+              {NAV_ITEMS.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/dashboard" &&
+                    item.href !== "/profile" &&
+                    pathname.startsWith(item.href)) ||
+                  (item.href === "/profile" &&
+                    (pathname === "/profile" ||
+                      pathname.startsWith("/profile/")));
+                const Icon = item.icon;
+                const label =
+                  locale === "ar" ? item.label : item.labelEn;
+                const textAlign =
+                  locale === "ar" ? "text-right" : "text-left";
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                      isActive
+                        ? linkActiveClass
+                        : `text-zinc-700 ${hoverSidebar}`
+                    } ${isRtl ? "flex-row-reverse" : ""}`}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    <span
+                      className={`flex-1 ${textAlign}`}
+                      lang={locale === "ar" ? "ar" : "en"}
+                    >
+                      {label}
+                    </span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        </aside>
 
-      <main className="w-full px-3 py-4 sm:px-5 lg:px-8">
-        {showProgress && (
-          <div className="mb-4">
-            <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-              <p className="mb-3 text-sm text-zinc-700">
-                {locale === "ar" ? (
-                  <>أكمل ملفك الشخصي بنسبة <span className={`font-semibold ${themeProgressText}`}>{profileComplete}%</span> ليراك الآخرون بشكل أفضل.</>
-                ) : (
-                  <>Complete your profile by <span className={`font-semibold ${themeProgressText}`}>{profileComplete}%</span> so others can see you better.</>
-                )}
-              </p>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100">
-                <div
-                  className={`h-full rounded-full ${themeProgress} transition-all duration-500`}
-                  style={{ width: `${profileComplete}%` }}
-                />
+        {/* Main content: flexible area that fills remaining space */}
+        <main className="flex-1 w-full px-3 py-4 sm:px-5 lg:px-8">
+          {showProgress && (
+            <div className="mb-4">
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
+                <p className="mb-3 text-sm text-zinc-700">
+                  {locale === "ar" ? (
+                    <>
+                      أكمل ملفك الشخصي بنسبة{" "}
+                      <span
+                        className={`font-semibold ${themeProgressText}`}
+                      >
+                        {profileComplete}%
+                      </span>{" "}
+                      ليراك الآخرون بشكل أفضل.
+                    </>
+                  ) : (
+                    <>
+                      Complete your profile by{" "}
+                      <span
+                        className={`font-semibold ${themeProgressText}`}
+                      >
+                        {profileComplete}%
+                      </span>{" "}
+                      so others can see you better.
+                    </>
+                  )}
+                </p>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100">
+                  <div
+                    className={`h-full rounded-full ${themeProgress} transition-all duration-500`}
+                    style={{ width: `${profileComplete}%` }}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        )}
-        <div className="w-full">{children}</div>
-      </main>
+          )}
+          <div className="w-full">{children}</div>
+        </main>
       </div>
     </div>
   );
