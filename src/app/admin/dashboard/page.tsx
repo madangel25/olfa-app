@@ -219,7 +219,7 @@ export default function AdminDashboardPage() {
           is_verified: Boolean(row.is_verified),
           verification_submitted: Boolean(row.verification_submitted),
           banned_at: (row.banned_at as string | null) ?? null,
-          is_vip: Boolean(row.is_vip),
+          is_vip: row.is_vip === true,
         }))
       );
     } catch (e) {
@@ -262,7 +262,7 @@ export default function AdminDashboardPage() {
         is_verified: Boolean(row.is_verified),
         verification_submitted: Boolean(row.verification_submitted),
         banned_at: (row.banned_at as string | null) ?? null,
-        is_vip: row.is_vip ?? false,
+        is_vip: row.is_vip === true,
         device_id: (row.device_id as string | null) ?? null,
       }));
       setPendingUsers(list);
