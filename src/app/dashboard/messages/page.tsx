@@ -119,8 +119,9 @@ export default function MessagesPage() {
       .order("updated_at", { ascending: false });
     if (convoErr) throw convoErr;
 
-    const rows = (convoRows ?? []) as Record<string, unknown>[];
-    if (rows.length === 0) {
+    // Use unknown bridge to bypass strict overlap check safely.
+    const rows = (convoRows as unknown) as any[];
+    if (!convoRows || rows.length === 0) {
       setConversations([]);
       return;
     }
