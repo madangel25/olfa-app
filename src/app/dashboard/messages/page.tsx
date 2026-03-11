@@ -6,7 +6,6 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
-type ConversationPairSchema = { left: string; right: string };
 type MessageSchema = { sender: string; content: string; read: string | null };
 
 type ConversationItem = {
@@ -59,30 +58,9 @@ export default function MessagesPage() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const convoSchemaRef = useRef<ConversationPairSchema | null>(null);
   const msgSchemaRef = useRef<MessageSchema | null>(null);
 
-  const detectConversationSchema = useCallback(async (userId: string): Promise<ConversationPairSchema> => {
-    if (convoSchemaRef.current) return convoSchemaRef.current;
-    const candidates: ConversationPairSchema[] = [
-      { left: "user_one_id", right: "user_two_id" },
-      { left: "user_a_id", right: "user_b_id" },
-      { left: "participant_one_id", right: "participant_two_id" },
-      { left: "member_one_id", right: "member_two_id" },
-    ];
-    for (const c of candidates) {
-      const { error } = await supabase
-        .from("conversations")
-        .select(`id,${c.left},${c.right},updated_at,created_at`)
-        .or(`${c.left}.eq.${userId},${c.right}.eq.${userId}`)
-        .limit(1);
-      if (!error) {
-        convoSchemaRef.current = c;
-        return c;
-      }
-    }
-    throw new Error("Unable to detect conversations schema.");
-  }, []);
+  const conversationPair = { left: "user_one_id", right: "user_two_id" } as const;
 
   const detectMessageSchema = useCallback(async (): Promise<MessageSchema> => {
     if (msgSchemaRef.current) return msgSchemaRef.current;
@@ -111,11 +89,10 @@ export default function MessagesPage() {
   }, []);
 
   const loadConversations = useCallback(async (userId: string) => {
-    const pair = await detectConversationSchema(userId);
     const { data: convoRows, error: convoErr } = await supabase
       .from("conversations")
-      .select(`id,${pair.left},${pair.right},updated_at,created_at`)
-      .or(`${pair.left}.eq.${userId},${pair.right}.eq.${userId}`)
+      .select("id,user_one_id,user_two_id,updated_at,created_at")
+      .or(`user_one_id.eq.${userId},user_two_id.eq.${userId}`)
       .order("updated_at", { ascending: false });
     if (convoErr) throw convoErr;
 
@@ -127,7 +104,7 @@ export default function MessagesPage() {
     }
 
     const partnerIds = rows
-      .map((r) => (r[pair.left] === userId ? (r[pair.right] as string) : (r[pair.left] as string)))
+      .map((r) => (r[conversationPair.left] === userId ? (r[conversationPair.right] as string) : (r[conversationPair.left] as string)))
       .filter(Boolean);
 
     const { data: partnerProfiles } = await supabase
@@ -156,7 +133,11 @@ export default function MessagesPage() {
 
     const list: ConversationItem[] = rows.map((r) => {
       const conversationId = r.id as string;
-      const partnerId = r[pair.left] === userId ? (r[pair.right] as string) : (r[pair.left] as string);
+      // Always show the "other user" (not auth.uid()).
+      const partnerId =
+        r[conversationPair.left] === userId
+          ? (r[conversationPair.right] as string)
+          : (r[conversationPair.left] as string);
       const p = partnerMap.get(partnerId) ?? {};
       const photos = Array.isArray(p.photo_urls)
         ? (p.photo_urls as unknown[]).filter((x): x is string => typeof x === "string")
@@ -175,7 +156,7 @@ export default function MessagesPage() {
       };
     });
     setConversations(list);
-  }, [detectConversationSchema, detectMessageSchema]);
+  }, [detectMessageSchema]);
 
   const loadMessages = useCallback(async (conversationId: string) => {
     setLoadingMessages(true);
@@ -203,23 +184,22 @@ export default function MessagesPage() {
   }, [detectMessageSchema]);
 
   const findOrCreateConversation = useCallback(async (me: string, other: string): Promise<string | null> => {
-    const pair = await detectConversationSchema(me);
     const { data: existing, error: existingErr } = await supabase
       .from("conversations")
       .select("id")
-      .or(`and(${pair.left}.eq.${me},${pair.right}.eq.${other}),and(${pair.left}.eq.${other},${pair.right}.eq.${me})`)
+      .or(`and(user_one_id.eq.${me},user_two_id.eq.${other}),and(user_one_id.eq.${other},user_two_id.eq.${me})`)
       .maybeSingle();
     if (existingErr) throw existingErr;
     if (existing?.id) return existing.id as string;
 
     const { data: created, error: createErr } = await supabase
       .from("conversations")
-      .insert({ [pair.left]: me, [pair.right]: other })
+      .insert({ user_one_id: me, user_two_id: other })
       .select("id")
       .maybeSingle();
     if (createErr) throw createErr;
     return (created?.id as string) ?? null;
-  }, [detectConversationSchema]);
+  }, []);
 
   useEffect(() => {
     let active = true;
