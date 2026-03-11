@@ -241,9 +241,17 @@ export default function DiscoverNearMePage() {
       setUsers(rows);
 
       const ratingMap: Record<string, { avg: number; count: number }> = {};
+      // Safety default so UI never breaks if RPC fails/loads.
+      rows.forEach((r) => {
+        ratingMap[r.id] = { avg: 0, count: 0 };
+      });
       await Promise.all(
         rows.map(async (r) => {
-          const { data } = await supabase.rpc("get_profile_rating", { p_to_user_id: r.id });
+          const { data, error } = await supabase.rpc("get_profile_rating", { p_to_user_id: r.id });
+          if (error) {
+            console.error("get_profile_rating failed:", error.message ?? error);
+            return;
+          }
           const row = Array.isArray(data) ? data[0] : data;
           if (row && typeof (row as { avg_rating?: number }).avg_rating === "number") {
             const x = row as { avg_rating: number; count_ratings: number };

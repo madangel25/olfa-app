@@ -175,6 +175,10 @@ export default function DiscoveryPage() {
 
       // Ratings from public.ratings via RPC.
       const ratingMap: Record<string, { avg: number; count: number }> = {};
+      // Safety default: every fetched user has a rating object (0/0) even if RPC fails.
+      cards.forEach((u) => {
+        ratingMap[u.id] = { avg: 0, count: 0 };
+      });
       await Promise.all(
         cards.map(async (u) => {
           const { data, error } = await supabase.rpc("get_profile_rating", { p_to_user_id: u.id });
