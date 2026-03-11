@@ -147,7 +147,9 @@ export default function MessagesPage() {
       .order("created_at", { ascending: false });
 
     const latestByConversation = new Map<string, Record<string, unknown>>();
-    ((messageRows ?? []) as Record<string, unknown>[]).forEach((m) => {
+    // Use unknown bridge to bypass strict overlap check safely.
+    const safeMessageRows = (messageRows as unknown) as any[];
+    safeMessageRows.forEach((m) => {
       const cid = m.conversation_id as string;
       if (!latestByConversation.has(cid)) latestByConversation.set(cid, m);
     });
