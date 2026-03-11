@@ -120,7 +120,7 @@ export default function MessagesPage() {
     if (convoErr) throw convoErr;
 
     // Use unknown bridge to bypass strict overlap check safely.
-    const rows = (convoRows as unknown) as any[];
+    const rows = ((convoRows as unknown) as any[] ?? []);
     if (!convoRows || rows.length === 0) {
       setConversations([]);
       return;
@@ -132,10 +132,10 @@ export default function MessagesPage() {
 
     const { data: partnerProfiles } = await supabase
       .from("profiles")
-      .select("id, full_name, photo_urls, primary_photo_index, last_seen_at")
+      .select("id,full_name,photo_urls,primary_photo_index,last_seen_at")
       .in("id", partnerIds);
     const partnerMap = new Map<string, Record<string, unknown>>(
-      ((partnerProfiles ?? []) as Record<string, unknown>[]).map((p) => [p.id as string, p])
+      (((partnerProfiles as unknown) as any[] ?? [])).map((p) => [p.id as string, p])
     );
 
     const messageSchema = await detectMessageSchema();
@@ -148,7 +148,7 @@ export default function MessagesPage() {
 
     const latestByConversation = new Map<string, Record<string, unknown>>();
     // Use unknown bridge to bypass strict overlap check safely.
-    const safeMessageRows = (messageRows as unknown) as any[];
+    const safeMessageRows = ((messageRows as unknown) as any[] ?? []);
     safeMessageRows.forEach((m) => {
       const cid = m.conversation_id as string;
       if (!latestByConversation.has(cid)) latestByConversation.set(cid, m);
@@ -188,7 +188,7 @@ export default function MessagesPage() {
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true });
       if (msgErr) throw msgErr;
-      const list = ((data ?? []) as Record<string, unknown>[]).map((m) => ({
+      const list = ((data as unknown) as any[] ?? []).map((m) => ({
         id: m.id as string,
         conversation_id: m.conversation_id as string,
         sender_id: String(m[mSchema.sender] ?? ""),
