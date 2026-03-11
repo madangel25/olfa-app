@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
@@ -308,25 +308,22 @@ export default function PublicProfilePage() {
   const primaryPhoto = profile.photo_urls[profile.primary_photo_index] ?? profile.photo_urls[0];
   const location = [profile.city, profile.country].filter(Boolean).join(", ") || null;
 
-  const attributeRows = useMemo(() => {
-    const rows: { icon: React.ReactNode; label: string; value: string }[] = [];
-    if (profile.job_title?.trim()) rows.push({ icon: <Briefcase className="h-4 w-4 shrink-0" />, label: t("profile.jobTitle"), value: profile.job_title });
-    if (educationLabel) rows.push({ icon: <GraduationCap className="h-4 w-4 shrink-0" />, label: t("profile.education"), value: educationLabel });
-    if (profile.height_cm?.trim()) rows.push({ icon: <Ruler className="h-4 w-4 shrink-0" />, label: t("profile.height"), value: `${profile.height_cm} cm` });
-    if (profile.weight_kg?.trim()) rows.push({ icon: <Scale className="h-4 w-4 shrink-0" />, label: t("profile.weight"), value: `${profile.weight_kg} kg` });
-    if (profile.city?.trim()) rows.push({ icon: <MapPin className="h-4 w-4 shrink-0" />, label: t("profile.city"), value: profile.city });
-    if (profile.country?.trim()) rows.push({ icon: <Globe className="h-4 w-4 shrink-0" />, label: t("profile.country"), value: profile.country });
-    if (profile.nationality?.trim()) rows.push({ icon: <User className="h-4 w-4 shrink-0" />, label: t("profile.nationality"), value: profile.nationality });
-    const skin = optLabel(t, profile.skin_tone) ?? profile.skin_tone?.trim();
-    if (skin) rows.push({ icon: <Palette className="h-4 w-4 shrink-0" />, label: t("profile.skinTone"), value: skin });
-    const smoke = optLabel(t, profile.smoking_status) ?? profile.smoking_status?.trim();
-    if (smoke) rows.push({ icon: <Cigarette className="h-4 w-4 shrink-0" />, label: t("profile.smoking"), value: smoke });
-    const relig = optLabel(t, profile.religious_commitment) ?? profile.religious_commitment?.trim();
-    if (relig) rows.push({ icon: <BookOpen className="h-4 w-4 shrink-0" />, label: t("profile.religiousCommitment"), value: relig });
-    const children = optLabel(t, profile.desire_children) ?? profile.desire_children?.trim();
-    if (children) rows.push({ icon: <Baby className="h-4 w-4 shrink-0" />, label: t("profile.desireChildren"), value: children });
-    return rows;
-  }, [profile, t, educationLabel]);
+  const attributeRows: { icon: React.ReactNode; label: string; value: string }[] = [];
+  if (profile.job_title?.trim()) attributeRows.push({ icon: <Briefcase className="h-4 w-4 shrink-0" />, label: t("profile.jobTitle"), value: profile.job_title });
+  if (educationLabel) attributeRows.push({ icon: <GraduationCap className="h-4 w-4 shrink-0" />, label: t("profile.education"), value: educationLabel });
+  if (profile.height_cm?.trim()) attributeRows.push({ icon: <Ruler className="h-4 w-4 shrink-0" />, label: t("profile.height"), value: `${profile.height_cm} cm` });
+  if (profile.weight_kg?.trim()) attributeRows.push({ icon: <Scale className="h-4 w-4 shrink-0" />, label: t("profile.weight"), value: `${profile.weight_kg} kg` });
+  if (profile.city?.trim()) attributeRows.push({ icon: <MapPin className="h-4 w-4 shrink-0" />, label: t("profile.city"), value: profile.city });
+  if (profile.country?.trim()) attributeRows.push({ icon: <Globe className="h-4 w-4 shrink-0" />, label: t("profile.country"), value: profile.country });
+  if (profile.nationality?.trim()) attributeRows.push({ icon: <User className="h-4 w-4 shrink-0" />, label: t("profile.nationality"), value: profile.nationality });
+  const skin = optLabel(t, profile.skin_tone) ?? profile.skin_tone?.trim();
+  if (skin) attributeRows.push({ icon: <Palette className="h-4 w-4 shrink-0" />, label: t("profile.skinTone"), value: skin });
+  const smoke = optLabel(t, profile.smoking_status) ?? profile.smoking_status?.trim();
+  if (smoke) attributeRows.push({ icon: <Cigarette className="h-4 w-4 shrink-0" />, label: t("profile.smoking"), value: smoke });
+  const relig = optLabel(t, profile.religious_commitment) ?? profile.religious_commitment?.trim();
+  if (relig) attributeRows.push({ icon: <BookOpen className="h-4 w-4 shrink-0" />, label: t("profile.religiousCommitment"), value: relig });
+  const children = optLabel(t, profile.desire_children) ?? profile.desire_children?.trim();
+  if (children) attributeRows.push({ icon: <Baby className="h-4 w-4 shrink-0" />, label: t("profile.desireChildren"), value: children });
 
   return (
     <div className="min-h-screen bg-[var(--theme-bg)] font-[family-name:var(--font-cairo)] text-zinc-900">
