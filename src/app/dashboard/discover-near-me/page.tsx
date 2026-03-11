@@ -126,7 +126,10 @@ export default function DiscoverNearMePage() {
   };
 
   useEffect(() => {
+    let active = true;
     const run = async () => {
+      setLoading(true);
+      try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -134,6 +137,7 @@ export default function DiscoverNearMePage() {
         router.replace("/register");
         return;
       }
+      if (!active) return;
       setCurrentUserId(user.id);
 
       const { data: myProfile } = await supabase
@@ -142,6 +146,7 @@ export default function DiscoverNearMePage() {
         .eq("id", user.id)
         .maybeSingle();
       const raw = myProfile as { quiz_answers?: unknown; gender?: string; role?: string } | null;
+      if (!active) return;
       setMyQuizAnswers(
         raw?.quiz_answers && typeof raw.quiz_answers === "object" && !Array.isArray(raw.quiz_answers)
           ? (raw.quiz_answers as Record<string, string>)
@@ -208,6 +213,7 @@ export default function DiscoverNearMePage() {
         .from("ignores")
         .select("ignored_user_id")
         .eq("user_id", user.id);
+      if (!active) return;
       setIgnoredIds(new Set((ignoresRows ?? []).map((r) => r.ignored_user_id)));
 
       const rows: UserRow[] = (profiles ?? []).map((p) => {
@@ -238,6 +244,7 @@ export default function DiscoverNearMePage() {
           is_match: iLiked && theyLiked,
         };
       });
+      if (!active) return;
       setUsers(rows);
 
       const ratingMap: Record<string, { avg: number; count: number }> = {};
@@ -247,23 +254,39 @@ export default function DiscoverNearMePage() {
       });
       await Promise.all(
         rows.map(async (r) => {
-          const { data, error } = await supabase.rpc("get_profile_rating", { p_to_user_id: r.id });
-          if (error) {
-            console.error("get_profile_rating failed:", error.message ?? error);
-            return;
-          }
-          const row = Array.isArray(data) ? data[0] : data;
-          if (row && typeof (row as { avg_rating?: number }).avg_rating === "number") {
-            const x = row as { avg_rating: number; count_ratings: number };
-            ratingMap[r.id] = { avg: x.avg_rating, count: Number(x.count_ratings) || 0 };
+          try {
+            const { data, error } = await supabase.rpc("get_profile_rating", { p_to_user_id: r.id });
+            if (error) {
+              console.error("get_profile_rating failed:", error.message ?? error);
+              return;
+            }
+            const row = Array.isArray(data) ? data[0] : data;
+            if (row && typeof (row as { avg_rating?: number }).avg_rating === "number") {
+              const x = row as { avg_rating: number; count_ratings: number };
+              ratingMap[r.id] = { avg: x.avg_rating, count: Number(x.count_ratings) || 0 };
+            }
+          } catch (rpcErr) {
+            console.error("get_profile_rating exception:", rpcErr);
           }
         })
       );
+      if (!active) return;
       setRatings(ratingMap);
-      setLoading(false);
+      } catch (err) {
+        console.error("Discover near me fetch failed:", err);
+        if (active) {
+          setUsers([]);
+          setRatings({});
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
     };
     run();
-  }, [router, countryFilter]);
+    return () => {
+      active = false;
+    };
+  }, [countryFilter]);
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -397,7 +420,7 @@ export default function DiscoverNearMePage() {
       </div>
 
       <div ref={listRef} className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-        {filteredUsers.map((u) => {
+        {(filteredUsers ?? []).map((u) => {
           const isMale = u.gender === "male";
           const borderClass = u.is_vip
             ? "border-2 border-amber-400 shadow-md"
