@@ -264,6 +264,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <div className="w-full">{children}</div>
         </main>
       </div>
+      </div>
     </OnlinePresenceContext.Provider>
   );
 }
