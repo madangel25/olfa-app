@@ -286,6 +286,30 @@ export default function MessagesPage() {
             );
             return [...withoutOptimistic, incoming];
           });
+
+          // If this is a new message from the partner while we are in this chat,
+          // mark it as read immediately and broadcast so the sender sees blue checks.
+          const senderId = String(row.sender_id ?? "");
+          if (senderId && senderId !== currentUserId) {
+            try {
+              await supabase.rpc("mark_messages_as_read", {
+                p_conversation_id: selectedConversationId,
+              });
+              const ch = messagesChannelRef.current;
+              if (ch) {
+                void ch.send({
+                  type: "broadcast",
+                  event: "messages_read",
+                  payload: {
+                    conversation_id: selectedConversationId,
+                    reader_id: currentUserId,
+                  },
+                });
+              }
+            } catch {
+              // ignore RPC errors here – local UI still shows incoming message
+            }
+          }
         }
       )
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, (payload) => {
