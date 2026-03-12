@@ -321,13 +321,22 @@ export default function MessagesPage() {
           });
         }
       )
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, async (payload) => {
-        const cid = (payload.new as Record<string, unknown>)?.conversation_id as string | undefined;
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, (payload) => {
+        const row = payload.new as Record<string, unknown>;
+        const cid = row.conversation_id as string | undefined;
         if (!cid || !selectedConversationId || cid !== selectedConversationId) return;
-        await loadMessages(selectedConversationId);
+
+        // Update is_read in place so checkmarks change instantly
+        setMessages((prev) =>
+          prev.map((m) =>
+            String(m.id) === String(row.id)
+              ? { ...m, is_read: Boolean(row.is_read) }
+              : m
+          )
+        );
       })
       .on("broadcast", { event: "typing" }, (payload) => {
-        const body = payload.payload as { conversation_id?: string; user_id?: string } | undefined;
+        const body = payload.payload as { conversation_id?: string; user_id?: string; isTyping?: boolean } | undefined;
         if (!body?.conversation_id || !body.user_id) return;
         if (!selectedConversationId || body.conversation_id !== selectedConversationId) return;
         if (!currentUserId || body.user_id === currentUserId) return;
@@ -483,14 +492,14 @@ export default function MessagesPage() {
             {selectedConversation && (
               <p className="mt-0.5 text-xs text-zinc-500">
                 {onlineUserIds.has(selectedConversation.partner_id)
-                  ? "Online"
+                  ? "متصل الآن"
                   : selectedConversation.partner_last_seen_at
-                  ? `Last seen at ${formatTime(selectedConversation.partner_last_seen_at)}`
+                  ? `آخر ظهور ${formatTime(selectedConversation.partner_last_seen_at)}`
                   : ""}
               </p>
             )}
             {isPartnerTyping && (
-              <p className="mt-0.5 text-xs text-sky-500">Typing...</p>
+              <p className="mt-0.5 text-xs text-sky-500 animate-pulse">يكتب الآن...</p>
             )}
           </div>
 
@@ -505,9 +514,15 @@ export default function MessagesPage() {
                   const mine = m.sender_id === currentUserId;
                   return (
                     <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm ${mine ? "bg-sky-500 text-white" : "bg-white text-zinc-900"}`}>
+                      <div
+                        className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm border ${
+                          mine
+                            ? "bg-sky-50 border-sky-100 text-zinc-800"
+                            : "bg-pink-50 border-pink-100 text-zinc-800"
+                        }`}
+                      >
                         <p className="whitespace-pre-wrap break-words">{m.content}</p>
-                        <div className={`mt-1 flex items-center gap-1 text-[11px] ${mine ? "text-sky-100" : "text-zinc-500"}`}>
+                        <div className="mt-1 flex items-center gap-1 text-[11px] text-zinc-500">
                           <span>{formatTime(m.created_at)}</span>
                           {mine && (
                             <span className="flex items-center">
@@ -540,7 +555,11 @@ export default function MessagesPage() {
                     void ch.send({
                       type: "broadcast",
                       event: "typing",
-                      payload: { conversation_id: selectedConversationId, user_id: currentUserId },
+                      payload: {
+                        conversation_id: selectedConversationId,
+                        user_id: currentUserId,
+                        isTyping: true,
+                      },
                     });
                   }
                 }}
