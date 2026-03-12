@@ -7,6 +7,11 @@ import { Check, CheckCheck } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useOnlinePresence } from "@/components/DashboardShell";
+import {
+  calculateSeriousnessScore,
+  getWordCount,
+  type BehaviorMetrics,
+} from "@/lib/chatBehaviorAnalysis";
 
 type ConversationItem = {
   id: string;
@@ -430,6 +435,84 @@ export default function MessagesPage() {
     [conversations, selectedConversationId]
   );
 
+  // Derive partner behavior metrics from message history (response time, word count) for current conversation
+  const partnerBehaviorMetrics = useMemo((): BehaviorMetrics => {
+    if (!selectedConversationId || !currentUserId || !selectedConversation) {
+      return { responseTimesMs: [], wordCounts: [] };
+    }
+    const partnerId = selectedConversation.partner_id;
+    const sorted = [...messages].sort(
+      (a, b) => new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime()
+    );
+    const responseTimesMs: number[] = [];
+    const wordCounts: number[] = [];
+    let lastOursAt: number | null = null;
+    for (const m of sorted) {
+      const t = m.created_at ? new Date(m.created_at).getTime() : 0;
+      if (m.sender_id === currentUserId) {
+        lastOursAt = t;
+      } else if (m.sender_id === partnerId) {
+        if (lastOursAt !== null) responseTimesMs.push(t - lastOursAt);
+        wordCounts.push(getWordCount(m.content));
+      }
+    }
+    return { responseTimesMs, wordCounts };
+  }, [messages, selectedConversationId, currentUserId, selectedConversation]);
+
+  const personalityInsights = useMemo(
+    () => calculateSeriousnessScore(partnerBehaviorMetrics),
+    [partnerBehaviorMetrics]
+  );
+
+  // Periodically sync insights to DB (non-blocking, doesn't affect chat performance)
+  useEffect(() => {
+    if (
+      !currentUserId ||
+      !selectedConversation?.partner_id ||
+      !selectedConversationId ||
+      (partnerBehaviorMetrics.responseTimesMs.length === 0 && partnerBehaviorMetrics.wordCounts.length === 0)
+    ) {
+      return;
+    }
+    const interval = setInterval(() => {
+      const avgResponseSec =
+        partnerBehaviorMetrics.responseTimesMs.length > 0
+          ? partnerBehaviorMetrics.responseTimesMs.reduce((a, b) => a + b, 0) /
+            partnerBehaviorMetrics.responseTimesMs.length / 1000
+          : null;
+      const avgWords =
+        partnerBehaviorMetrics.wordCounts.length > 0
+          ? partnerBehaviorMetrics.wordCounts.reduce((a, b) => a + b, 0) /
+            partnerBehaviorMetrics.wordCounts.length
+          : null;
+      void supabase
+        .from("user_behavior_analytics")
+        .upsert(
+          {
+            user_id: selectedConversation.partner_id,
+            viewer_id: currentUserId,
+            conversation_id: selectedConversationId,
+            response_time_avg_seconds: avgResponseSec,
+            avg_word_count: avgWords,
+            seriousness_score: personalityInsights.score,
+            response_speed_label: personalityInsights.responseSpeedLabel,
+            engagement_label: personalityInsights.engagementLabel,
+            last_calculated_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "viewer_id,user_id" }
+        )
+        .then(() => {});
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, [
+    currentUserId,
+    selectedConversationId,
+    selectedConversation?.partner_id,
+    partnerBehaviorMetrics,
+    personalityInsights,
+  ]);
+
   // Debounced helper to broadcast typing status on the current chat channel
   const sendTypingStatus = useCallback(
     (isTyping: boolean) => {
@@ -559,6 +642,56 @@ export default function MessagesPage() {
           })}
           {conversations.length === 0 && (
             <p className="p-4 text-sm text-zinc-500">No active conversations yet.</p>
+          )}
+
+          {/* Personality Insights (VIP or blurred) */}
+          {selectedConversation && (
+            <div className="border-t border-zinc-200 p-3">
+              <div
+                className={`rounded-xl border border-zinc-200 bg-gradient-to-br from-sky-50/80 to-pink-50/80 p-3 ${
+                  !myIsVip ? "relative select-none" : ""
+                }`}
+              >
+                {!myIsVip && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-xl bg-zinc-900/70 backdrop-blur-md">
+                    <p className="px-3 text-center text-sm font-medium text-white">
+                      Upgrade to VIP to see personality insights
+                    </p>
+                    <Link
+                      href="/dashboard"
+                      className="mt-2 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600"
+                    >
+                      Upgrade to VIP
+                    </Link>
+                  </div>
+                )}
+                <div className={!myIsVip ? "blur-[3px]" : ""}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                  Personality Insights
+                </p>
+                <dl className="mt-2 space-y-1 text-sm">
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-zinc-600">Response Speed</dt>
+                    <dd className="font-medium text-zinc-900">
+                      {personalityInsights.responseSpeedLabel}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-zinc-600">Engagement</dt>
+                    <dd className="font-medium text-zinc-900">
+                      {personalityInsights.engagementLabel}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <dt className="text-zinc-600">Seriousness Score</dt>
+                    <dd className="font-medium text-zinc-900">
+                      {personalityInsights.score}%
+                    </dd>
+                  </div>
+                </dl>
+                </div>
+              </div>
+            </div>
           )}
         </aside>
 
