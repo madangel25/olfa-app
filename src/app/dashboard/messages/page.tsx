@@ -63,6 +63,7 @@ export default function MessagesPage() {
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
   const messagesChannelRef = useRef<any>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const typingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadConversations = useCallback(async (userId: string) => {
     const { data: convoRows, error: convoErr } = await supabase
@@ -276,26 +277,23 @@ export default function MessagesPage() {
     };
   }, [currentUserId]);
 
+  // Per-conversation realtime channel for messages, typing, and read-sync
   useEffect(() => {
-    if (!currentUserId) return;
+    if (!currentUserId || !selectedConversationId) return;
     const channel = supabase
-      .channel(`messages:list:${currentUserId}`)
+      .channel(`chat_${selectedConversationId}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
         async (payload) => {
-          // Debug: see every new message event we receive
           // eslint-disable-next-line no-console
           console.log("New message received via Realtime:", payload);
           const row = payload.new as Record<string, unknown>;
           const cid = row.conversation_id as string | undefined;
-          if (!cid) return;
+          if (!cid || cid !== selectedConversationId) return;
 
           // Update conversations list (last message preview, timestamps)
           await loadConversations(currentUserId);
-
-          // If this isn't the currently open conversation, don't touch the thread UI
-          if (!selectedConversationId || cid !== selectedConversationId) return;
 
           const incoming: ChatMessage = {
             id: String(row.id),
@@ -324,7 +322,7 @@ export default function MessagesPage() {
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, (payload) => {
         const row = payload.new as Record<string, unknown>;
         const cid = row.conversation_id as string | undefined;
-        if (!cid || !selectedConversationId || cid !== selectedConversationId) return;
+        if (!cid || cid !== selectedConversationId) return;
 
         // Update is_read in place so checkmarks change instantly
         setMessages((prev) =>
@@ -338,7 +336,7 @@ export default function MessagesPage() {
       .on("broadcast", { event: "typing" }, (payload) => {
         const body = payload.payload as { conversation_id?: string; user_id?: string; isTyping?: boolean } | undefined;
         if (!body?.conversation_id || !body.user_id) return;
-        if (!selectedConversationId || body.conversation_id !== selectedConversationId) return;
+        if (body.conversation_id !== selectedConversationId) return;
         if (!currentUserId || body.user_id === currentUserId) return;
 
         setIsPartnerTyping(true);
@@ -349,13 +347,27 @@ export default function MessagesPage() {
           setIsPartnerTyping(false);
         }, 3000);
       })
+      .on("broadcast", { event: "messages_read" }, (payload) => {
+        const body = payload.payload as { conversation_id?: string; reader_id?: string } | undefined;
+        if (!body?.conversation_id || !body.reader_id) return;
+        if (body.conversation_id !== selectedConversationId) return;
+        if (!currentUserId || body.reader_id === currentUserId) return;
+
+        // Partner just marked messages as read: mark all my sent messages as read
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.sender_id === currentUserId ? { ...m, is_read: true } : m
+          )
+        );
+      })
       .subscribe();
+
     messagesChannelRef.current = channel;
     return () => {
       supabase.removeChannel(channel);
       messagesChannelRef.current = null;
     };
-  }, [currentUserId, loadConversations, loadMessages, selectedConversationId]);
+  }, [currentUserId, loadConversations, selectedConversationId]);
 
   useEffect(() => {
     if (!selectedConversationId && conversations.length > 0) {
@@ -374,21 +386,55 @@ export default function MessagesPage() {
   // Mark messages as read when a conversation is opened/viewed
   useEffect(() => {
     const markAsRead = async () => {
-      if (!selectedConversationId) return;
+      if (!selectedConversationId || !currentUserId) return;
       try {
         await supabase.rpc("mark_messages_as_read", {
           p_conversation_id: selectedConversationId,
         });
+        // Broadcast read status so the partner updates immediately
+        const ch = messagesChannelRef.current;
+        if (ch) {
+          void ch.send({
+            type: "broadcast",
+            event: "messages_read",
+            payload: {
+              conversation_id: selectedConversationId,
+              reader_id: currentUserId,
+            },
+          });
+        }
       } catch {
         // ignore RPC errors for now – UI will still function
       }
     };
     void markAsRead();
-  }, [selectedConversationId]);
+  }, [currentUserId, selectedConversationId]);
 
   const selectedConversation = useMemo(
     () => conversations.find((c) => c.id === selectedConversationId) ?? null,
     [conversations, selectedConversationId]
+  );
+
+  // Debounced helper to broadcast typing status on the current chat channel
+  const sendTypingStatus = useCallback(
+    (isTyping: boolean) => {
+      if (!messagesChannelRef.current || !selectedConversationId || !currentUserId) return;
+      if (typingDebounceRef.current) {
+        clearTimeout(typingDebounceRef.current);
+      }
+      typingDebounceRef.current = setTimeout(() => {
+        void messagesChannelRef.current.send({
+          type: "broadcast",
+          event: "typing",
+          payload: {
+            conversation_id: selectedConversationId,
+            user_id: currentUserId,
+            isTyping,
+          },
+        });
+      }, 250);
+    },
+    [currentUserId, selectedConversationId]
   );
 
   const handleSend = async () => {
@@ -550,18 +596,7 @@ export default function MessagesPage() {
                 onChange={(e) => {
                   const value = e.target.value;
                   setDraft(value);
-                  const ch = messagesChannelRef.current;
-                  if (ch && selectedConversationId && currentUserId) {
-                    void ch.send({
-                      type: "broadcast",
-                      event: "typing",
-                      payload: {
-                        conversation_id: selectedConversationId,
-                        user_id: currentUserId,
-                        isTyping: true,
-                      },
-                    });
-                  }
+                  sendTypingStatus(true);
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
