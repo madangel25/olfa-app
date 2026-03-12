@@ -64,6 +64,7 @@ export default function MessagesPage() {
   const messagesChannelRef = useRef<any>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoReadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { onlineUserIds } = useOnlinePresence();
 
   const loadConversations = useCallback(async (userId: string) => {
@@ -288,27 +289,15 @@ export default function MessagesPage() {
           });
 
           // If this is a new message from the partner while we are in this chat,
-          // mark it as read immediately and broadcast so the sender sees blue checks.
+          // schedule an auto-read so the sender sees blue checks shortly after.
           const senderId = String(row.sender_id ?? "");
           if (senderId && senderId !== currentUserId) {
-            try {
-              await supabase.rpc("mark_messages_as_read", {
-                p_conversation_id: selectedConversationId,
-              });
-              const ch = messagesChannelRef.current;
-              if (ch) {
-                void ch.send({
-                  type: "broadcast",
-                  event: "messages_read",
-                  payload: {
-                    conversation_id: selectedConversationId,
-                    reader_id: currentUserId,
-                  },
-                });
-              }
-            } catch {
-              // ignore RPC errors here – local UI still shows incoming message
+            if (autoReadTimeoutRef.current) {
+              clearTimeout(autoReadTimeoutRef.current);
             }
+            autoReadTimeoutRef.current = setTimeout(() => {
+              void markConversationRead();
+            }, 500);
           }
         }
       )
@@ -318,11 +307,11 @@ export default function MessagesPage() {
         if (!cid || cid !== selectedConversationId) return;
 
         // Update is_read in place so checkmarks change instantly
-        setMessages((prev) =>
-          prev.map((m) =>
-            String(m.id) === String(row.id)
-              ? { ...m, is_read: Boolean(row.is_read) }
-              : m
+        setMessages((current) =>
+          current.map((msg) =>
+            String(msg.id) === String(row.id)
+              ? { ...msg, is_read: Boolean(row.is_read) }
+              : msg
           )
         );
       })
@@ -378,35 +367,50 @@ export default function MessagesPage() {
 
   // Mark messages as read when a conversation is opened/viewed
   useEffect(() => {
-    const markAsRead = async () => {
-      if (!selectedConversationId || !currentUserId) return;
-      try {
-        await supabase.rpc("mark_messages_as_read", {
-          p_conversation_id: selectedConversationId,
-        });
-        // Broadcast read status so the partner updates immediately
-        const ch = messagesChannelRef.current;
-        if (ch) {
-          void ch.send({
-            type: "broadcast",
-            event: "messages_read",
-            payload: {
-              conversation_id: selectedConversationId,
-              reader_id: currentUserId,
-            },
-          });
-        }
-      } catch {
-        // ignore RPC errors for now – UI will still function
+    void markConversationRead();
+  }, [markConversationRead]);
+
+  // When the tab becomes visible again while a conversation is selected, re-mark as read.
+  useEffect(() => {
+    if (!selectedConversationId || !currentUserId) return;
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        void markConversationRead();
       }
     };
-    void markAsRead();
-  }, [currentUserId, selectedConversationId]);
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [currentUserId, markConversationRead, selectedConversationId]);
 
   const selectedConversation = useMemo(
     () => conversations.find((c) => c.id === selectedConversationId) ?? null,
     [conversations, selectedConversationId]
   );
+
+  // Shared helper: mark all messages in the current conversation as read in DB and broadcast.
+  const markConversationRead = useCallback(async () => {
+    if (!selectedConversationId || !currentUserId) return;
+    try {
+      await supabase.rpc("mark_messages_as_read", {
+        p_conversation_id: selectedConversationId,
+      });
+      const ch = messagesChannelRef.current;
+      if (ch) {
+        void ch.send({
+          type: "broadcast",
+          event: "messages_read",
+          payload: {
+            conversation_id: selectedConversationId,
+            reader_id: currentUserId,
+          },
+        });
+      }
+    } catch {
+      // Ignore RPC/broadcast errors – UI will still function via local state / UPDATE events.
+    }
+  }, [currentUserId, selectedConversationId]);
 
   // Debounced helper to broadcast typing status on the current chat channel
   const sendTypingStatus = useCallback(
