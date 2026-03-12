@@ -30,7 +30,7 @@ import {
 import { logAdminAction } from "@/lib/adminLog";
 import { QuizEditorModal } from "@/components/admin/QuizEditorModal";
 
-type TabId = "overview" | "verifications" | "users" | "quiz";
+type TabId = "overview" | "verifications" | "users" | "quiz" | "moderation";
 
 type QuizOptionRow = {
   value: string;
@@ -155,6 +155,10 @@ export default function AdminDashboardPage() {
     null | { type: "add" } | { type: "edit"; question: QuizQuestionRow }
   >(null);
   const [savingQuiz, setSavingQuiz] = useState(false);
+  const [flaggedMessages, setFlaggedMessages] = useState<
+    { id: string; conversation_id: string; sender_id: string; content: string; created_at: string | null; flagged_at: string | null }[]
+  >([]);
+  const [loadingFlagged, setLoadingFlagged] = useState(false);
 
   // Admin access is enforced by AdminGuard (role === 'admin' only).
 
@@ -478,6 +482,29 @@ export default function AdminDashboardPage() {
     if (activeTab === "quiz") loadQuizQuestions();
   }, [activeTab, loadQuizQuestions]);
 
+  const loadFlaggedMessages = useCallback(async () => {
+    setLoadingFlagged(true);
+    setError(null);
+    try {
+      const { data, error: err } = await supabase
+        .from("messages")
+        .select("id,conversation_id,sender_id,content,created_at,flagged_at")
+        .eq("is_flagged", true)
+        .order("flagged_at", { ascending: false })
+        .limit(200);
+      if (err) throw err;
+      setFlaggedMessages(((data ?? []) as unknown) as typeof flaggedMessages);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load flagged messages.");
+    } finally {
+      setLoadingFlagged(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "moderation") loadFlaggedMessages();
+  }, [activeTab, loadFlaggedMessages]);
+
   const saveQuizQuestion = async (data: {
     category: string;
     title_en: string;
@@ -718,6 +745,7 @@ export default function AdminDashboardPage() {
     { id: "verifications", label: "قيد الموافقة", icon: ImageIcon },
     { id: "users", label: "المستخدمون", icon: Users },
     { id: "quiz", label: "إدارة الأسئلة", icon: ListOrdered },
+    { id: "moderation", label: "الرسائل المبلغ عنها", icon: AlertTriangle },
   ];
 
   return (
@@ -1101,6 +1129,43 @@ export default function AdminDashboardPage() {
                 </table>
                 {quizQuestions.length === 0 && (
                   <p className="p-8 text-center text-zinc-500 text-sm">لا توجد أسئلة. أضف سؤالاً من الجدول في الترجمة أو من الزر أعلاه.</p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Moderation: Flagged messages */}
+        {activeTab === "moderation" && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-zinc-800">الرسائل المبلغ عنها (كلمات محظورة)</h2>
+            {loadingFlagged ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-10 w-10 animate-spin text-sky-500" />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {flaggedMessages.length === 0 ? (
+                  <p className="rounded-xl border border-zinc-200 bg-zinc-50 p-6 text-center text-sm text-zinc-500">
+                    لا توجد رسائل مبلغ عنها.
+                  </p>
+                ) : (
+                  flaggedMessages.map((m) => (
+                    <div
+                      key={m.id}
+                      className="rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-right"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-xs text-amber-700">
+                          {m.flagged_at ? new Date(m.flagged_at).toLocaleString("ar-SA") : "—"}
+                        </span>
+                        <span className="text-xs font-mono text-zinc-500">
+                          conv: {m.conversation_id.slice(0, 8)}… · sender: {m.sender_id.slice(0, 8)}…
+                        </span>
+                      </div>
+                      <p className="text-sm text-zinc-800 break-words">{m.content || "—"}</p>
+                    </div>
+                  ))
                 )}
               </div>
             )}

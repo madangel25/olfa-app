@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Check, CheckCheck } from "lucide-react";
+import { Check, CheckCheck, MoreVertical, Flag, ImagePlus, Eye } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useOnlinePresence } from "@/components/DashboardShell";
@@ -49,6 +49,20 @@ function formatTime(iso: string | null): string {
   }
 }
 
+const REPORT_REASONS = [
+  { value: "harassment", label: "Harassment", labelAr: "مضايقة" },
+  { value: "fake_profile", label: "Fake Profile", labelAr: "ملف وهمي" },
+  { value: "spam", label: "Spam", labelAr: "سبام" },
+  { value: "inappropriate", label: "Inappropriate Content", labelAr: "محتوى غير لائق" },
+  { value: "other", label: "Other", labelAr: "أخرى" },
+] as const;
+
+function containsBannedWord(text: string, bannedWords: string[]): boolean {
+  if (!bannedWords.length) return false;
+  const lower = text.toLowerCase();
+  return bannedWords.some((w) => lower.includes(w.toLowerCase()));
+}
+
 export default function MessagesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -71,7 +85,26 @@ export default function MessagesPage() {
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const autoReadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bannedWordsRef = useRef<string[]>([]);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState<string>("harassment");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [viewOnce, setViewOnce] = useState(false);
+  const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
   const { onlineUserIds } = useOnlinePresence();
+
+  // Fetch banned words once on app load (no lag on typing).
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data, error: err } = await supabase.from("banned_words").select("word");
+      if (!active || err) return;
+      bannedWordsRef.current = ((data as unknown) as { word: string }[] ?? []).map((r) => r.word);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Shared helper: mark all messages in the current conversation as read in DB and broadcast.
   const markConversationRead = useCallback(async () => {
@@ -555,17 +588,47 @@ export default function MessagesPage() {
       };
       setMessages((prev) => [...prev, optimisticMessage]);
 
+      const isFlagged = containsBannedWord(text, bannedWordsRef.current);
       const { error: sendErr } = await supabase.from("messages").insert({
         conversation_id: selectedConversationId,
         sender_id: currentUserId,
         content: text,
         is_read: false,
+        is_flagged: isFlagged,
+        ...(isFlagged && { flagged_at: new Date().toISOString() }),
       });
       if (sendErr) throw sendErr;
     } catch (e) {
       // Roll back optimistic message on error
       setMessages((prev) => prev.filter((m) => !m.id.startsWith("optimistic-")));
       setError(e instanceof Error ? e.message : "Failed to send message.");
+    }
+  };
+
+  const handleReportSubmit = async () => {
+    if (!currentUserId || !selectedConversation?.partner_id || !selectedConversationId) return;
+    setReportSubmitting(true);
+    try {
+      const snapshot = messages.slice(-20).map((m) => ({
+        id: m.id,
+        sender_id: m.sender_id,
+        content: m.content,
+        created_at: m.created_at,
+      }));
+      const { error: reportErr } = await supabase.from("chat_reports").insert({
+        reporter_id: currentUserId,
+        reported_user_id: selectedConversation.partner_id,
+        conversation_id: selectedConversationId,
+        reason: reportReason,
+        message_snapshot: snapshot,
+      });
+      if (reportErr) throw reportErr;
+      setReportModalOpen(false);
+      setReportReason("harassment");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to submit report.");
+    } finally {
+      setReportSubmitting(false);
     }
   };
 
@@ -697,30 +760,64 @@ export default function MessagesPage() {
 
         {/* Message thread */}
         <section className="flex min-h-0 flex-col">
-          <div className="border-b border-zinc-200 px-4 py-3">
+          <div className="relative border-b border-zinc-200 px-4 py-3">
             {selectedConversation ? (
               <>
-                <Link
-                  href={`/profile/${selectedConversation.partner_id}`}
-                  className="flex items-center gap-3 no-underline outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-1 rounded-lg -m-1 p-1"
-                >
-                  <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-zinc-200">
-                    {selectedConversation.partner_photo ? (
-                      <img
-                        src={selectedConversation.partner_photo}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-zinc-500">
-                        {(selectedConversation.partner_name || "?").slice(0, 1)}
-                      </div>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/profile/${selectedConversation.partner_id}`}
+                    className="flex flex-1 min-w-0 items-center gap-3 no-underline outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-1 rounded-lg -m-1 p-1"
+                  >
+                    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-zinc-200">
+                      {selectedConversation.partner_photo ? (
+                        <img
+                          src={selectedConversation.partner_photo}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-zinc-500">
+                          {(selectedConversation.partner_name || "?").slice(0, 1)}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm font-semibold text-zinc-900 truncate">
+                      {selectedConversation.partner_name}
+                    </p>
+                  </Link>
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setHeaderMenuOpen((o) => !o)}
+                      className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
+                      aria-label="Menu"
+                    >
+                      <MoreVertical className="h-5 w-5" />
+                    </button>
+                    {headerMenuOpen && (
+                      <>
+                        <div
+                          className="fixed inset-0 z-10"
+                          aria-hidden
+                          onClick={() => setHeaderMenuOpen(false)}
+                        />
+                        <div className="absolute left-0 top-full z-20 mt-1 w-48 rounded-xl border border-zinc-200 bg-white py-1 shadow-lg">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setHeaderMenuOpen(false);
+                              setReportModalOpen(true);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-red-50 hover:text-red-700"
+                          >
+                            <Flag className="h-4 w-4" />
+                            Report User
+                          </button>
+                        </div>
+                      </>
                     )}
                   </div>
-                  <p className="text-sm font-semibold text-zinc-900 truncate">
-                    {selectedConversation.partner_name}
-                  </p>
-                </Link>
+                </div>
                 {(() => {
                   const online =
                     onlineUserIds.has(selectedConversation.partner_id) ||
@@ -815,13 +912,70 @@ export default function MessagesPage() {
                   Send
                 </button>
               </div>
-              <p className="mt-1 text-[11px] text-zinc-500">
-                VIP can start chats directly. Others need a mutual match.
-              </p>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-zinc-600">
+                  <span className="flex items-center gap-1" title="View Once (backend coming soon)">
+                    <Eye className="h-4 w-4" />
+                    View Once
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={viewOnce}
+                    onChange={(e) => setViewOnce(e.target.checked)}
+                    className="rounded border-zinc-300 text-sky-500 focus:ring-sky-400"
+                  />
+                </label>
+                <p className="text-[11px] text-zinc-500">
+                  VIP can start chats directly. Others need a mutual match.
+                </p>
+              </div>
             </div>
           )}
         </section>
       </div>
+
+      {/* Report User modal */}
+      {reportModalOpen && selectedConversation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl">
+            <h3 className="text-lg font-semibold text-zinc-900">Report User</h3>
+            <p className="mt-1 text-sm text-zinc-600">
+              Report {selectedConversation.partner_name}? A snapshot of the last 20 messages will be sent to moderators.
+            </p>
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-zinc-700">Reason</label>
+              <select
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900"
+              >
+                {REPORT_REASONS.map((r) => (
+                  <option key={r.value} value={r.value}>
+                    {r.label} / {r.labelAr}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setReportModalOpen(false)}
+                className="flex-1 rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleReportSubmit()}
+                disabled={reportSubmitting}
+                className="flex-1 rounded-xl bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
+              >
+                {reportSubmitting ? "Submitting…" : "Submit Report"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
