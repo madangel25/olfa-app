@@ -833,7 +833,7 @@ export default function MessagesPage() {
       clearInterval(recordingIntervalRef.current);
       recordingIntervalRef.current = null;
     }
-    if (mediaRecorderRef.current?.state !== "inactive") {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current = null;
     }
@@ -843,13 +843,14 @@ export default function MessagesPage() {
   }, []);
 
   const sendRecording = useCallback(() => {
-    if (!mediaRecorderRef.current || !currentUserId || !selectedConversationId) return;
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || !currentUserId || !selectedConversationId) return;
     if (recordingIntervalRef.current) {
       clearInterval(recordingIntervalRef.current);
       recordingIntervalRef.current = null;
     }
     pendingSendVoiceRef.current = true;
-    mediaRecorderRef.current.stop();
+    recorder.stop();
     mediaRecorderRef.current = null;
   }, [currentUserId, selectedConversationId]);
 
