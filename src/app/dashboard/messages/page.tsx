@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
@@ -57,6 +57,7 @@ export default function MessagesPage() {
   const [error, setError] = useState<string | null>(null);
 
   const conversationPair = { left: "user_one_id", right: "user_two_id" } as const;
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const loadConversations = useCallback(async (userId: string) => {
     const { data: convoRows, error: convoErr } = await supabase
@@ -150,6 +151,13 @@ export default function MessagesPage() {
     }
   }, []);
 
+  // Always scroll to the latest message when messages change or when switching conversations
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [messages.length, selectedConversationId]);
+
   const findOrCreateConversation = useCallback(async (me: string, other: string): Promise<string | null> => {
     const { data: existing, error: existingErr } = await supabase
       .from("conversations")
@@ -235,17 +243,47 @@ export default function MessagesPage() {
     if (!currentUserId) return;
     const channel = supabase
       .channel(`messages:list:${currentUserId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, async (payload) => {
-        // Debug: see every new message event we receive
-        // eslint-disable-next-line no-console
-        console.log("New message received via Realtime:", payload);
-        const cid = (payload.new as Record<string, unknown>)?.conversation_id as string | undefined;
-        if (!cid) return;
-        await loadConversations(currentUserId);
-        if (selectedConversationId && cid === selectedConversationId) {
-          await loadMessages(selectedConversationId);
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        async (payload) => {
+          // Debug: see every new message event we receive
+          // eslint-disable-next-line no-console
+          console.log("New message received via Realtime:", payload);
+          const row = payload.new as Record<string, unknown>;
+          const cid = row.conversation_id as string | undefined;
+          if (!cid) return;
+
+          // Update conversations list (last message preview, timestamps)
+          await loadConversations(currentUserId);
+
+          // If this isn't the currently open conversation, don't touch the thread UI
+          if (!selectedConversationId || cid !== selectedConversationId) return;
+
+          const incoming: ChatMessage = {
+            id: String(row.id),
+            conversation_id: cid,
+            sender_id: String(row.sender_id ?? ""),
+            content: String(row.content ?? ""),
+            created_at: (row.created_at as string) ?? null,
+            is_read: Boolean(row.is_read),
+          };
+
+          // Merge with local state, removing any matching optimistic message
+          setMessages((prev) => {
+            const withoutOptimistic = prev.filter(
+              (m) =>
+                !(
+                  m.id.startsWith("optimistic-") &&
+                  m.conversation_id === incoming.conversation_id &&
+                  m.sender_id === incoming.sender_id &&
+                  m.content === incoming.content
+                )
+            );
+            return [...withoutOptimistic, incoming];
+          });
         }
-      })
+      )
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, async (payload) => {
         const cid = (payload.new as Record<string, unknown>)?.conversation_id as string | undefined;
         if (!cid || !selectedConversationId || cid !== selectedConversationId) return;
@@ -278,6 +316,11 @@ export default function MessagesPage() {
 
   const handleSend = async () => {
     if (!currentUserId || !selectedConversationId || !draft.trim()) return;
+    const text = draft.trim();
+
+    // Clear input immediately
+    setDraft("");
+
     try {
       // Optimistic UI: add the message locally before waiting for Supabase
       const optimisticId = `optimistic-${Date.now()}`;
@@ -285,7 +328,7 @@ export default function MessagesPage() {
         id: optimisticId,
         conversation_id: selectedConversationId,
         sender_id: currentUserId,
-        content: draft.trim(),
+        content: text,
         created_at: new Date().toISOString(),
         is_read: false,
       };
@@ -294,13 +337,10 @@ export default function MessagesPage() {
       const { error: sendErr } = await supabase.from("messages").insert({
         conversation_id: selectedConversationId,
         sender_id: currentUserId,
-        content: draft.trim(),
+        content: text,
         is_read: false,
       });
       if (sendErr) throw sendErr;
-      setDraft("");
-      // Sync with DB state so the optimistic message is replaced by the real row
-      await loadMessages(selectedConversationId);
     } catch (e) {
       // Roll back optimistic message on error
       setMessages((prev) => prev.filter((m) => !m.id.startsWith("optimistic-")));
@@ -395,6 +435,7 @@ export default function MessagesPage() {
                     </li>
                   );
                 })}
+                <div ref={messagesEndRef} />
               </ul>
             )}
           </div>
