@@ -58,6 +58,10 @@ export default function MessagesPage() {
 
   const conversationPair = { left: "user_one_id", right: "user_two_id" } as const;
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
+  const [isPartnerTyping, setIsPartnerTyping] = useState(false);
+  const messagesChannelRef = useRef<any>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadConversations = useCallback(async (userId: string) => {
     const { data: convoRows, error: convoErr } = await supabase
@@ -242,6 +246,38 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!currentUserId) return;
     const channel = supabase
+      .channel("online-users", {
+        config: {
+          presence: {
+            key: currentUserId,
+          },
+        },
+      })
+      .on("presence", { event: "sync" }, () => {
+        const state = channel.presenceState() as Record<string, Array<{ user_id?: string }>>;
+        const ids = new Set<string>();
+        Object.values(state).forEach((entries) => {
+          entries.forEach((entry) => {
+            if (entry.user_id) ids.add(String(entry.user_id));
+          });
+        });
+        setOnlineUserIds(ids);
+      });
+
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        void channel.track({ user_id: currentUserId });
+      }
+    });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUserId]);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    const channel = supabase
       .channel(`messages:list:${currentUserId}`)
       .on(
         "postgres_changes",
@@ -289,9 +325,25 @@ export default function MessagesPage() {
         if (!cid || !selectedConversationId || cid !== selectedConversationId) return;
         await loadMessages(selectedConversationId);
       })
+      .on("broadcast", { event: "typing" }, (payload) => {
+        const body = payload.payload as { conversation_id?: string; user_id?: string } | undefined;
+        if (!body?.conversation_id || !body.user_id) return;
+        if (!selectedConversationId || body.conversation_id !== selectedConversationId) return;
+        if (!currentUserId || body.user_id === currentUserId) return;
+
+        setIsPartnerTyping(true);
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+        typingTimeoutRef.current = setTimeout(() => {
+          setIsPartnerTyping(false);
+        }, 3000);
+      })
       .subscribe();
+    messagesChannelRef.current = channel;
     return () => {
       supabase.removeChannel(channel);
+      messagesChannelRef.current = null;
     };
   }, [currentUserId, loadConversations, loadMessages, selectedConversationId]);
 
@@ -308,6 +360,16 @@ export default function MessagesPage() {
     }
     void loadMessages(selectedConversationId);
   }, [loadMessages, selectedConversationId]);
+
+  // Mark messages as read when a conversation is opened/viewed
+  useEffect(() => {
+    if (!selectedConversationId || !currentUserId) return;
+    void supabase
+      .rpc("mark_messages_as_read", { p_conversation_id: selectedConversationId })
+      .catch(() => {
+        // ignore RPC errors for now – UI will still function
+      });
+  }, [selectedConversationId, currentUserId]);
 
   const selectedConversation = useMemo(
     () => conversations.find((c) => c.id === selectedConversationId) ?? null,
@@ -374,6 +436,8 @@ export default function MessagesPage() {
           {(conversations ?? []).map((c) => {
             const selected = selectedConversationId === c.id;
             const online = isOnline(c.partner_last_seen_at);
+            const isOnlineNow = onlineUserIds.has(c.partner_id);
+            const online = isOnlineNow || isOnline(c.partner_last_seen_at);
             return (
               <button
                 key={c.id}
@@ -412,6 +476,18 @@ export default function MessagesPage() {
             <p className="text-sm font-semibold text-zinc-900">
               {selectedConversation?.partner_name ?? "Select a conversation"}
             </p>
+            {selectedConversation && (
+              <p className="mt-0.5 text-xs text-zinc-500">
+                {onlineUserIds.has(selectedConversation.partner_id)
+                  ? "Online"
+                  : selectedConversation.partner_last_seen_at
+                  ? `Last seen at ${formatTime(selectedConversation.partner_last_seen_at)}`
+                  : ""}
+              </p>
+            )}
+            {isPartnerTyping && (
+              <p className="mt-0.5 text-xs text-sky-500">Typing...</p>
+            )}
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50 px-3 py-4">
@@ -429,7 +505,11 @@ export default function MessagesPage() {
                         <p className="whitespace-pre-wrap break-words">{m.content}</p>
                         <div className={`mt-1 flex items-center gap-1 text-[11px] ${mine ? "text-sky-100" : "text-zinc-500"}`}>
                           <span>{formatTime(m.created_at)}</span>
-                          {mine && <span>{m.is_read ? "✓✓" : "✓"}</span>}
+                          {mine && (
+                            <span className={m.is_read ? "text-sky-300" : "text-zinc-400"}>
+                              {m.is_read ? "✓✓" : "✓"}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </li>
@@ -444,7 +524,18 @@ export default function MessagesPage() {
             <div className="flex items-center gap-2">
               <input
                 value={draft}
-                onChange={(e) => setDraft(e.target.value)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setDraft(value);
+                  const ch = messagesChannelRef.current;
+                  if (ch && selectedConversationId && currentUserId) {
+                    void ch.send({
+                      type: "broadcast",
+                      event: "typing",
+                      payload: { conversation_id: selectedConversationId, user_id: currentUserId },
+                    });
+                  }
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
