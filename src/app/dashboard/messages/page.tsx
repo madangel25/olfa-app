@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Check, CheckCheck, MoreVertical, Flag, ImagePlus, Eye } from "lucide-react";
+import { Check, CheckCheck, MoreVertical, Flag, ImagePlus, Eye, Plus, Mic, Loader2, X } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useOnlinePresence } from "@/components/DashboardShell";
@@ -31,6 +31,10 @@ type ChatMessage = {
   content: string;
   created_at: string | null;
   is_read: boolean;
+  message_type?: "text" | "image" | "audio";
+  attachment_url?: string | null;
+  is_temporary?: boolean;
+  temporary_viewed_at?: string | null;
 };
 
 function isOnline(lastSeenAt: string | null): boolean {
@@ -56,6 +60,8 @@ const REPORT_REASONS = [
   { value: "inappropriate", label: "Inappropriate Content", labelAr: "محتوى غير لائق" },
   { value: "other", label: "Other", labelAr: "أخرى" },
 ] as const;
+
+const MAX_MEDIA_BYTES = 5 * 1024 * 1024; // 5MB
 
 function containsBannedWord(text: string, bannedWords: string[]): boolean {
   if (!bannedWords.length) return false;
@@ -91,6 +97,18 @@ export default function MessagesPage() {
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [viewOnce, setViewOnce] = useState(false);
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [showMediaMenu, setShowMediaMenu] = useState(false);
+  const [imagePreview, setImagePreview] = useState<{ file: File; objectUrl: string } | null>(null);
+  const [imagePreviewViewOnce, setImagePreviewViewOnce] = useState(false);
+  const [recording, setRecording] = useState<{ blob: Blob; seconds: number } | null>(null);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [uploadingMedia, setUploadingMedia] = useState<"image" | "audio" | null>(null);
+  const [revealedViewOnceUrls, setRevealedViewOnceUrls] = useState<Record<string, string>>({});
+  const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingChunksRef = useRef<Blob[]>([]);
+  const recordingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { onlineUserIds } = useOnlinePresence();
 
   // Fetch banned words once on app load (no lag on typing).
@@ -159,7 +177,7 @@ export default function MessagesPage() {
     const convoIds = rows.map((r) => r.id as string);
     const { data: messageRows } = await supabase
       .from("messages")
-      .select("id,conversation_id,sender_id,content,created_at,is_read")
+      .select("id,conversation_id,sender_id,content,created_at,is_read,message_type")
       .in("conversation_id", convoIds)
       .order("created_at", { ascending: false });
 
@@ -193,7 +211,13 @@ export default function MessagesPage() {
         partner_name: (p.full_name as string) ?? "Unknown",
         partner_photo: photo,
         partner_last_seen_at: (p.last_seen_at as string) ?? null,
-        last_message: msg ? String(msg.content ?? "") : "",
+        last_message: msg
+          ? (msg.message_type === "image"
+            ? "Photo"
+            : msg.message_type === "audio"
+              ? "Voice note"
+              : String(msg.content ?? ""))
+          : "",
         last_message_at: (msg?.created_at as string) ?? null,
         hasUnread,
       };
@@ -206,7 +230,7 @@ export default function MessagesPage() {
     try {
       const { data, error: msgErr } = await supabase
         .from("messages")
-        .select("id,conversation_id,sender_id,content,created_at,is_read")
+        .select("id,conversation_id,sender_id,content,created_at,is_read,message_type,attachment_url,is_temporary,temporary_viewed_at")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true });
       if (msgErr) throw msgErr;
@@ -217,6 +241,10 @@ export default function MessagesPage() {
         content: String(m.content ?? ""),
         created_at: (m.created_at as string) ?? null,
         is_read: Boolean(m.is_read),
+        message_type: (m.message_type as "text" | "image" | "audio") ?? "text",
+        attachment_url: m.attachment_url ?? null,
+        is_temporary: Boolean(m.is_temporary),
+        temporary_viewed_at: (m.temporary_viewed_at as string) ?? null,
       }));
       setMessages(list);
     } finally {
@@ -355,6 +383,10 @@ export default function MessagesPage() {
             content: String(row.content ?? ""),
             created_at: (row.created_at as string) ?? null,
             is_read: Boolean(row.is_read),
+            message_type: (row.message_type as "text" | "image" | "audio") ?? "text",
+            attachment_url: (row.attachment_url as string) ?? null,
+            is_temporary: Boolean(row.is_temporary),
+            temporary_viewed_at: (row.temporary_viewed_at as string) ?? null,
           };
 
           // Merge with local state, removing any matching optimistic message
@@ -389,11 +421,14 @@ export default function MessagesPage() {
         const cid = row.conversation_id as string | undefined;
         if (!cid || cid !== selectedConversationId) return;
 
-        // Update is_read in place so checkmarks change instantly
         setMessages((current) =>
           current.map((msg) =>
             String(msg.id) === String(row.id)
-              ? { ...msg, is_read: Boolean(row.is_read) }
+              ? {
+                  ...msg,
+                  is_read: Boolean(row.is_read),
+                  temporary_viewed_at: (row.temporary_viewed_at as string) ?? msg.temporary_viewed_at,
+                }
               : msg
           )
         );
@@ -632,6 +667,233 @@ export default function MessagesPage() {
     }
   };
 
+  const getSignedUrl = useCallback(async (path: string): Promise<string> => {
+    const { data } = await supabase.storage.from("chat-media").createSignedUrl(path, 3600);
+    if (data?.signedUrl) return data.signedUrl;
+    return "";
+  }, []);
+
+  const uploadToChatMedia = useCallback(
+    async (file: File, conversationId: string, userId: string): Promise<string> => {
+      const ext = file.name.split(".").pop()?.toLowerCase() || (file.type.startsWith("audio") ? "webm" : "jpg");
+      const path = `${conversationId}/${userId}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("chat-media").upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+      if (error) throw error;
+      return path;
+    },
+    []
+  );
+
+  const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_MEDIA_BYTES) {
+      setError("Image must be under 5MB.");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file.");
+      return;
+    }
+    setImagePreview({ file, objectUrl: URL.createObjectURL(file) });
+    setImagePreviewViewOnce(false);
+    e.target.value = "";
+  }, []);
+
+  const handleSendImage = useCallback(async () => {
+    if (!currentUserId || !selectedConversationId || !imagePreview) return;
+    const optimisticId = `optimistic-img-${Date.now()}`;
+    setUploadingMedia("image");
+    setShowMediaMenu(false);
+    try {
+      const path = await uploadToChatMedia(imagePreview.file, selectedConversationId, currentUserId);
+      URL.revokeObjectURL(imagePreview.objectUrl);
+      setImagePreview(null);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: optimisticId,
+          conversation_id: selectedConversationId,
+          sender_id: currentUserId,
+          content: "",
+          created_at: new Date().toISOString(),
+          is_read: false,
+          message_type: "image",
+          attachment_url: path,
+          is_temporary: imagePreviewViewOnce,
+          temporary_viewed_at: null,
+        },
+      ]);
+      const { error: insertErr } = await supabase.from("messages").insert({
+        conversation_id: selectedConversationId,
+        sender_id: currentUserId,
+        content: "",
+        message_type: "image",
+        attachment_url: path,
+        is_temporary: imagePreviewViewOnce,
+        is_read: false,
+      });
+      if (insertErr) throw insertErr;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to send image.");
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+    } finally {
+      setUploadingMedia(null);
+    }
+  }, [currentUserId, selectedConversationId, imagePreview, imagePreviewViewOnce, uploadToChatMedia]);
+
+  const pendingSendVoiceRef = useRef(false);
+  const voiceSendRef = useRef<(blob: Blob) => void>(() => {});
+
+  const sendRecordingBlob = useCallback(
+    async (blob: Blob) => {
+      if (!currentUserId || !selectedConversationId) return;
+      setShowMediaMenu(false);
+      setUploadingMedia("audio");
+      try {
+        const file = new File([blob], "voice.webm", { type: "audio/webm" });
+        const path = await uploadToChatMedia(file, selectedConversationId, currentUserId);
+        const optimisticId = `optimistic-audio-${Date.now()}`;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: optimisticId,
+            conversation_id: selectedConversationId,
+            sender_id: currentUserId,
+            content: "",
+            created_at: new Date().toISOString(),
+            is_read: false,
+            message_type: "audio",
+            attachment_url: path,
+            is_temporary: false,
+            temporary_viewed_at: null,
+          },
+        ]);
+        const { error: insertErr } = await supabase.from("messages").insert({
+          conversation_id: selectedConversationId,
+          sender_id: currentUserId,
+          content: "",
+          message_type: "audio",
+          attachment_url: path,
+          is_read: false,
+        });
+        if (insertErr) throw insertErr;
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to send voice note.");
+      } finally {
+        setUploadingMedia(null);
+      }
+    },
+    [currentUserId, selectedConversationId, uploadToChatMedia]
+  );
+  voiceSendRef.current = sendRecordingBlob;
+
+  const startRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      recordingChunksRef.current = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size) recordingChunksRef.current.push(e.data);
+      };
+      recorder.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const shouldSend = pendingSendVoiceRef.current;
+        pendingSendVoiceRef.current = false;
+        const chunks = recordingChunksRef.current;
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        setRecording(null);
+        setRecordingSeconds(0);
+        if (shouldSend && blob.size > 0) {
+          if (blob.size <= MAX_MEDIA_BYTES) {
+            voiceSendRef.current(blob);
+          } else {
+            setError("Voice note must be under 5MB.");
+          }
+        }
+      };
+      recorder.start(200);
+      mediaRecorderRef.current = recorder;
+      setRecordingSeconds(0);
+      setRecording({ blob: new Blob(), seconds: 0 });
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingSeconds((s) => s + 1);
+      }, 1000);
+    } catch (err) {
+      setError("Microphone access is required for voice notes.");
+    }
+  }, []);
+
+  const cancelRecording = useCallback(() => {
+    pendingSendVoiceRef.current = false;
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+    if (mediaRecorderRef.current?.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
+    }
+    setRecording(null);
+    setRecordingSeconds(0);
+    setShowMediaMenu(false);
+  }, []);
+
+  const sendRecording = useCallback(() => {
+    if (!mediaRecorderRef.current || !currentUserId || !selectedConversationId) return;
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+      recordingIntervalRef.current = null;
+    }
+    pendingSendVoiceRef.current = true;
+    mediaRecorderRef.current.stop();
+    mediaRecorderRef.current = null;
+  }, [currentUserId, selectedConversationId]);
+
+  const markViewOnceViewed = useCallback(async (messageId: string) => {
+    try {
+      await supabase.rpc("mark_temporary_message_viewed", { p_message_id: messageId });
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId ? { ...m, temporary_viewed_at: new Date().toISOString() } : m
+        )
+      );
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const revealViewOnce = useCallback(
+    async (messageId: string, path: string) => {
+      await markViewOnceViewed(messageId);
+      const url = await getSignedUrl(path);
+      setRevealedViewOnceUrls((prev) => ({ ...prev, [messageId]: url }));
+    },
+    [markViewOnceViewed, getSignedUrl]
+  );
+
+  useEffect(() => {
+    const pathsToFetch = new Set<string>();
+    for (const m of messages) {
+      const path = m.attachment_url;
+      if (!path) continue;
+      const isImage = m.message_type === "image";
+      const isAudio = m.message_type === "audio";
+      const needUrl =
+        isAudio ||
+        (isImage && (m.sender_id === currentUserId || m.temporary_viewed_at || revealedViewOnceUrls[m.id]));
+      if (needUrl && path && !mediaUrls[path]) pathsToFetch.add(path);
+    }
+    pathsToFetch.forEach((path) => {
+      getSignedUrl(path).then((url) => {
+        setMediaUrls((prev) => (prev[path] ? prev : { ...prev, [path]: url }));
+      });
+    });
+  }, [messages, currentUserId, revealedViewOnceUrls]);
+
   if (loading) {
     return <LoadingScreen message="Loading messages..." theme="sky" />;
   }
@@ -853,6 +1115,19 @@ export default function MessagesPage() {
               <ul className="space-y-2">
                 {(messages ?? []).map((m) => {
                   const mine = m.sender_id === currentUserId;
+                  const isImage = m.message_type === "image";
+                  const isAudio = m.message_type === "audio";
+                  const viewOnceNotViewed =
+                    isImage && m.is_temporary && !mine && !m.temporary_viewed_at && !revealedViewOnceUrls[m.id];
+                  const imageUrl =
+                    isImage && m.attachment_url
+                      ? revealedViewOnceUrls[m.id] || (viewOnceNotViewed ? null : mediaUrls[m.attachment_url])
+                      : null;
+                  const audioUrl = isAudio && m.attachment_url ? mediaUrls[m.attachment_url] : null;
+                  const isLoadingMedia =
+                    (isImage && m.attachment_url && !viewOnceNotViewed && !imageUrl) ||
+                    (isAudio && m.attachment_url && !audioUrl);
+
                   return (
                     <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div
@@ -862,7 +1137,50 @@ export default function MessagesPage() {
                             : "bg-pink-50 border-pink-100 text-zinc-800"
                         }`}
                       >
-                        <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                        {isImage && m.attachment_url && (
+                          <div className="min-w-[120px] min-h-[100px]">
+                            {viewOnceNotViewed ? (
+                              <button
+                                type="button"
+                                onClick={() => void revealViewOnce(m.id, m.attachment_url!)}
+                                className="flex items-center gap-2 rounded-lg border border-dashed border-zinc-300 bg-white/80 px-4 py-3 text-sm text-zinc-600 hover:bg-white"
+                              >
+                                <Eye className="h-4 w-4" />
+                                Tap to view
+                              </button>
+                            ) : isLoadingMedia ? (
+                              <div className="flex items-center justify-center py-8">
+                                <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+                              </div>
+                            ) : imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt=""
+                                className="max-h-64 rounded-lg object-contain"
+                              />
+                            ) : (
+                              <span className="text-xs text-zinc-500">Image</span>
+                            )}
+                            {m.is_temporary && (
+                              <p className="mt-1 text-[10px] text-zinc-500">View once</p>
+                            )}
+                          </div>
+                        )}
+                        {isAudio && m.attachment_url && (
+                          <div className="min-w-[200px]">
+                            {audioUrl ? (
+                              <audio controls src={audioUrl} className="max-w-full" />
+                            ) : (
+                              <div className="flex items-center gap-2 py-2">
+                                <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
+                                <span className="text-xs text-zinc-500">Loading voice note…</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {(!isImage && !isAudio) && (
+                          <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                        )}
                         <div className="mt-1 flex items-center gap-1 text-[11px] text-zinc-500">
                           <span>{formatTime(m.created_at)}</span>
                           {mine && (
@@ -886,7 +1204,70 @@ export default function MessagesPage() {
 
           {selectedConversationId && (
             <div className="border-t border-zinc-200 p-3">
+              {recording !== null && (
+                <div className="mb-2 flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
+                  <span className="text-sm text-zinc-600">
+                    Recording… {Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, "0")}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={cancelRecording}
+                      className="rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-600 hover:bg-zinc-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={sendRecording}
+                      className="rounded-lg bg-sky-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-600"
+                    >
+                      Send
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="flex items-center gap-2">
+                <div className="relative shrink-0">
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleImageSelect}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowMediaMenu((o) => !o)}
+                    className="rounded-xl p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
+                    aria-label="Attach"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </button>
+                  {showMediaMenu && (
+                    <>
+                      <div className="fixed inset-0 z-10" aria-hidden onClick={() => setShowMediaMenu(false)} />
+                      <div className="absolute bottom-full left-0 z-20 mb-1 flex gap-1 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg">
+                        <button
+                          type="button"
+                          onClick={() => { imageInputRef.current?.click(); setShowMediaMenu(false); }}
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                        >
+                          <ImagePlus className="h-4 w-4" />
+                          Photo
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setShowMediaMenu(false); void startRecording(); }}
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                        >
+                          <Mic className="h-4 w-4" />
+                          Voice
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
                 <input
                   value={draft}
                   onChange={(e) => {
@@ -906,33 +1287,58 @@ export default function MessagesPage() {
                 <button
                   type="button"
                   onClick={() => void handleSend()}
-                  disabled={!draft.trim()}
+                  disabled={!draft.trim() || !!uploadingMedia}
                   className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-600 disabled:opacity-50"
                 >
-                  Send
+                  {uploadingMedia ? <Loader2 className="h-5 w-5 animate-spin" /> : "Send"}
                 </button>
               </div>
               <div className="mt-2 flex items-center justify-between gap-2">
-                <label className="flex cursor-pointer items-center gap-2 text-xs text-zinc-600">
-                  <span className="flex items-center gap-1" title="View Once (backend coming soon)">
-                    <Eye className="h-4 w-4" />
-                    View Once
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={viewOnce}
-                    onChange={(e) => setViewOnce(e.target.checked)}
-                    className="rounded border-zinc-300 text-sky-500 focus:ring-sky-400"
-                  />
-                </label>
                 <p className="text-[11px] text-zinc-500">
-                  VIP can start chats directly. Others need a mutual match.
+                  VIP can start chats directly. Others need a mutual match. Max 5MB for photos and voice.
                 </p>
               </div>
             </div>
           )}
         </section>
       </div>
+
+      {/* Image preview modal (before send) */}
+      {imagePreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl">
+            <div className="relative aspect-square overflow-hidden rounded-xl bg-zinc-100">
+              <img src={imagePreview.objectUrl} alt="Preview" className="h-full w-full object-contain" />
+            </div>
+            <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-zinc-700">
+              <Eye className="h-4 w-4" />
+              <input
+                type="checkbox"
+                checked={imagePreviewViewOnce}
+                onChange={(e) => setImagePreviewViewOnce(e.target.checked)}
+                className="rounded border-zinc-300 text-sky-500"
+              />
+              View Once
+            </label>
+            <div className="mt-4 flex gap-2">
+              <button
+                type="button"
+                onClick={() => { URL.revokeObjectURL(imagePreview.objectUrl); setImagePreview(null); }}
+                className="flex-1 rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSendImage()}
+                className="flex-1 rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-600"
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Report User modal */}
       {reportModalOpen && selectedConversation && (
