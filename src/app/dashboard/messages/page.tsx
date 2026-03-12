@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { Check, CheckCheck } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { LoadingScreen } from "@/components/LoadingScreen";
 
@@ -509,8 +510,12 @@ export default function MessagesPage() {
                         <div className={`mt-1 flex items-center gap-1 text-[11px] ${mine ? "text-sky-100" : "text-zinc-500"}`}>
                           <span>{formatTime(m.created_at)}</span>
                           {mine && (
-                            <span className={m.is_read ? "text-sky-300" : "text-zinc-400"}>
-                              {m.is_read ? "✓✓" : "✓"}
+                            <span className="flex items-center">
+                              {m.is_read ? (
+                                <CheckCheck size={14} className="text-blue-500" />
+                              ) : (
+                                <Check size={14} className="text-gray-400" />
+                              )}
                             </span>
                           )}
                         </div>
