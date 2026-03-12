@@ -1,12 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { LoadingScreen } from "@/components/LoadingScreen";
-
-type MessageSchema = { sender: string; content: string; read: string | null };
 
 type ConversationItem = {
   id: string;
@@ -24,7 +22,7 @@ type ChatMessage = {
   sender_id: string;
   content: string;
   created_at: string | null;
-  read_at: string | null;
+  is_read: boolean;
 };
 
 function isOnline(lastSeenAt: string | null): boolean {
@@ -58,35 +56,7 @@ export default function MessagesPage() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const msgSchemaRef = useRef<MessageSchema | null>(null);
-
   const conversationPair = { left: "user_one_id", right: "user_two_id" } as const;
-
-  const detectMessageSchema = useCallback(async (): Promise<MessageSchema> => {
-    if (msgSchemaRef.current) return msgSchemaRef.current;
-    const candidates: MessageSchema[] = [
-      { sender: "sender_id", content: "content", read: "read_at" },
-      { sender: "sender_id", content: "body", read: "read_at" },
-      { sender: "from_user_id", content: "content", read: "read_at" },
-      { sender: "from_user_id", content: "body", read: "read_at" },
-      { sender: "sender_id", content: "content", read: "seen_at" },
-      { sender: "from_user_id", content: "content", read: "seen_at" },
-      { sender: "sender_id", content: "content", read: null },
-      { sender: "from_user_id", content: "content", read: null },
-    ];
-    for (const c of candidates) {
-      const readPart = c.read ? `,${c.read}` : "";
-      const { error } = await supabase
-        .from("messages")
-        .select(`id,conversation_id,${c.sender},${c.content},created_at${readPart}`)
-        .limit(1);
-      if (!error) {
-        msgSchemaRef.current = c;
-        return c;
-      }
-    }
-    throw new Error("Unable to detect messages schema.");
-  }, []);
 
   const loadConversations = useCallback(async (userId: string) => {
     const { data: convoRows, error: convoErr } = await supabase
@@ -115,11 +85,10 @@ export default function MessagesPage() {
       (((partnerProfiles as unknown) as any[] ?? [])).map((p) => [p.id as string, p])
     );
 
-    const messageSchema = await detectMessageSchema();
     const convoIds = rows.map((r) => r.id as string);
     const { data: messageRows } = await supabase
       .from("messages")
-      .select(`id,conversation_id,${messageSchema.sender},${messageSchema.content},created_at`)
+      .select("id,conversation_id,sender_id,content,created_at,is_read")
       .in("conversation_id", convoIds)
       .order("created_at", { ascending: false });
 
@@ -151,37 +120,35 @@ export default function MessagesPage() {
         partner_name: (p.full_name as string) ?? "Unknown",
         partner_photo: photo,
         partner_last_seen_at: (p.last_seen_at as string) ?? null,
-        last_message: msg ? String(msg[messageSchema.content] ?? "") : "",
+        last_message: msg ? String(msg.content ?? "") : "",
         last_message_at: (msg?.created_at as string) ?? null,
       };
     });
     setConversations(list);
-  }, [detectMessageSchema]);
+  }, []);
 
   const loadMessages = useCallback(async (conversationId: string) => {
     setLoadingMessages(true);
     try {
-      const mSchema = await detectMessageSchema();
-      const readPart = mSchema.read ? `,${mSchema.read}` : "";
       const { data, error: msgErr } = await supabase
         .from("messages")
-        .select(`id,conversation_id,${mSchema.sender},${mSchema.content},created_at${readPart}`)
+        .select("id,conversation_id,sender_id,content,created_at,is_read")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: true });
       if (msgErr) throw msgErr;
       const list = ((data as unknown) as any[] ?? []).map((m) => ({
         id: m.id as string,
         conversation_id: m.conversation_id as string,
-        sender_id: String(m[mSchema.sender] ?? ""),
-        content: String(m[mSchema.content] ?? ""),
+        sender_id: String(m.sender_id ?? ""),
+        content: String(m.content ?? ""),
         created_at: (m.created_at as string) ?? null,
-        read_at: mSchema.read ? ((m[mSchema.read] as string) ?? null) : null,
+        is_read: Boolean(m.is_read),
       }));
       setMessages(list);
     } finally {
       setLoadingMessages(false);
     }
-  }, [detectMessageSchema]);
+  }, []);
 
   const findOrCreateConversation = useCallback(async (me: string, other: string): Promise<string | null> => {
     const { data: existing, error: existingErr } = await supabase
@@ -309,14 +276,12 @@ export default function MessagesPage() {
   const handleSend = async () => {
     if (!currentUserId || !selectedConversationId || !draft.trim()) return;
     try {
-      const mSchema = await detectMessageSchema();
-      const payload: Record<string, unknown> = {
+      const { error: sendErr } = await supabase.from("messages").insert({
         conversation_id: selectedConversationId,
-        [mSchema.sender]: currentUserId,
-        [mSchema.content]: draft.trim(),
-      };
-      if (mSchema.read) payload[mSchema.read] = null;
-      const { error: sendErr } = await supabase.from("messages").insert(payload);
+        sender_id: currentUserId,
+        content: draft.trim(),
+        is_read: false,
+      });
       if (sendErr) throw sendErr;
       setDraft("");
     } catch (e) {
@@ -405,7 +370,7 @@ export default function MessagesPage() {
                         <p className="whitespace-pre-wrap break-words">{m.content}</p>
                         <div className={`mt-1 flex items-center gap-1 text-[11px] ${mine ? "text-sky-100" : "text-zinc-500"}`}>
                           <span>{formatTime(m.created_at)}</span>
-                          {mine && <span>{m.read_at ? "✓✓" : "✓"}</span>}
+                          {mine && <span>{m.is_read ? "✓✓" : "✓"}</span>}
                         </div>
                       </div>
                     </li>
