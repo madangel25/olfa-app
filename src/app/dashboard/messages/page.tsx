@@ -236,6 +236,9 @@ export default function MessagesPage() {
     const channel = supabase
       .channel(`messages:list:${currentUserId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, async (payload) => {
+        // Debug: see every new message event we receive
+        // eslint-disable-next-line no-console
+        console.log("New message received via Realtime:", payload);
         const cid = (payload.new as Record<string, unknown>)?.conversation_id as string | undefined;
         if (!cid) return;
         await loadConversations(currentUserId);
@@ -276,6 +279,18 @@ export default function MessagesPage() {
   const handleSend = async () => {
     if (!currentUserId || !selectedConversationId || !draft.trim()) return;
     try {
+      // Optimistic UI: add the message locally before waiting for Supabase
+      const optimisticId = `optimistic-${Date.now()}`;
+      const optimisticMessage: ChatMessage = {
+        id: optimisticId,
+        conversation_id: selectedConversationId,
+        sender_id: currentUserId,
+        content: draft.trim(),
+        created_at: new Date().toISOString(),
+        is_read: false,
+      };
+      setMessages((prev) => [...prev, optimisticMessage]);
+
       const { error: sendErr } = await supabase.from("messages").insert({
         conversation_id: selectedConversationId,
         sender_id: currentUserId,
@@ -284,7 +299,11 @@ export default function MessagesPage() {
       });
       if (sendErr) throw sendErr;
       setDraft("");
+      // Sync with DB state so the optimistic message is replaced by the real row
+      await loadMessages(selectedConversationId);
     } catch (e) {
+      // Roll back optimistic message on error
+      setMessages((prev) => prev.filter((m) => !m.id.startsWith("optimistic-")));
       setError(e instanceof Error ? e.message : "Failed to send message.");
     }
   };
