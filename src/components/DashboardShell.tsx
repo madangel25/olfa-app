@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -68,11 +68,24 @@ const HOVER_SIDEBAR = {
   neutral: "hover:bg-violet-50 hover:text-violet-800",
 } as const;
 
+type OnlinePresenceContextValue = {
+  onlineUserIds: Set<string>;
+};
+
+const OnlinePresenceContext = createContext<OnlinePresenceContextValue>({
+  onlineUserIds: new Set(),
+});
+
+export function useOnlinePresence(): OnlinePresenceContextValue {
+  return useContext(OnlinePresenceContext);
+}
+
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { dir, locale } = useLanguage();
   const { theme } = useTheme();
   const [profileComplete, setProfileComplete] = useState<number | null>(null);
+  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
 
   const isRtl = dir === "rtl";
   const linkActiveClass = isRtl ? THEME_ACTIVE_RTL[theme] : THEME_ACTIVE_LTR[theme];
@@ -111,15 +124,62 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
   }, []);
 
+  // Global online presence: any open dashboard tab marks user as online.
+  useEffect(() => {
+    let active = true;
+    let channel: any = null;
+
+    const init = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user || !active) return;
+
+      channel = supabase
+        .channel("global_presence", {
+          config: {
+            presence: {
+              key: user.id,
+            },
+          },
+        })
+        .on("presence", { event: "sync" }, () => {
+          const state = channel.presenceState() as Record<string, Array<{ user_id?: string }>>;
+          const ids = new Set<string>();
+          Object.values(state).forEach((entries) => {
+            entries.forEach((entry) => {
+              if (entry.user_id) ids.add(String(entry.user_id));
+            });
+          });
+          setOnlineUserIds(ids);
+        });
+
+      channel.subscribe((status: string) => {
+        if (status === "SUBSCRIBED") {
+          void channel.track({ user_id: user.id });
+        }
+      });
+    };
+
+    void init();
+    return () => {
+      active = false;
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, []);
+
   const showProgress = profileComplete !== null && profileComplete < 100;
   const sidebarBorder = isRtl ? SIDEBAR_BORDER_RTL[theme] : SIDEBAR_BORDER_LTR[theme];
 
   return (
-    <div
-      className="min-h-screen font-[family-name:var(--font-cairo)] text-zinc-900"
-      style={{ background: "var(--theme-bg)" }}
-    >
-      <div className="relative min-h-screen">
+    <OnlinePresenceContext.Provider value={{ onlineUserIds }}>
+      <div
+        className="min-h-screen font-[family-name:var(--font-cairo)] text-zinc-900"
+        style={{ background: "var(--theme-bg)" }}
+      >
+        <div className="relative min-h-screen">
         {/* Sidebar: starts at top-16 (below navbar), z-40, height calc(100vh - 64px). */}
         <aside
           className={`fixed top-16 z-40 hidden h-[calc(100vh-4rem)] w-64 border-t-0 bg-white md:block ${locale === "ar" ? "right-0 border-l" : "left-0 border-r"} ${sidebarBorder}`}
@@ -162,7 +222,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
         {/* Main: pt-16 (below navbar), px-8 breathing room, md:pl-64/md:pr-64 for sidebar (only md+). */}
         <main
-          className={`min-w-0 w-full flex-1 pt-16 px-8 py-4 ${locale === "ar" ? "md:pr-64" : "md:pl-64"}`}
+          className={`min-w-0 w-full flex-1 pt-16 px-8 py-4 ${
+            locale === "ar" ? "md:pr-64" : "md:pl-64"
+          }`}
         >
           {showProgress && (
             <div className="mb-4">
@@ -202,6 +264,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           <div className="w-full">{children}</div>
         </main>
       </div>
-    </div>
+    </OnlinePresenceContext.Provider>
   );
 }

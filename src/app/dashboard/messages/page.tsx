@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Check, CheckCheck } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { LoadingScreen } from "@/components/LoadingScreen";
+import { useOnlinePresence } from "@/components/DashboardShell";
 
 type ConversationItem = {
   id: string;
@@ -59,11 +60,11 @@ export default function MessagesPage() {
 
   const conversationPair = { left: "user_one_id", right: "user_two_id" } as const;
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
-  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
   const messagesChannelRef = useRef<any>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { onlineUserIds } = useOnlinePresence();
 
   const loadConversations = useCallback(async (userId: string) => {
     const { data: convoRows, error: convoErr } = await supabase
@@ -244,38 +245,6 @@ export default function MessagesPage() {
       active = false;
     };
   }, [findOrCreateConversation, loadConversations, router, withUserId]);
-
-  useEffect(() => {
-    if (!currentUserId) return;
-    const channel = supabase
-      .channel("online-users", {
-        config: {
-          presence: {
-            key: currentUserId,
-          },
-        },
-      })
-      .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState() as Record<string, Array<{ user_id?: string }>>;
-        const ids = new Set<string>();
-        Object.values(state).forEach((entries) => {
-          entries.forEach((entry) => {
-            if (entry.user_id) ids.add(String(entry.user_id));
-          });
-        });
-        setOnlineUserIds(ids);
-      });
-
-    channel.subscribe((status) => {
-      if (status === "SUBSCRIBED") {
-        void channel.track({ user_id: currentUserId });
-      }
-    });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [currentUserId]);
 
   // Per-conversation realtime channel for messages, typing, and read-sync
   useEffect(() => {
@@ -504,15 +473,21 @@ export default function MessagesPage() {
                 onClick={() => setSelectedConversationId(c.id)}
                 className={`flex w-full items-center gap-3 px-4 py-3 text-right transition ${selected ? "bg-sky-50" : "hover:bg-zinc-50"}`}
               >
-                <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-zinc-100">
-                  {c.partner_photo ? (
-                    <img src={c.partner_photo} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-zinc-500">
-                      {(c.partner_name || "?").slice(0, 1)}
-                    </div>
-                  )}
-                  <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border border-white ${isPartnerOnline ? "bg-emerald-500" : "bg-zinc-300"}`} />
+                <div className="relative h-11 w-11 shrink-0">
+                  <div className="h-11 w-11 overflow-hidden rounded-full bg-zinc-100">
+                    {c.partner_photo ? (
+                      <img src={c.partner_photo} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-zinc-500">
+                        {(c.partner_name || "?").slice(0, 1)}
+                      </div>
+                    )}
+                  </div>
+                  <span
+                    className={`absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-white ${
+                      isPartnerOnline ? "bg-emerald-500" : "bg-zinc-300"
+                    }`}
+                  />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
@@ -535,18 +510,22 @@ export default function MessagesPage() {
             <p className="text-sm font-semibold text-zinc-900">
               {selectedConversation?.partner_name ?? "Select a conversation"}
             </p>
-            {selectedConversation && (
-              <p className="mt-0.5 text-xs text-zinc-500">
-                {onlineUserIds.has(selectedConversation.partner_id)
-                  ? "متصل الآن"
-                  : selectedConversation.partner_last_seen_at
-                  ? `آخر ظهور ${formatTime(selectedConversation.partner_last_seen_at)}`
-                  : ""}
-              </p>
-            )}
-            {isPartnerTyping && (
-              <p className="mt-0.5 text-xs text-sky-500 animate-pulse">يكتب الآن...</p>
-            )}
+            {selectedConversation && (() => {
+              const online =
+                onlineUserIds.has(selectedConversation.partner_id) ||
+                isOnline(selectedConversation.partner_last_seen_at);
+              let status: string | null = null;
+              if (isPartnerTyping) {
+                status = "يكتب الآن...";
+              } else if (online) {
+                status = "متصل الآن";
+              } else if (selectedConversation.partner_last_seen_at) {
+                status = `آخر ظهور ${formatTime(selectedConversation.partner_last_seen_at)}`;
+              }
+              return status ? (
+                <p className="mt-0.5 text-xs text-zinc-500">{status}</p>
+              ) : null;
+            })()}
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50 px-3 py-4">
