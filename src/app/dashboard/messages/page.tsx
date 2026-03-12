@@ -435,9 +435,7 @@ export default function MessagesPage() {
         <aside className="overflow-y-auto border-b border-zinc-200 md:border-b-0 md:border-l">
           {(conversations ?? []).map((c) => {
             const selected = selectedConversationId === c.id;
-            const online = isOnline(c.partner_last_seen_at);
-            const isOnlineNow = onlineUserIds.has(c.partner_id);
-            const online = isOnlineNow || isOnline(c.partner_last_seen_at);
+            const isPartnerOnline = onlineUserIds.has(c.partner_id) || isOnline(c.partner_last_seen_at);
             return (
               <button
                 key={c.id}
@@ -453,7 +451,7 @@ export default function MessagesPage() {
                       {(c.partner_name || "?").slice(0, 1)}
                     </div>
                   )}
-                  <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border border-white ${online ? "bg-emerald-500" : "bg-zinc-300"}`} />
+                  <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border border-white ${isPartnerOnline ? "bg-emerald-500" : "bg-zinc-300"}`} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
