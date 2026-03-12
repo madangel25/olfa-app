@@ -67,6 +67,29 @@ export default function MessagesPage() {
   const autoReadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { onlineUserIds } = useOnlinePresence();
 
+  // Shared helper: mark all messages in the current conversation as read in DB and broadcast.
+  const markConversationRead = useCallback(async () => {
+    if (!selectedConversationId || !currentUserId) return;
+    try {
+      await supabase.rpc("mark_messages_as_read", {
+        p_conversation_id: selectedConversationId,
+      });
+      const ch = messagesChannelRef.current;
+      if (ch) {
+        void ch.send({
+          type: "broadcast",
+          event: "messages_read",
+          payload: {
+            conversation_id: selectedConversationId,
+            reader_id: currentUserId,
+          },
+        });
+      }
+    } catch {
+      // Ignore RPC/broadcast errors – UI will still function via local state / UPDATE events.
+    }
+  }, [currentUserId, selectedConversationId]);
+
   const loadConversations = useCallback(async (userId: string) => {
     const { data: convoRows, error: convoErr } = await supabase
       .from("conversations")
@@ -388,29 +411,6 @@ export default function MessagesPage() {
     () => conversations.find((c) => c.id === selectedConversationId) ?? null,
     [conversations, selectedConversationId]
   );
-
-  // Shared helper: mark all messages in the current conversation as read in DB and broadcast.
-  const markConversationRead = useCallback(async () => {
-    if (!selectedConversationId || !currentUserId) return;
-    try {
-      await supabase.rpc("mark_messages_as_read", {
-        p_conversation_id: selectedConversationId,
-      });
-      const ch = messagesChannelRef.current;
-      if (ch) {
-        void ch.send({
-          type: "broadcast",
-          event: "messages_read",
-          payload: {
-            conversation_id: selectedConversationId,
-            reader_id: currentUserId,
-          },
-        });
-      }
-    } catch {
-      // Ignore RPC/broadcast errors – UI will still function via local state / UPDATE events.
-    }
-  }, [currentUserId, selectedConversationId]);
 
   // Debounced helper to broadcast typing status on the current chat channel
   const sendTypingStatus = useCallback(
