@@ -363,13 +363,18 @@ export default function MessagesPage() {
 
   // Mark messages as read when a conversation is opened/viewed
   useEffect(() => {
-    if (!selectedConversationId || !currentUserId) return;
-    void supabase
-      .rpc("mark_messages_as_read", { p_conversation_id: selectedConversationId })
-      .catch(() => {
+    const markAsRead = async () => {
+      if (!selectedConversationId) return;
+      try {
+        await supabase.rpc("mark_messages_as_read", {
+          p_conversation_id: selectedConversationId,
+        });
+      } catch {
         // ignore RPC errors for now – UI will still function
-      });
-  }, [selectedConversationId, currentUserId]);
+      }
+    };
+    void markAsRead();
+  }, [selectedConversationId]);
 
   const selectedConversation = useMemo(
     () => conversations.find((c) => c.id === selectedConversationId) ?? null,
