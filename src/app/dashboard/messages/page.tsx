@@ -16,6 +16,7 @@ type ConversationItem = {
   partner_last_seen_at: string | null;
   last_message: string;
   last_message_at: string | null;
+  hasUnread: boolean;
 };
 
 type ChatMessage = {
@@ -146,6 +147,8 @@ export default function MessagesPage() {
       const photoIndex = typeof p.primary_photo_index === "number" ? p.primary_photo_index : 0;
       const photo = photos[photoIndex] ?? photos[0] ?? null;
       const msg = latestByConversation.get(conversationId);
+      const lastFromPartner = msg && String(msg.sender_id) !== userId;
+      const hasUnread = Boolean(msg && lastFromPartner && msg.is_read === false);
       return {
         id: conversationId,
         partner_id: partnerId,
@@ -154,6 +157,7 @@ export default function MessagesPage() {
         partner_last_seen_at: (p.last_seen_at as string) ?? null,
         last_message: msg ? String(msg.content ?? "") : "",
         last_message_at: (msg?.created_at as string) ?? null,
+        hasUnread,
       };
     });
     setConversations(list);
@@ -270,6 +274,24 @@ export default function MessagesPage() {
     };
   }, [findOrCreateConversation, loadConversations, router, withUserId]);
 
+  // Inbox: when no conversation is selected, still listen for new messages so unread badges update
+  useEffect(() => {
+    if (!currentUserId) return;
+    const channel = supabase
+      .channel(`inbox_${currentUserId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        () => {
+          void loadConversations(currentUserId);
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUserId, loadConversations]);
+
   // Per-conversation realtime channel for messages, typing, and read-sync
   useEffect(() => {
     if (!currentUserId || !selectedConversationId) return;
@@ -279,14 +301,14 @@ export default function MessagesPage() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
         async (payload) => {
-          // eslint-disable-next-line no-console
-          console.log("New message received via Realtime:", payload);
           const row = payload.new as Record<string, unknown>;
           const cid = row.conversation_id as string | undefined;
-          if (!cid || cid !== selectedConversationId) return;
+          if (!cid) return;
 
-          // Update conversations list (last message preview, timestamps)
+          // Always refresh conversation list so unread badge updates for any conversation
           await loadConversations(currentUserId);
+
+          if (cid !== selectedConversationId) return;
 
           const incoming: ChatMessage = {
             id: String(row.id),
@@ -374,11 +396,7 @@ export default function MessagesPage() {
     };
   }, [currentUserId, loadConversations, selectedConversationId]);
 
-  useEffect(() => {
-    if (!selectedConversationId && conversations.length > 0) {
-      setSelectedConversationId(conversations[0].id);
-    }
-  }, [conversations, selectedConversationId]);
+  // No auto-select: user must pick a conversation. Placeholder shown when none selected.
 
   useEffect(() => {
     if (!selectedConversationId) {
@@ -498,7 +516,14 @@ export default function MessagesPage() {
               <button
                 key={c.id}
                 type="button"
-                onClick={() => setSelectedConversationId(c.id)}
+                onClick={() => {
+                  setSelectedConversationId(c.id);
+                  setConversations((prev) =>
+                    prev.map((conv) =>
+                      conv.id === c.id ? { ...conv, hasUnread: false } : conv
+                    )
+                  );
+                }}
                 className={`flex w-full items-center gap-3 px-4 py-3 text-right transition ${selected ? "bg-sky-50" : "hover:bg-zinc-50"}`}
               >
                 <div className="relative h-11 w-11 shrink-0">
@@ -520,7 +545,12 @@ export default function MessagesPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <p className="truncate text-sm font-semibold text-zinc-900">{c.partner_name}</p>
-                    <span className="text-[11px] text-zinc-500">{formatTime(c.last_message_at)}</span>
+                    <span className="flex shrink-0 items-center gap-1">
+                      {c.hasUnread && (
+                        <span className="h-2 w-2 rounded-full bg-red-500" title="Unread" />
+                      )}
+                      <span className="text-[11px] text-zinc-500">{formatTime(c.last_message_at)}</span>
+                    </span>
                   </div>
                   <p className="truncate text-xs text-zinc-600">{c.last_message || "ابدأ المحادثة"}</p>
                 </div>
@@ -535,29 +565,57 @@ export default function MessagesPage() {
         {/* Message thread */}
         <section className="flex min-h-0 flex-col">
           <div className="border-b border-zinc-200 px-4 py-3">
-            <p className="text-sm font-semibold text-zinc-900">
-              {selectedConversation?.partner_name ?? "Select a conversation"}
-            </p>
-            {selectedConversation && (() => {
-              const online =
-                onlineUserIds.has(selectedConversation.partner_id) ||
-                isOnline(selectedConversation.partner_last_seen_at);
-              let status: string | null = null;
-              if (isPartnerTyping) {
-                status = "يكتب الآن...";
-              } else if (online) {
-                status = "متصل الآن";
-              } else if (selectedConversation.partner_last_seen_at) {
-                status = `آخر ظهور ${formatTime(selectedConversation.partner_last_seen_at)}`;
-              }
-              return status ? (
-                <p className="mt-0.5 text-xs text-zinc-500">{status}</p>
-              ) : null;
-            })()}
+            {selectedConversation ? (
+              <>
+                <Link
+                  href={`/profile/${selectedConversation.partner_id}`}
+                  className="flex items-center gap-3 no-underline outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-1 rounded-lg -m-1 p-1"
+                >
+                  <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-zinc-200">
+                    {selectedConversation.partner_photo ? (
+                      <img
+                        src={selectedConversation.partner_photo}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-zinc-500">
+                        {(selectedConversation.partner_name || "?").slice(0, 1)}
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-sm font-semibold text-zinc-900 truncate">
+                    {selectedConversation.partner_name}
+                  </p>
+                </Link>
+                {(() => {
+                  const online =
+                    onlineUserIds.has(selectedConversation.partner_id) ||
+                    isOnline(selectedConversation.partner_last_seen_at);
+                  let status: string | null = null;
+                  if (isPartnerTyping) {
+                    status = "يكتب الآن...";
+                  } else if (online) {
+                    status = "متصل الآن";
+                  } else if (selectedConversation.partner_last_seen_at) {
+                    status = `آخر ظهور ${formatTime(selectedConversation.partner_last_seen_at)}`;
+                  }
+                  return status ? (
+                    <p className="mt-0.5 text-xs text-zinc-500">{status}</p>
+                  ) : null;
+                })()}
+              </>
+            ) : (
+              <p className="text-sm font-semibold text-zinc-500">Select a conversation</p>
+            )}
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50 px-3 py-4">
-            {loadingMessages ? (
+            {!selectedConversationId ? (
+              <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center text-zinc-500">
+                <p className="text-sm">Select a conversation to start chatting.</p>
+              </div>
+            ) : loadingMessages ? (
               <p className="text-center text-sm text-zinc-500">Loading messages...</p>
             ) : messages.length === 0 ? (
               <p className="text-center text-sm text-zinc-500">No messages yet.</p>
@@ -596,37 +654,39 @@ export default function MessagesPage() {
             )}
           </div>
 
-          <div className="border-t border-zinc-200 p-3">
-            <div className="flex items-center gap-2">
-              <input
-                value={draft}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setDraft(value);
-                  sendTypingStatus(true);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    void handleSend();
-                  }
-                }}
-                placeholder="Type a message..."
-                className="flex-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
-              />
-              <button
-                type="button"
-                onClick={() => void handleSend()}
-                disabled={!selectedConversationId || !draft.trim()}
-                className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-600 disabled:opacity-50"
-              >
-                Send
-              </button>
+          {selectedConversationId && (
+            <div className="border-t border-zinc-200 p-3">
+              <div className="flex items-center gap-2">
+                <input
+                  value={draft}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setDraft(value);
+                    sendTypingStatus(true);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      void handleSend();
+                    }
+                  }}
+                  placeholder="Type a message..."
+                  className="flex-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => void handleSend()}
+                  disabled={!draft.trim()}
+                  className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-600 disabled:opacity-50"
+                >
+                  Send
+                </button>
+              </div>
+              <p className="mt-1 text-[11px] text-zinc-500">
+                VIP can start chats directly. Others need a mutual match.
+              </p>
             </div>
-            <p className="mt-1 text-[11px] text-zinc-500">
-              VIP can start chats directly. Others need a mutual match.
-            </p>
-          </div>
+          )}
         </section>
       </div>
     </div>
