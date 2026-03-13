@@ -7,7 +7,9 @@ export type AdminActionType =
   | "role_change"
   | "message_flag"
   | "message_unflag"
-  | "behavior_score_adjust";
+  | "behavior_score_adjust"
+  | "report_warn"
+  | "report_ban";
 
 export async function logAdminAction(
   adminId: string,
