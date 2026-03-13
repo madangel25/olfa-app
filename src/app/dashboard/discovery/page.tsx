@@ -10,7 +10,6 @@ import { useOnlinePresence } from "@/components/DashboardShell";
 import {
   Search,
   Heart,
-  MessageCircle,
   MapPin,
   Users,
   SlidersHorizontal,
@@ -404,36 +403,26 @@ export default function DiscoveryPage() {
             </button>
           )}
           {canCommunicate && (
-            <>
-              {u.is_match ? (
-                <Link
-                  href={`/dashboard/messages?with=${u.id}`}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-500 text-white transition hover:bg-rose-600"
-                  title={copy.message}
-                >
-                  <MessageCircle className="h-4 w-4" />
-                </Link>
-              ) :               u.i_liked ? (
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-stone-50 text-stone-500" title={copy.liked}>
-                  <Heart className="h-4 w-4 fill-current" />
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handleLike(u.id)}
-                  disabled={likingId === u.id}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
-                  title={copy.like}
-                  aria-label={copy.like}
-                >
-                  {likingId === u.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Heart className="h-4 w-4" />
-                  )}
-                </button>
-              )}
-            </>
+            u.i_liked ? (
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-stone-50 text-stone-500" title={copy.liked}>
+                <Heart className="h-4 w-4 fill-current" />
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleLike(u.id)}
+                disabled={likingId === u.id}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
+                title={copy.like}
+                aria-label={copy.like}
+              >
+                {likingId === u.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Heart className="h-4 w-4" />
+                )}
+              </button>
+            )
           )}
         </div>
       </div>

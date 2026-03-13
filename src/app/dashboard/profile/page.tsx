@@ -104,25 +104,25 @@ export default function DashboardProfileViewPage() {
 
   useEffect(() => {
     const run = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
       if (!user) { router.replace("/login"); return; }
-      const { data, error } = await supabase
-        .from("profiles")
+        const { data, error } = await supabase
+          .from("profiles")
         .select("full_name, gender, age, job_title, education_level, marital_status, height_cm, weight_kg, country, city, nationality, skin_tone, smoking_status, religious_commitment, desire_children, about_me, ideal_partner, photo_urls, primary_photo_index")
-        .eq("id", user.id)
-        .maybeSingle();
+          .eq("id", user.id)
+          .maybeSingle();
 
       if (error || !data) { setLoading(false); return; }
       setUserId(user.id);
 
-      const raw = data as Record<string, unknown>;
-      let photo_urls: string[] = [];
-      if (Array.isArray(raw.photo_urls)) {
-        photo_urls = raw.photo_urls.filter((u): u is string => typeof u === "string");
-      }
+          const raw = data as Record<string, unknown>;
+          let photo_urls: string[] = [];
+            if (Array.isArray(raw.photo_urls)) {
+              photo_urls = raw.photo_urls.filter((u): u is string => typeof u === "string");
+            }
       const primary_photo_index = typeof raw.primary_photo_index === "number" ? raw.primary_photo_index : 0;
       const ageVal = raw.age;
-      setProfile({
+          setProfile({
         full_name: (raw.full_name as string) ?? null,
         gender: (raw.gender as string) ?? null,
         age: ageVal != null ? String(ageVal) : null,
@@ -140,7 +140,7 @@ export default function DashboardProfileViewPage() {
         desire_children: (raw.desire_children as string) ?? null,
         about_me: (raw.about_me as string) ?? null,
         ideal_partner: (raw.ideal_partner as string) ?? null,
-        photo_urls,
+            photo_urls,
         primary_photo_index,
       });
 
@@ -236,22 +236,22 @@ export default function DashboardProfileViewPage() {
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-[28px] font-semibold text-rose-600">
                   {(profile.full_name ?? "?").slice(0, 1)}
-                </div>
-              )}
-            </div>
+                  </div>
+                    )}
+                  </div>
             <div className={`flex gap-2 pb-2 pt-2 ${isRtl ? "flex-row-reverse" : ""}`}>
-              <button
-                type="button"
+                        <button
+                          type="button"
                 onClick={() => setViewAsPublic((v) => !v)}
                 className="rounded-lg border border-stone-200 bg-white px-3.5 py-2 text-[13px] font-medium text-stone-700 transition hover:bg-stone-100"
-              >
+                        >
                 {viewAsPublic ? (locale === "ar" ? "إغلاق المعاينة" : "Close preview") : (locale === "ar" ? "مشاركة" : "Share")}
-              </button>
+                        </button>
               <Link href={EDIT_PROFILE_HREF} className="rounded-lg bg-rose-500 px-5 py-2 text-[13px] font-semibold text-white transition hover:bg-rose-600">
                 {t("profile.editProfile")}
               </Link>
-            </div>
-          </div>
+                      </div>
+                    </div>
 
           <div className="mt-3 pb-6">
             <h1 className="text-xl font-semibold text-stone-900">{profile.full_name ?? "—"}</h1>
@@ -262,8 +262,8 @@ export default function DashboardProfileViewPage() {
               {maritalLabel && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-rose-100 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-600">
                   <Heart className="h-3 w-3" /> {maritalLabel}
-                </span>
-              )}
+                        </span>
+                      )}
               {location && (
                 <span className="inline-flex items-center gap-1 text-xs text-stone-400">
                   <MapPin className="h-3 w-3" /> {location}
@@ -280,11 +280,11 @@ export default function DashboardProfileViewPage() {
                     <p className="mt-0.5 text-[13px] font-medium text-stone-900">{item.value}</p>
                   </div>
                 ))}
-              </div>
+                  </div>
             )}
-          </div>
-        </div>
-      </div>
+                  </div>
+                </div>
+                  </div>
 
       {/* About Me card */}
       <div className="mt-4 rounded-xl border border-stone-200 bg-white px-5 py-4 shadow-[0_1px_3px_rgba(0,0,0,.07)]">
@@ -297,9 +297,9 @@ export default function DashboardProfileViewPage() {
             <Link href={EDIT_PROFILE_HREF} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-rose-500 px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-rose-600">
               <Wand2 className="h-4 w-4" /> {t("profile.letAiWriteBioNow")}
             </Link>
-          </div>
-        )}
-      </div>
+                </div>
+                    )}
+                  </div>
 
       {/* Ideal Partner card */}
       <div className="mt-3 rounded-xl border border-stone-200 bg-white px-5 py-4 shadow-[0_1px_3px_rgba(0,0,0,.07)]">
@@ -312,9 +312,9 @@ export default function DashboardProfileViewPage() {
             <Link href={EDIT_PROFILE_HREF} className="mt-3 inline-flex items-center gap-2 rounded-lg bg-rose-500 px-4 py-2 text-[13px] font-semibold text-white transition hover:bg-rose-600">
               <Wand2 className="h-4 w-4" /> {t("profile.letAiWriteBioNow")}
             </Link>
-          </div>
-        )}
-      </div>
+                  </div>
+                    )}
+                  </div>
 
       {/* Stats strip */}
       <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -325,8 +325,8 @@ export default function DashboardProfileViewPage() {
               <div className="h-full rounded-full bg-rose-400 transition-all duration-500" style={{ width: `${strengthPercent}%` }} />
             </div>
             <span className="text-sm font-semibold text-stone-900">{strengthPercent}%</span>
-          </div>
-        </div>
+                  </div>
+                </div>
         <div className="rounded-xl border border-stone-200 bg-white px-5 py-4 shadow-[0_1px_3px_rgba(0,0,0,.07)]">
           <p className="text-[11px] font-semibold uppercase tracking-[.07em] text-stone-500">{t("profile.charismaRating")}</p>
           <div className={`mt-2 flex items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
@@ -336,8 +336,8 @@ export default function DashboardProfileViewPage() {
               ))}
             </div>
             <span className="text-sm font-semibold text-stone-900">{charismaOutOf10}/10</span>
-          </div>
-        </div>
+                </div>
+              </div>
         <div className="rounded-xl border border-stone-200 bg-white px-5 py-4 shadow-[0_1px_3px_rgba(0,0,0,.07)]">
           <p className="text-[11px] font-semibold uppercase tracking-[.07em] text-stone-500">{t("profile.communityRating")}</p>
           {communityRating !== null && communityRating.count > 0 ? (
@@ -352,8 +352,8 @@ export default function DashboardProfileViewPage() {
           ) : (
             <p className="mt-2 text-sm text-stone-400">{locale === "ar" ? "لا توجد تقييمات بعد" : "No ratings yet"}</p>
           )}
-        </div>
-      </div>
+                </div>
+              </div>
 
       {/* Bottom actions */}
       <div className={`mt-4 flex flex-wrap items-center gap-3 ${isRtl ? "flex-row-reverse" : ""}`}>
