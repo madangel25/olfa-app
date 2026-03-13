@@ -683,20 +683,20 @@ export default function ProfilePage() {
     );
   }
 
-  const isFemale = (profile.gender || "").toLowerCase() === "female";
+  const isFemale = false;
   const theme = {
-    accent: isFemale ? "pink" : "sky",
-    bg: isFemale ? "bg-pink-100" : "bg-sky-100",
-    border: isFemale ? "border-pink-300" : "border-sky-300",
-    text: isFemale ? "text-pink-600" : "text-sky-600",
-    textMuted: isFemale ? "text-pink-700" : "text-sky-700",
-    focusRing: isFemale ? "focus:ring-pink-500" : "focus:ring-sky-500",
-    hoverBorder: isFemale ? "hover:border-pink-400" : "hover:border-sky-400",
-    hoverBg: isFemale ? "hover:bg-pink-100" : "hover:bg-sky-100",
-    hoverText: isFemale ? "hover:text-pink-600" : "hover:text-sky-600",
-    fill: isFemale ? "fill-pink-600" : "fill-sky-600",
-    badge: isFemale ? "bg-pink-500" : "bg-sky-500",
-    primaryBtn: isFemale ? "bg-pink-500 hover:bg-pink-600 text-white border-0" : "bg-sky-500 hover:bg-sky-600 text-white border-0",
+    accent: "slate",
+    bg: "bg-slate-100",
+    border: "border-slate-200",
+    text: "text-slate-700",
+    textMuted: "text-slate-700",
+    focusRing: "focus:ring-slate-400",
+    hoverBorder: "hover:border-slate-300",
+    hoverBg: "hover:bg-slate-100",
+    hoverText: "hover:text-slate-700",
+    fill: "fill-slate-700",
+    badge: "bg-slate-600",
+    primaryBtn: "bg-slate-900 hover:bg-slate-800 text-white border-0",
   };
 
   const cardClass = "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6";
@@ -730,7 +730,7 @@ export default function ProfilePage() {
 
       {/* Stepper */}
       <nav
-        className="flex flex-wrap gap-2 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm sm:flex-nowrap"
+        className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm sm:flex-nowrap"
         aria-label="Profile sections"
       >
         {STEP_ORDER.map(({ id, icon: Icon, key }) => (

@@ -234,13 +234,13 @@ function AudioMiniPlayer({ src }: { src: string }) {
         <button
           type="button"
           onClick={() => void toggle()}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-sky-500 text-white hover:bg-sky-600"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-white hover:bg-slate-800"
         >
           {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
         </button>
         <div className="min-w-0 flex-1">
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
-            <div className="h-full rounded-full bg-sky-500 transition-all" style={{ width: `${progress}%` }} />
+            <div className="h-full rounded-full bg-slate-900 transition-all" style={{ width: `${progress}%` }} />
           </div>
           <div className="mt-1 text-[10px] text-zinc-500">
             {formatAudioTime(currentTime)} / {formatAudioTime(duration || 0)}
@@ -1111,7 +1111,7 @@ export default function MessagesPage() {
                     )
                   );
                 }}
-                className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-right transition ${selected ? "bg-sky-50" : "hover:bg-zinc-100/80"}`}
+                className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-right transition ${selected ? "bg-slate-100" : "hover:bg-zinc-100/80"}`}
               >
                 <div className="relative h-10 w-10 shrink-0">
                   <div className="h-10 w-10 overflow-hidden rounded-full bg-zinc-100">
@@ -1249,11 +1249,11 @@ export default function MessagesPage() {
                   <p className="mb-3 text-sm font-semibold text-zinc-800">{copy.personalityInsights}</p>
                   <div className="space-y-3">
                     <div className="rounded-xl bg-white/80 p-2">
-                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-zinc-600"><Zap className="h-3.5 w-3.5 text-sky-600" /> {copy.responseSpeed}</p>
+                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-zinc-600"><Zap className="h-3.5 w-3.5 text-slate-600" /> {copy.responseSpeed}</p>
                       <p className="text-sm font-semibold text-zinc-900">{personalityInsights.responseSpeedLabel}</p>
                     </div>
                     <div className="rounded-xl bg-white/80 p-2">
-                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-zinc-600"><Gauge className="h-3.5 w-3.5 text-violet-600" /> {copy.engagement}</p>
+                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-zinc-600"><Gauge className="h-3.5 w-3.5 text-slate-600" /> {copy.engagement}</p>
                       <p className="text-sm font-semibold text-zinc-900">{personalityInsights.engagementLabel}</p>
                     </div>
                     <div className="rounded-xl bg-white/80 p-2">
@@ -1300,8 +1300,8 @@ export default function MessagesPage() {
                       <div
                         className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm font-medium shadow-sm border ${
                           mine
-                            ? "bg-sky-50 border-sky-100 text-zinc-800"
-                            : "bg-pink-50 border-pink-100 text-zinc-800"
+                            ? "bg-slate-100 border-slate-200 text-zinc-800"
+                            : "bg-white border-slate-200 text-zinc-800"
                         }`}
                       >
                         {isImage && m.attachment_url && (
@@ -1349,9 +1349,9 @@ export default function MessagesPage() {
                           {mine && (
                             <span className="flex items-center">
                               {m.is_read ? (
-                                <CheckCheck size={15} className="text-sky-600" />
+                                <CheckCheck size={15} className="text-slate-600" />
                               ) : (
-                                <Check size={15} className="text-sky-400" />
+                                <Check size={15} className="text-slate-400" />
                               )}
                             </span>
                           )}
@@ -1383,7 +1383,7 @@ export default function MessagesPage() {
                     <button
                       type="button"
                       onClick={sendRecording}
-                      className="rounded-lg bg-sky-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-600"
+                      className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
                     >
                       {copy.send}
                     </button>
@@ -1444,13 +1444,13 @@ export default function MessagesPage() {
                     }
                   }}
                   placeholder={copy.typeMessage}
-                  className="flex-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                  className="flex-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
                 />
                 <button
                   type="button"
                   onClick={() => void handleSend()}
                   disabled={!draft.trim() || !!uploadingMedia}
-                  className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-600 disabled:opacity-50"
+                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
                 >
                   {uploadingMedia ? <Loader2 className="h-5 w-5 animate-spin" /> : copy.send}
                 </button>
@@ -1480,7 +1480,7 @@ export default function MessagesPage() {
                 type="checkbox"
                 checked={imagePreviewViewOnce}
                 onChange={(e) => setImagePreviewViewOnce(e.target.checked)}
-                className="rounded border-zinc-300 text-sky-500"
+                className="rounded border-zinc-300 text-slate-600"
               />
               {copy.viewOnceLabel}
             </label>
@@ -1495,7 +1495,7 @@ export default function MessagesPage() {
               <button
                 type="button"
                 onClick={() => void handleSendImage()}
-                className="flex-1 rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-600"
+                className="flex-1 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
               >
                 {copy.send}
               </button>
