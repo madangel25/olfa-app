@@ -162,7 +162,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <OnlinePresenceContext.Provider value={{ onlineUserIds }}>
-      <div className="min-h-screen bg-[#FFFAF7] font-[family-name:var(--font-jakarta)] text-stone-900">
+      <div className="h-screen overflow-hidden bg-[#FFFAF7] font-[family-name:var(--font-jakarta)] text-stone-900">
         <aside
           className={`fixed inset-y-0 z-40 hidden w-[220px] flex-col bg-white md:flex ${locale === "ar" ? "right-0 border-l border-stone-200" : "left-0 border-r border-stone-200"}`}
           aria-label="Dashboard navigation"
