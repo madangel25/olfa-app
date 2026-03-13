@@ -1085,7 +1085,7 @@ export default function MessagesPage() {
 
   return (
     <div className="font-[family-name:var(--font-cairo)]" dir={dir}>
-      <div className="h-[calc(100vh-120px)] bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="h-[calc(100vh-160px)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex h-full w-full flex-col">
           {error && (
             <div className="mx-3 mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -1124,7 +1124,7 @@ export default function MessagesPage() {
                     )}
                   </div>
                   <span
-                    className={`absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-white ${
+                    className={`ml-1 inline-flex h-2.5 w-2.5 rounded-full border border-white ${
                       isPartnerOnline ? "bg-emerald-500" : "bg-zinc-300"
                     }`}
                   />
@@ -1196,7 +1196,7 @@ export default function MessagesPage() {
                     </button>
                     {headerMenuOpen && (
                       <>
-                        <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-xl border border-zinc-200 bg-white py-1 shadow-xl">
+                        <div className="mt-1 w-48 rounded-xl border border-zinc-200 bg-white py-1 shadow-xl">
                           <button
                             type="button"
                             onClick={() => {
@@ -1409,7 +1409,7 @@ export default function MessagesPage() {
                   </button>
                   {showMediaMenu && (
                     <>
-                      <div className="absolute bottom-full left-0 z-50 mb-1 flex gap-1 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg">
+                      <div className="mt-2 flex gap-1 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg">
                         <button
                           type="button"
                           onClick={() => { imageInputRef.current?.click(); setShowMediaMenu(false); }}
@@ -1469,7 +1469,7 @@ export default function MessagesPage() {
 
       {/* Image preview modal (before send) */}
       {imagePreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="mt-4 flex items-center justify-center bg-black/5 p-4">
           <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl">
             <div className="relative aspect-square overflow-hidden rounded-xl bg-zinc-100">
               <img src={imagePreview.objectUrl} alt={copy.photoPreviewAlt} className="h-full w-full object-contain" />
@@ -1506,7 +1506,7 @@ export default function MessagesPage() {
 
       {/* Report User modal */}
       {reportModalOpen && selectedConversation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="mt-4 flex items-center justify-center bg-black/5 p-4">
           <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl">
             <h3 className="text-lg font-semibold text-zinc-900">{copy.reportTitle}</h3>
             <p className="mt-1 text-sm text-zinc-600">

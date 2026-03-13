@@ -171,12 +171,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <OnlinePresenceContext.Provider value={{ onlineUserIds }}>
-      <div
-        className="flex min-h-screen font-[family-name:var(--font-cairo)] text-zinc-900 bg-[#f8fafc]"
-      >
-        {/* Slim sidebar */}
+      <div className="min-h-screen bg-[#f1f5f9] font-[family-name:var(--font-cairo)] text-zinc-900">
         <aside
-          className={`hidden h-screen w-64 shrink-0 border-zinc-200 bg-white/90 backdrop-blur-md md:block ${locale === "ar" ? "order-2 border-l" : "order-1 border-r"} ${sidebarBorder}`}
+          className={`fixed inset-y-0 hidden w-[240px] border-zinc-200 bg-white md:block ${locale === "ar" ? "right-0 border-l" : "left-0 border-r"} ${sidebarBorder}`}
           aria-label="Dashboard navigation"
         >
           <div className="h-full overflow-y-auto px-2 py-4">
@@ -236,12 +233,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        <div className={`relative flex min-w-0 flex-1 flex-col ${locale === "ar" ? "order-1" : "order-2"}`}>
+        <div className={`min-w-0 ${locale === "ar" ? "md:mr-[240px]" : "md:ml-[240px]"}`}>
           <Navbar
             compact
-            className={`${locale === "ar" ? "left-0 right-0 md:right-64" : "left-0 right-0 md:left-64"}`}
+            className={`${locale === "ar" ? "left-0 right-0 md:right-[240px]" : "left-0 right-0 md:left-[240px]"}`}
           />
-          <main className="mt-14 h-[calc(100vh-56px)] overflow-y-auto p-4 md:p-6">
+          <main className="h-[calc(100vh-60px)] overflow-y-auto p-8 pt-8 mt-[60px]">
             {children}
           </main>
         </div>

@@ -118,7 +118,7 @@ function SearchableCountrySelect({
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            className="absolute top-full left-0 z-50 mt-1 max-h-72 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl"
+            className="mt-1 max-h-72 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl"
           >
             <div className="border-b border-zinc-200 p-2">
               <input
@@ -699,7 +699,7 @@ export default function ProfilePage() {
     primaryBtn: isFemale ? "bg-pink-500 hover:bg-pink-600 text-white border-0" : "bg-sky-500 hover:bg-sky-600 text-white border-0",
   };
 
-  const cardClass = "rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6";
+  const cardClass = "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6";
   const inputClass =
     `min-h-[2.75rem] w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 shadow-sm outline-none transition-all ${theme.focusRing} focus:ring-2 placeholder:text-zinc-400`;
   const buttonClass =
@@ -711,7 +711,7 @@ export default function ProfilePage() {
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md rounded-xl border px-4 py-3 text-sm shadow-xl sm:left-auto ${
+          className={`rounded-xl border px-4 py-3 text-sm shadow-sm ${
             toast.type === "success"
               ? "border-emerald-200 bg-emerald-50 text-emerald-800"
               : "border-red-200 bg-red-50 text-red-800"
@@ -721,7 +721,7 @@ export default function ProfilePage() {
           {toast.message}
         </motion.div>
       )}
-      <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 p-8 space-y-6">
+      <div className="mx-auto max-w-5xl space-y-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
       {/* Page header */}
       <header className={`mb-6 ${dir === "rtl" ? "text-right" : "text-left"}`}>
         <h1 className="text-2xl font-semibold text-zinc-900">{t("profile.title")}</h1>
@@ -1044,7 +1044,7 @@ export default function ProfilePage() {
                     {profile.photo_urls[i] ? (
                       <>
                         <img src={profile.photo_urls[i]} alt="" className={`h-full w-full object-cover ${profile.photo_privacy_blur ? "blur-md" : ""}`} />
-                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 opacity-0 transition group-hover:opacity-100">
+                        <div className="mt-2 flex flex-col items-center justify-center gap-2 rounded-lg bg-black/5 p-2">
                           <button type="button" onClick={() => setPrimaryPhoto(i)} className={`rounded-lg bg-white/95 p-2.5 ${theme.text} shadow-lg hover:bg-zinc-100`} title={t("profile.setPrimary")}>
                             <Star className={`h-5 w-5 ${profile.primary_photo_index === i ? theme.fill : ""}`} />
                           </button>
@@ -1053,7 +1053,7 @@ export default function ProfilePage() {
                           </button>
                         </div>
                         {profile.primary_photo_index === i && (
-                          <span className={`absolute left-2 top-2 rounded-md ${theme.badge} px-2 py-1 text-xs font-semibold text-white shadow`}>{t("profile.primary")}</span>
+                          <span className={`mt-2 inline-flex rounded-md ${theme.badge} px-2 py-1 text-xs font-semibold text-white shadow`}>{t("profile.primary")}</span>
                         )}
                       </>
                     ) : (
