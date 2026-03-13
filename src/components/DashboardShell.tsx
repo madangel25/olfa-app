@@ -11,7 +11,7 @@ import {
   PROFILE_UPDATED_EVENT,
   type ProfileForCompleteness,
 } from "@/lib/profileCompleteness";
-import { Home, User, MessageCircle, Heart, UserCircle, MapPin } from "lucide-react";
+import { Home, User, MessageCircle, Heart, UserCircle, MapPin, ShieldCheck } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "الرئيسية", labelEn: "Home", icon: Home },
@@ -21,6 +21,13 @@ const NAV_ITEMS = [
   { href: "/dashboard/likes", label: "الإعجابات", labelEn: "Likes", icon: Heart },
   { href: "/dashboard/messages", label: "الرسائل", labelEn: "Messages", icon: MessageCircle },
 ];
+
+const ADMIN_NAV_ITEM = {
+  href: "/dashboard/admin/moderation",
+  label: "الإشراف",
+  labelEn: "Moderation",
+  icon: ShieldCheck,
+};
 
 const PROFILE_SELECT_MINIMAL = "full_name, gender, email, is_verified";
 const PROFILE_SELECT_FULL =
@@ -86,6 +93,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const { theme } = useTheme();
   const [profileComplete, setProfileComplete] = useState<number | null>(null);
   const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const isRtl = dir === "rtl";
   const linkActiveClass = isRtl ? THEME_ACTIVE_RTL[theme] : THEME_ACTIVE_LTR[theme];
@@ -96,7 +104,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const fetchCompleteness = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const select = PROFILE_SELECT_FULL;
+    const select = PROFILE_SELECT_FULL + ", role";
     const { data, error } = await supabase
       .from("profiles")
       .select(select)
@@ -105,13 +113,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     if (error) {
       const { data: fallback } = await supabase
         .from("profiles")
-        .select(PROFILE_SELECT_MINIMAL)
+        .select(PROFILE_SELECT_MINIMAL + ", role")
         .eq("id", user.id)
         .maybeSingle();
       setProfileComplete(fallback ? getProfileCompleteness(fallback as ProfileForCompleteness) : 0);
+      setIsAdmin((fallback as { role?: string } | null)?.role === "admin");
       return;
     }
     setProfileComplete(data ? getProfileCompleteness(data as ProfileForCompleteness) : 0);
+    setIsAdmin((data as { role?: string } | null)?.role === "admin");
   };
 
   useEffect(() => {
@@ -216,6 +226,28 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   </Link>
                 );
               })}
+              {isAdmin && (() => {
+                const item = ADMIN_NAV_ITEM;
+                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                const Icon = item.icon;
+                const label = locale === "ar" ? item.label : item.labelEn;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                      isActive
+                        ? linkActiveClass
+                        : `text-zinc-700 ${hoverSidebar}`
+                    } ${locale === "ar" ? "flex-row-reverse text-right" : "text-left"}`}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    <span className="flex-1" lang={locale === "ar" ? "ar" : "en"}>
+                      {label}
+                    </span>
+                  </Link>
+                );
+              })()}
             </nav>
           </div>
         </aside>
