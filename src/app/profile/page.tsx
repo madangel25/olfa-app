@@ -91,6 +91,7 @@ function optLabel(t: (k: string) => string, value: string | null): string | null
 }
 
 export default function ProfilePage() {
+  const pathname = usePathname();
   const router = useRouter();
   const { locale, dir, t } = useLanguage();
   const [userId, setUserId] = useState<string | null>(null);
