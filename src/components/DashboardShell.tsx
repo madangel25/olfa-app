@@ -182,7 +182,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <OnlinePresenceContext.Provider value={contextValue}>
-      <div className="min-h-screen bg-[#f1f5f9] font-[family-name:var(--font-cairo)] text-zinc-900">
+      <div className="flex min-h-screen overflow-hidden bg-[#f8fafc] font-[family-name:var(--font-cairo)] text-zinc-900" dir={dir}>
         <aside
           className={`fixed inset-y-0 hidden w-[240px] border-zinc-200 bg-white md:block ${locale === "ar" ? "right-0 border-l" : "left-0 border-r"} ${sidebarBorder}`}
           aria-label="Dashboard navigation"
@@ -249,8 +249,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             compact
             className={`${locale === "ar" ? "left-0 right-0 md:right-[240px]" : "left-0 right-0 md:left-[240px]"}`}
           />
-          <main className="mt-[60px] h-[calc(100vh-60px)] overflow-y-auto p-8">
-            {children}
+          <main className="mt-[60px] flex-1 overflow-y-auto">
+            <div className="p-4 md:p-8">
+              {children}
+            </div>
           </main>
         </div>
       </div>
