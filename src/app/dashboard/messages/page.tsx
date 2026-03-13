@@ -1474,6 +1474,7 @@ export default function MessagesPage() {
           )}
         </section>
       </div>
+      </div>
 
       {/* Image preview modal (before send) */}
       {imagePreview && (
