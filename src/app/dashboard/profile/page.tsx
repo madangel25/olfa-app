@@ -148,7 +148,7 @@ function SearchableCountrySelect({
                 </li>
               ))}
               {filtered.length === 0 && (
-                <li className="px-4 py-3 text-sm text-zinc-500">No matches</li>
+                <li className="px-4 py-3 text-sm text-zinc-500">{locale === "ar" ? "لا توجد نتائج" : "No matches"}</li>
               )}
             </ul>
           </motion.div>

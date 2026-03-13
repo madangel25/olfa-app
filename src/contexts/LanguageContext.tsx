@@ -13,7 +13,7 @@ import { LOCALE_STORAGE_KEY, getTranslations, getQuizQuestions, t as tFn } from 
 type LanguageContextValue = {
   locale: Locale;
   setLocale: (next: Locale) => void;
-  t: (path: string) => string;
+  t: (path: string, params?: Record<string, string | number>) => string;
   dir: "ltr" | "rtl";
   getQuizQuestions: () => ReturnType<typeof getQuizQuestions>;
   getTranslations: () => ReturnType<typeof getTranslations>;
@@ -47,7 +47,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, [locale, mounted]);
 
   const t = useCallback(
-    (path: string) => tFn(locale, path),
+    (path: string, params?: Record<string, string | number>) => tFn(locale, path, params),
     [locale]
   );
 

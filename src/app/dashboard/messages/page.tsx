@@ -7,6 +7,7 @@ import { Check, CheckCheck, MoreVertical, Flag, ImagePlus, Eye, Plus, Mic, Loade
 import { supabase } from "@/lib/supabaseClient";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useOnlinePresence } from "@/components/DashboardShell";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   calculateSeriousnessScore,
   getWordCount,
@@ -63,6 +64,115 @@ const REPORT_REASONS = [
 
 const MAX_MEDIA_BYTES = 5 * 1024 * 1024; // 5MB
 
+const MESSAGES_COPY = {
+  en: {
+    title: "Messages",
+    backToDiscovery: "Discovery",
+    loading: "Loading messages...",
+    unread: "Unread",
+    startChat: "Start the conversation",
+    noConversations: "No active conversations yet.",
+    vipInsightsLocked: "Upgrade to VIP to see personality insights",
+    vipUpgrade: "Upgrade to VIP",
+    personalityInsights: "Personality Insights",
+    responseSpeed: "Response Speed",
+    engagement: "Engagement",
+    seriousnessScore: "Seriousness Score",
+    reportUser: "Report User",
+    typingNow: "Typing now...",
+    onlineNow: "Online now",
+    lastSeen: "Last seen",
+    selectConversation: "Select a conversation",
+    selectConversationToStart: "Select a conversation to start chatting.",
+    noMessages: "No messages yet.",
+    tapToView: "Tap to view",
+    image: "Image",
+    viewOnce: "View once",
+    loadingVoice: "Loading voice note...",
+    recording: "Recording...",
+    cancel: "Cancel",
+    send: "Send",
+    attach: "Attach",
+    photo: "Photo",
+    voice: "Voice",
+    typeMessage: "Type a message...",
+    helperVip: "VIP can start chats directly. Others need a mutual match. Max 5MB for photos and voice.",
+    preview: "Preview",
+    viewOnceLabel: "View Once",
+    reportTitle: "Report User",
+    reportDescriptionPrefix: "Report",
+    reportDescriptionSuffix: "A snapshot of the last 20 messages will be sent to moderators.",
+    reason: "Reason",
+    submitting: "Submitting...",
+    submitReport: "Submit Report",
+    onlyAfterMatch: "You can only start chat after a match, unless you are VIP.",
+    failedLoad: "Failed to load messages.",
+    failedSend: "Failed to send message.",
+    failedReport: "Failed to submit report.",
+    imageUnder5mb: "Image must be under 5MB.",
+    selectImage: "Please select an image file.",
+    failedSendImage: "Failed to send image.",
+    failedSendVoice: "Failed to send voice note.",
+    voiceUnder5mb: "Voice note must be under 5MB.",
+    micRequired: "Microphone access is required for voice notes.",
+    photoPreviewAlt: "Preview",
+    menu: "Menu",
+  },
+  ar: {
+    title: "الرسائل",
+    backToDiscovery: "البحث",
+    loading: "جاري تحميل الرسائل...",
+    unread: "غير مقروء",
+    startChat: "ابدأ المحادثة",
+    noConversations: "لا توجد محادثات نشطة حالياً.",
+    vipInsightsLocked: "قم بالترقية إلى VIP لرؤية التحليلات",
+    vipUpgrade: "الترقية إلى VIP",
+    personalityInsights: "تحليلات الشخصية",
+    responseSpeed: "سرعة الرد",
+    engagement: "مستوى التفاعل",
+    seriousnessScore: "مؤشر الجدية",
+    reportUser: "الإبلاغ عن المستخدم",
+    typingNow: "يكتب الآن...",
+    onlineNow: "متصل الآن",
+    lastSeen: "آخر ظهور",
+    selectConversation: "اختر محادثة",
+    selectConversationToStart: "اختر محادثة لبدء الدردشة.",
+    noMessages: "لا توجد رسائل بعد.",
+    tapToView: "اضغط للعرض",
+    image: "صورة",
+    viewOnce: "عرض مرة واحدة",
+    loadingVoice: "جاري تحميل الرسالة الصوتية...",
+    recording: "جارٍ التسجيل...",
+    cancel: "إلغاء",
+    send: "إرسال",
+    attach: "إرفاق",
+    photo: "صورة",
+    voice: "صوت",
+    typeMessage: "اكتب رسالة...",
+    helperVip: "يمكن لـ VIP بدء المحادثة مباشرة. غير ذلك يتطلب تطابق متبادل. الحد الأقصى 5MB للصور والصوت.",
+    preview: "معاينة",
+    viewOnceLabel: "عرض مرة واحدة",
+    reportTitle: "الإبلاغ عن المستخدم",
+    reportDescriptionPrefix: "إبلاغ",
+    reportDescriptionSuffix: "سيتم إرسال لقطة من آخر 20 رسالة إلى المشرفين.",
+    reason: "السبب",
+    submitting: "جارٍ الإرسال...",
+    submitReport: "إرسال البلاغ",
+    onlyAfterMatch: "يمكنك بدء المحادثة فقط بعد حدوث تطابق، إلا إذا كنت VIP.",
+    failedLoad: "تعذر تحميل الرسائل.",
+    failedSend: "تعذر إرسال الرسالة.",
+    failedReport: "تعذر إرسال البلاغ.",
+    imageUnder5mb: "يجب أن يكون حجم الصورة أقل من 5MB.",
+    selectImage: "يرجى اختيار ملف صورة.",
+    failedSendImage: "تعذر إرسال الصورة.",
+    failedSendVoice: "تعذر إرسال الرسالة الصوتية.",
+    voiceUnder5mb: "يجب أن يكون حجم الرسالة الصوتية أقل من 5MB.",
+    micRequired: "يلزم السماح بالوصول إلى الميكروفون للتسجيل الصوتي.",
+    photoPreviewAlt: "معاينة",
+    menu: "القائمة",
+  },
+} as const;
+
 function containsBannedWord(text: string, bannedWords: string[]): boolean {
   if (!bannedWords.length) return false;
   const lower = text.toLowerCase();
@@ -73,6 +183,8 @@ export default function MessagesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const withUserId = searchParams.get("with");
+  const { locale, dir } = useLanguage();
+  const copy = MESSAGES_COPY[locale];
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [myIsVip, setMyIsVip] = useState(false);
@@ -208,14 +320,14 @@ export default function MessagesPage() {
       return {
         id: conversationId,
         partner_id: partnerId,
-        partner_name: (p.full_name as string) ?? "Unknown",
+        partner_name: (p.full_name as string) ?? (locale === "ar" ? "غير معروف" : "Unknown"),
         partner_photo: photo,
         partner_last_seen_at: (p.last_seen_at as string) ?? null,
         last_message: msg
           ? (msg.message_type === "image"
-            ? "Photo"
+            ? (locale === "ar" ? "صورة" : "Photo")
             : msg.message_type === "audio"
-              ? "Voice note"
+              ? (locale === "ar" ? "صوت" : "Voice")
               : String(msg.content ?? ""))
           : "",
         last_message_at: (msg?.created_at as string) ?? null,
@@ -223,7 +335,7 @@ export default function MessagesPage() {
       };
     });
     setConversations(list);
-  }, []);
+  }, [locale]);
 
   const loadMessages = useCallback(async (conversationId: string) => {
     setLoadingMessages(true);
@@ -319,7 +431,7 @@ export default function MessagesPage() {
           }
           if (!canChat) {
             if (!active) return;
-            setError("You can only start chat after a match, unless you are VIP.");
+            setError(copy.onlyAfterMatch);
           } else {
             const cid = await findOrCreateConversation(user.id, withUserId);
             if (cid && active) setSelectedConversationId(cid);
@@ -329,7 +441,7 @@ export default function MessagesPage() {
         await loadConversations(user.id);
       } catch (e) {
         if (!active) return;
-        setError(e instanceof Error ? e.message : "Failed to load messages.");
+        setError(e instanceof Error ? e.message : copy.failedLoad);
       } finally {
         if (active) setLoading(false);
       }
@@ -636,7 +748,7 @@ export default function MessagesPage() {
     } catch (e) {
       // Roll back optimistic message on error
       setMessages((prev) => prev.filter((m) => !m.id.startsWith("optimistic-")));
-      setError(e instanceof Error ? e.message : "Failed to send message.");
+      setError(e instanceof Error ? e.message : copy.failedSend);
     }
   };
 
@@ -661,7 +773,7 @@ export default function MessagesPage() {
       setReportModalOpen(false);
       setReportReason("harassment");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to submit report.");
+      setError(e instanceof Error ? e.message : copy.failedReport);
     } finally {
       setReportSubmitting(false);
     }
@@ -691,11 +803,11 @@ export default function MessagesPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > MAX_MEDIA_BYTES) {
-      setError("Image must be under 5MB.");
+      setError(copy.imageUnder5mb);
       return;
     }
     if (!file.type.startsWith("image/")) {
-      setError("Please select an image file.");
+      setError(copy.selectImage);
       return;
     }
     setImagePreview({ file, objectUrl: URL.createObjectURL(file) });
@@ -738,7 +850,7 @@ export default function MessagesPage() {
       });
       if (insertErr) throw insertErr;
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to send image.");
+      setError(e instanceof Error ? e.message : copy.failedSendImage);
       setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
     } finally {
       setUploadingMedia(null);
@@ -782,7 +894,7 @@ export default function MessagesPage() {
         });
         if (insertErr) throw insertErr;
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to send voice note.");
+        setError(e instanceof Error ? e.message : copy.failedSendVoice);
       } finally {
         setUploadingMedia(null);
       }
@@ -811,7 +923,7 @@ export default function MessagesPage() {
           if (blob.size <= MAX_MEDIA_BYTES) {
             voiceSendRef.current(blob);
           } else {
-            setError("Voice note must be under 5MB.");
+            setError(copy.voiceUnder5mb);
           }
         }
       };
@@ -823,7 +935,7 @@ export default function MessagesPage() {
         setRecordingSeconds((s) => s + 1);
       }, 1000);
     } catch (err) {
-      setError("Microphone access is required for voice notes.");
+      setError(copy.micRequired);
     }
   }, []);
 
@@ -896,16 +1008,16 @@ export default function MessagesPage() {
   }, [messages, currentUserId, revealedViewOnceUrls]);
 
   if (loading) {
-    return <LoadingScreen message="Loading messages..." theme="sky" />;
+    return <LoadingScreen message={copy.loading} theme="sky" />;
   }
 
   return (
-    <div className="h-[calc(100vh-6rem)] overflow-hidden font-[family-name:var(--font-cairo)]">
+    <div className="h-[calc(100vh-6rem)] overflow-hidden font-[family-name:var(--font-cairo)]" dir={dir}>
       <div className="mb-3 flex items-center justify-between">
         <Link href="/dashboard/discovery" className="text-sm text-sky-600 hover:text-sky-700">
-          ← البحث
+          ← {copy.backToDiscovery}
         </Link>
-        <h1 className="text-xl font-semibold text-zinc-900">Messages</h1>
+        <h1 className="text-xl font-semibold text-zinc-900">{copy.title}</h1>
         <span />
       </div>
 
@@ -956,18 +1068,18 @@ export default function MessagesPage() {
                     <p className="truncate text-sm font-semibold text-zinc-900">{c.partner_name}</p>
                     <span className="flex shrink-0 items-center gap-1">
                       {c.hasUnread && (
-                        <span className="h-2 w-2 rounded-full bg-red-500" title="Unread" />
+                        <span className="h-2 w-2 rounded-full bg-red-500" title={copy.unread} />
                       )}
                       <span className="text-[11px] text-zinc-500">{formatTime(c.last_message_at)}</span>
                     </span>
                   </div>
-                  <p className="truncate text-xs text-zinc-600">{c.last_message || "ابدأ المحادثة"}</p>
+                  <p className="truncate text-xs text-zinc-600">{c.last_message || copy.startChat}</p>
                 </div>
               </button>
             );
           })}
           {conversations.length === 0 && (
-            <p className="p-4 text-sm text-zinc-500">No active conversations yet.</p>
+            <p className="p-4 text-sm text-zinc-500">{copy.noConversations}</p>
           )}
 
           {/* Personality Insights (VIP or blurred) */}
@@ -981,35 +1093,35 @@ export default function MessagesPage() {
                 {!myIsVip && (
                   <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-xl bg-zinc-900/70 backdrop-blur-md">
                     <p className="px-3 text-center text-sm font-medium text-white">
-                      Upgrade to VIP to see personality insights
+                      {copy.vipInsightsLocked}
                     </p>
                     <Link
                       href="/dashboard"
                       className="mt-2 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600"
                     >
-                      Upgrade to VIP
+                      {copy.vipUpgrade}
                     </Link>
                   </div>
                 )}
                 <div className={!myIsVip ? "blur-[3px]" : ""}>
                 <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  Personality Insights
+                  {copy.personalityInsights}
                 </p>
                 <dl className="mt-2 space-y-1 text-sm">
                   <div className="flex justify-between gap-2">
-                    <dt className="text-zinc-600">Response Speed</dt>
+                    <dt className="text-zinc-600">{copy.responseSpeed}</dt>
                     <dd className="font-medium text-zinc-900">
                       {personalityInsights.responseSpeedLabel}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <dt className="text-zinc-600">Engagement</dt>
+                    <dt className="text-zinc-600">{copy.engagement}</dt>
                     <dd className="font-medium text-zinc-900">
                       {personalityInsights.engagementLabel}
                     </dd>
                   </div>
                   <div className="flex justify-between gap-2">
-                    <dt className="text-zinc-600">Seriousness Score</dt>
+                    <dt className="text-zinc-600">{copy.seriousnessScore}</dt>
                     <dd className="font-medium text-zinc-900">
                       {personalityInsights.score}%
                     </dd>
@@ -1053,7 +1165,7 @@ export default function MessagesPage() {
                       type="button"
                       onClick={() => setHeaderMenuOpen((o) => !o)}
                       className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
-                      aria-label="Menu"
+                      aria-label={copy.menu}
                     >
                       <MoreVertical className="h-5 w-5" />
                     </button>
@@ -1074,7 +1186,7 @@ export default function MessagesPage() {
                             className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-red-50 hover:text-red-700"
                           >
                             <Flag className="h-4 w-4" />
-                            Report User
+                            {copy.reportUser}
                           </button>
                         </div>
                       </>
@@ -1087,11 +1199,11 @@ export default function MessagesPage() {
                     isOnline(selectedConversation.partner_last_seen_at);
                   let status: string | null = null;
                   if (isPartnerTyping) {
-                    status = "يكتب الآن...";
+                    status = copy.typingNow;
                   } else if (online) {
-                    status = "متصل الآن";
+                    status = copy.onlineNow;
                   } else if (selectedConversation.partner_last_seen_at) {
-                    status = `آخر ظهور ${formatTime(selectedConversation.partner_last_seen_at)}`;
+                    status = `${copy.lastSeen} ${formatTime(selectedConversation.partner_last_seen_at)}`;
                   }
                   return status ? (
                     <p className="mt-0.5 text-xs text-zinc-500">{status}</p>
@@ -1099,19 +1211,19 @@ export default function MessagesPage() {
                 })()}
               </>
             ) : (
-              <p className="text-sm font-semibold text-zinc-500">Select a conversation</p>
+              <p className="text-sm font-semibold text-zinc-500">{copy.selectConversation}</p>
             )}
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50 px-3 py-4">
             {!selectedConversationId ? (
               <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center text-zinc-500">
-                <p className="text-sm">Select a conversation to start chatting.</p>
+                <p className="text-sm">{copy.selectConversationToStart}</p>
               </div>
             ) : loadingMessages ? (
-              <p className="text-center text-sm text-zinc-500">Loading messages...</p>
+              <p className="text-center text-sm text-zinc-500">{copy.loading}</p>
             ) : messages.length === 0 ? (
-              <p className="text-center text-sm text-zinc-500">No messages yet.</p>
+              <p className="text-center text-sm text-zinc-500">{copy.noMessages}</p>
             ) : (
               <ul className="space-y-2">
                 {(messages ?? []).map((m) => {
@@ -1147,7 +1259,7 @@ export default function MessagesPage() {
                                 className="flex items-center gap-2 rounded-lg border border-dashed border-zinc-300 bg-white/80 px-4 py-3 text-sm text-zinc-600 hover:bg-white"
                               >
                                 <Eye className="h-4 w-4" />
-                                Tap to view
+                                {copy.tapToView}
                               </button>
                             ) : isLoadingMedia ? (
                               <div className="flex items-center justify-center py-8">
@@ -1160,10 +1272,10 @@ export default function MessagesPage() {
                                 className="max-h-64 rounded-lg object-contain"
                               />
                             ) : (
-                              <span className="text-xs text-zinc-500">Image</span>
+                              <span className="text-xs text-zinc-500">{copy.image}</span>
                             )}
                             {m.is_temporary && (
-                              <p className="mt-1 text-[10px] text-zinc-500">View once</p>
+                              <p className="mt-1 text-[10px] text-zinc-500">{copy.viewOnce}</p>
                             )}
                           </div>
                         )}
@@ -1174,7 +1286,7 @@ export default function MessagesPage() {
                             ) : (
                               <div className="flex items-center gap-2 py-2">
                                 <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
-                                <span className="text-xs text-zinc-500">Loading voice note…</span>
+                                <span className="text-xs text-zinc-500">{copy.loadingVoice}</span>
                               </div>
                             )}
                           </div>
@@ -1208,7 +1320,7 @@ export default function MessagesPage() {
               {recording !== null && (
                 <div className="mb-2 flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
                   <span className="text-sm text-zinc-600">
-                    Recording… {Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, "0")}
+                    {copy.recording} {Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, "0")}
                   </span>
                   <div className="flex gap-2">
                     <button
@@ -1216,14 +1328,14 @@ export default function MessagesPage() {
                       onClick={cancelRecording}
                       className="rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-600 hover:bg-zinc-200"
                     >
-                      Cancel
+                      {copy.cancel}
                     </button>
                     <button
                       type="button"
                       onClick={sendRecording}
                       className="rounded-lg bg-sky-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-600"
                     >
-                      Send
+                      {copy.send}
                     </button>
                   </div>
                 </div>
@@ -1241,7 +1353,7 @@ export default function MessagesPage() {
                     type="button"
                     onClick={() => setShowMediaMenu((o) => !o)}
                     className="rounded-xl p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
-                    aria-label="Attach"
+                    aria-label={copy.attach}
                   >
                     <Plus className="h-5 w-5" />
                   </button>
@@ -1255,7 +1367,7 @@ export default function MessagesPage() {
                           className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
                         >
                           <ImagePlus className="h-4 w-4" />
-                          Photo
+                          {copy.photo}
                         </button>
                         <button
                           type="button"
@@ -1263,7 +1375,7 @@ export default function MessagesPage() {
                           className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
                         >
                           <Mic className="h-4 w-4" />
-                          Voice
+                          {copy.voice}
                         </button>
                       </div>
                     </>
@@ -1282,7 +1394,7 @@ export default function MessagesPage() {
                       void handleSend();
                     }
                   }}
-                  placeholder="Type a message..."
+                  placeholder={copy.typeMessage}
                   className="flex-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                 />
                 <button
@@ -1291,12 +1403,12 @@ export default function MessagesPage() {
                   disabled={!draft.trim() || !!uploadingMedia}
                   className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-600 disabled:opacity-50"
                 >
-                  {uploadingMedia ? <Loader2 className="h-5 w-5 animate-spin" /> : "Send"}
+                  {uploadingMedia ? <Loader2 className="h-5 w-5 animate-spin" /> : copy.send}
                 </button>
               </div>
               <div className="mt-2 flex items-center justify-between gap-2">
                 <p className="text-[11px] text-zinc-500">
-                  VIP can start chats directly. Others need a mutual match. Max 5MB for photos and voice.
+                  {copy.helperVip}
                 </p>
               </div>
             </div>
@@ -1309,7 +1421,7 @@ export default function MessagesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl">
             <div className="relative aspect-square overflow-hidden rounded-xl bg-zinc-100">
-              <img src={imagePreview.objectUrl} alt="Preview" className="h-full w-full object-contain" />
+              <img src={imagePreview.objectUrl} alt={copy.photoPreviewAlt} className="h-full w-full object-contain" />
             </div>
             <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-zinc-700">
               <Eye className="h-4 w-4" />
@@ -1319,7 +1431,7 @@ export default function MessagesPage() {
                 onChange={(e) => setImagePreviewViewOnce(e.target.checked)}
                 className="rounded border-zinc-300 text-sky-500"
               />
-              View Once
+              {copy.viewOnceLabel}
             </label>
             <div className="mt-4 flex gap-2">
               <button
@@ -1327,14 +1439,14 @@ export default function MessagesPage() {
                 onClick={() => { URL.revokeObjectURL(imagePreview.objectUrl); setImagePreview(null); }}
                 className="flex-1 rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
               >
-                Cancel
+                {copy.cancel}
               </button>
               <button
                 type="button"
                 onClick={() => void handleSendImage()}
                 className="flex-1 rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-600"
               >
-                Send
+                {copy.send}
               </button>
             </div>
           </div>
@@ -1345,12 +1457,12 @@ export default function MessagesPage() {
       {reportModalOpen && selectedConversation && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl">
-            <h3 className="text-lg font-semibold text-zinc-900">Report User</h3>
+            <h3 className="text-lg font-semibold text-zinc-900">{copy.reportTitle}</h3>
             <p className="mt-1 text-sm text-zinc-600">
-              Report {selectedConversation.partner_name}? A snapshot of the last 20 messages will be sent to moderators.
+              {copy.reportDescriptionPrefix} {selectedConversation.partner_name}? {copy.reportDescriptionSuffix}
             </p>
             <div className="mt-4">
-              <label className="block text-sm font-medium text-zinc-700">Reason</label>
+              <label className="block text-sm font-medium text-zinc-700">{copy.reason}</label>
               <select
                 value={reportReason}
                 onChange={(e) => setReportReason(e.target.value)}
@@ -1358,7 +1470,7 @@ export default function MessagesPage() {
               >
                 {REPORT_REASONS.map((r) => (
                   <option key={r.value} value={r.value}>
-                    {r.label} / {r.labelAr}
+                    {locale === "ar" ? r.labelAr : r.label}
                   </option>
                 ))}
               </select>
@@ -1369,7 +1481,7 @@ export default function MessagesPage() {
                 onClick={() => setReportModalOpen(false)}
                 className="flex-1 rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
               >
-                Cancel
+                {copy.cancel}
               </button>
               <button
                 type="button"
@@ -1377,7 +1489,7 @@ export default function MessagesPage() {
                 disabled={reportSubmitting}
                 className="flex-1 rounded-xl bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
               >
-                {reportSubmitting ? "Submitting…" : "Submit Report"}
+                {reportSubmitting ? copy.submitting : copy.submitReport}
               </button>
             </div>
           </div>

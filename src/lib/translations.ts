@@ -1170,9 +1170,23 @@ export function getQuizQuestions(locale: Locale): QuizQuestion[] {
 }
 
 /** Get a nested translation by dot path, e.g. "home.heroTitle" */
-export function t(locale: Locale, path: string): string {
-  const value = getNested(translations[locale] as unknown as Record<string, unknown>, path);
-  return value ?? path;
+function interpolate(template: string, params?: Record<string, string | number>): string {
+  if (!params) return template;
+  return template.replace(/\{(\w+)\}/g, (_, key: string) => {
+    const value = params[key];
+    return value === undefined || value === null ? `{${key}}` : String(value);
+  });
+}
+
+export function t(
+  locale: Locale,
+  path: string,
+  params?: Record<string, string | number>
+): string {
+  const primary = getNested(translations[locale] as unknown as Record<string, unknown>, path);
+  const fallback = getNested(translations.en as unknown as Record<string, unknown>, path);
+  const value = primary ?? fallback ?? path;
+  return interpolate(value, params);
 }
 
 export const LOCALE_STORAGE_KEY = "olfa-locale";

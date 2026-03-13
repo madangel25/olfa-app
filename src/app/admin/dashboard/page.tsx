@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { logAdminAction } from "@/lib/adminLog";
 import { QuizEditorModal } from "@/components/admin/QuizEditorModal";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type TabId = "overview" | "verifications" | "users" | "quiz" | "moderation";
 
@@ -109,6 +110,24 @@ function statusLabel(row: UserRow): string {
 }
 
 export default function AdminDashboardPage() {
+  const { locale, dir } = useLanguage();
+  const copy = {
+    dashboardTitle: locale === "ar" ? "لوحة الإدارة" : "Admin Dashboard",
+    tabOverview: locale === "ar" ? "نظرة عامة" : "Overview",
+    tabPending: locale === "ar" ? "قيد الموافقة" : "Pending",
+    tabUsers: locale === "ar" ? "المستخدمون" : "Users",
+    tabQuiz: locale === "ar" ? "إدارة الأسئلة" : "Quiz",
+    tabModeration: locale === "ar" ? "الرسائل المبلغ عنها" : "Moderation",
+    pendingApprovals: locale === "ar" ? "قيد الموافقة" : "Pending approvals",
+    loadingVerification: locale === "ar" ? "جاري تحميل طلبات التوثيق..." : "Loading verification requests...",
+    noVerification: locale === "ar" ? "لا توجد طلبات قيد المراجعة." : "No pending verification requests.",
+    noQuestions: locale === "ar" ? "لا توجد أسئلة. أضف سؤالاً من الزر أعلاه." : "No questions yet. Add one from the button above.",
+    noFlagged: locale === "ar" ? "لا توجد رسائل مبلغ عنها." : "No flagged messages.",
+    loadingUsers: locale === "ar" ? "جاري تحميل المستخدمين..." : "Loading users...",
+    verificationTitle: locale === "ar" ? "قيد الموافقة على التوثيق" : "Verification Pending Review",
+    quizTitle: locale === "ar" ? "إدارة الأسئلة" : "Quiz Management",
+    flaggedTitle: locale === "ar" ? "الرسائل المبلغ عنها (كلمات محظورة)" : "Flagged Messages (Banned Words)",
+  };
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [users, setUsers] = useState<UserRow[]>([]);
   const [stats, setStats] = useState<Stats>({
@@ -741,20 +760,20 @@ export default function AdminDashboardPage() {
   };
 
   const tabs: { id: TabId; label: string; icon: React.ElementType }[] = [
-    { id: "overview", label: "نظرة عامة", icon: BarChart3 },
-    { id: "verifications", label: "قيد الموافقة", icon: ImageIcon },
-    { id: "users", label: "المستخدمون", icon: Users },
-    { id: "quiz", label: "إدارة الأسئلة", icon: ListOrdered },
-    { id: "moderation", label: "الرسائل المبلغ عنها", icon: AlertTriangle },
+    { id: "overview", label: copy.tabOverview, icon: BarChart3 },
+    { id: "verifications", label: copy.tabPending, icon: ImageIcon },
+    { id: "users", label: copy.tabUsers, icon: Users },
+    { id: "quiz", label: copy.tabQuiz, icon: ListOrdered },
+    { id: "moderation", label: copy.tabModeration, icon: AlertTriangle },
   ];
 
   return (
     <div
       className="min-h-screen p-4 md:p-6 font-[family-name:var(--font-cairo)]"
-      dir="rtl"
+      dir={dir}
     >
       <div className="mx-auto max-w-6xl">
-        <h1 className="text-2xl font-bold text-zinc-900 mb-6">لوحة الإدارة</h1>
+        <h1 className="text-2xl font-bold text-zinc-900 mb-6">{copy.dashboardTitle}</h1>
 
         {error && (
           <div className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
@@ -846,7 +865,7 @@ export default function AdminDashboardPage() {
                   <Clock className="h-6 w-6 text-sky-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-zinc-500">قيد الموافقة</p>
+                  <p className="text-sm text-zinc-500">{copy.pendingApprovals}</p>
                   <p className="text-2xl font-bold text-zinc-900">
                     {loadingStats ? (
                       <Loader2 className="h-6 w-6 animate-spin text-sky-500" />
@@ -863,15 +882,15 @@ export default function AdminDashboardPage() {
         {/* Pending Verifications */}
         {activeTab === "verifications" && (
           <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-zinc-800">قيد الموافقة على التوثيق</h2>
+            <h2 className="text-lg font-semibold text-zinc-800">{copy.verificationTitle}</h2>
             {loadingPending ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <Loader2 className="h-10 w-10 animate-spin text-sky-500" />
-                <p className="text-sm text-zinc-500">جاري تحميل طلبات التوثيق...</p>
+                <p className="text-sm text-zinc-500">{copy.loadingVerification}</p>
               </div>
             ) : pendingUsers.length === 0 ? (
               <div className={SKY.card + " p-8 text-center"}>
-                <p className="text-sm text-zinc-500">لا توجد طلبات قيد المراجعة.</p>
+                <p className="text-sm text-zinc-500">{copy.noVerification}</p>
               </div>
             ) : (
               <div className="grid gap-6">
@@ -1054,7 +1073,7 @@ export default function AdminDashboardPage() {
         {activeTab === "quiz" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-zinc-800">إدارة الأسئلة</h2>
+              <h2 className="text-lg font-semibold text-zinc-800">{copy.quizTitle}</h2>
               <button
                 type="button"
                 onClick={() => setQuizModal({ type: "add" })}
@@ -1128,7 +1147,7 @@ export default function AdminDashboardPage() {
                   </tbody>
                 </table>
                 {quizQuestions.length === 0 && (
-                  <p className="p-8 text-center text-zinc-500 text-sm">لا توجد أسئلة. أضف سؤالاً من الجدول في الترجمة أو من الزر أعلاه.</p>
+                  <p className="p-8 text-center text-zinc-500 text-sm">{copy.noQuestions}</p>
                 )}
               </div>
             )}
@@ -1138,7 +1157,7 @@ export default function AdminDashboardPage() {
         {/* Moderation: Flagged messages */}
         {activeTab === "moderation" && (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-zinc-800">الرسائل المبلغ عنها (كلمات محظورة)</h2>
+            <h2 className="text-lg font-semibold text-zinc-800">{copy.flaggedTitle}</h2>
             {loadingFlagged ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="h-10 w-10 animate-spin text-sky-500" />
@@ -1147,7 +1166,7 @@ export default function AdminDashboardPage() {
               <div className="space-y-2">
                 {flaggedMessages.length === 0 ? (
                   <p className="rounded-xl border border-zinc-200 bg-zinc-50 p-6 text-center text-sm text-zinc-500">
-                    لا توجد رسائل مبلغ عنها.
+                    {copy.noFlagged}
                   </p>
                 ) : (
                   flaggedMessages.map((m) => (
@@ -1191,7 +1210,7 @@ export default function AdminDashboardPage() {
             {loadingUsers ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <Loader2 className="h-10 w-10 animate-spin text-sky-500" />
-                <p className="text-sm text-zinc-500">جاري تحميل المستخدمين...</p>
+                <p className="text-sm text-zinc-500">{copy.loadingUsers}</p>
               </div>
             ) : usersError ? (
               <div className="flex flex-col items-center justify-center py-16 px-4 gap-4">

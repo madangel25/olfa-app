@@ -71,6 +71,20 @@ export default function DiscoveryPage() {
   const [filterCity, setFilterCity] = useState("");
   const [filterMarital, setFilterMarital] = useState("");
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const dCopy = {
+    title: locale === "ar" ? "البحث" : "Discovery",
+    intro:
+      locale === "ar"
+        ? "أعضاء موثقون. أعجب للتواصل؛ عند الإعجاب المتبادل يصبح توافقاً."
+        : "Verified members. Like to connect; when they like back, it's a match.",
+    loading: locale === "ar" ? "جاري التحميل…" : "Loading discovery...",
+    city: locale === "ar" ? "المدينة" : "City",
+    someone: locale === "ar" ? "شخص ما" : "Someone",
+    user: locale === "ar" ? "المستخدم" : "user",
+    years: locale === "ar" ? "سنة" : "y/o",
+    rating: locale === "ar" ? "تقييم" : "rating",
+    new: locale === "ar" ? "جديد" : "New",
+  };
 
   // Fetch profiles: opposite gender only, verified, not banned, exclude self
   useEffect(() => {
@@ -247,7 +261,7 @@ export default function DiscoveryPage() {
     if (!error) {
       setLikes((prev) => new Set(prev).add(toUserId));
       const card = users.find((u) => u.id === toUserId);
-      if (card?.they_liked_me) setMatchToast(card.full_name ?? "Someone");
+      if (card?.they_liked_me) setMatchToast(card.full_name ?? dCopy.someone);
       setUsers((prev) =>
         prev.map((u) =>
           u.id === toUserId
@@ -295,7 +309,7 @@ export default function DiscoveryPage() {
 
   if (loading) {
     return (
-      <LoadingScreen message={locale === "ar" ? "جاري التحميل…" : "Loading discovery…"} theme="sky" />
+      <LoadingScreen message={dCopy.loading} theme="sky" />
     );
   }
 
@@ -305,14 +319,10 @@ export default function DiscoveryPage() {
         <Link href="/dashboard" className="text-sm text-sky-600 hover:text-sky-700">
           ← {t("nav.home")}
         </Link>
-        <h1 className="text-xl font-semibold text-zinc-900">Discovery</h1>
+        <h1 className="text-xl font-semibold text-zinc-900">{dCopy.title}</h1>
         <span />
       </div>
-      <p className="mb-4 text-sm text-zinc-700">
-        {locale === "ar"
-          ? "أعضاء موثقون. أعجب للتواصل؛ عند الإعجاب المتبادل يصبح توافقاً."
-          : "Verified members. Like to connect; when they like back, it's a match."}
-      </p>
+      <p className="mb-4 text-sm text-zinc-700">{dCopy.intro}</p>
 
       {/* Online now – horizontal list */}
       {onlineUsers.length > 0 && (
@@ -408,7 +418,7 @@ export default function DiscoveryPage() {
           <label className="text-xs font-medium text-zinc-600">{t("discovery.filterCity")}</label>
           <input
             type="text"
-            placeholder={locale === "ar" ? "المدينة" : "City"}
+            placeholder={dCopy.city}
             value={filterCity}
             onChange={(e) => setFilterCity(e.target.value)}
             className="w-32 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-900"
@@ -464,7 +474,7 @@ export default function DiscoveryPage() {
               <Link
                 href={`/profile/${u.id}`}
                 className="flex flex-col overflow-hidden focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-400"
-                aria-label={locale === "ar" ? `عرض ملف ${u.full_name ?? "المستخدم"}` : `View ${u.full_name ?? "user"}'s profile`}
+                aria-label={locale === "ar" ? `عرض ملف ${u.full_name ?? dCopy.user}` : `View ${u.full_name ?? dCopy.user}'s profile`}
               >
                 {/* Card image */}
                 <div className={`relative aspect-[4/5] w-full shrink-0 ${isMale ? "bg-sky-50" : "bg-pink-50"}`}>
@@ -498,7 +508,7 @@ export default function DiscoveryPage() {
                     <p className="truncate font-semibold text-zinc-900">{u.full_name ?? "Unknown"}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-0 text-xs text-zinc-600">
-                    {u.age != null && <span>{u.age} {locale === "ar" ? "سنة" : "y/o"}</span>}
+                    {u.age != null && <span>{u.age} {dCopy.years}</span>}
                     {u.city && <span>• {u.city}</span>}
                   </div>
                   {maritalLabel && <p className="text-xs text-zinc-500">{maritalLabel}</p>}
@@ -510,8 +520,8 @@ export default function DiscoveryPage() {
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-zinc-500">
                       {hasRating
-                        ? (locale === "ar" ? `${rating.avg.toFixed(1)} تقييم` : `${rating.avg.toFixed(1)} rating`)
-                        : (locale === "ar" ? "جديد" : "New")}
+                        ? `${rating.avg.toFixed(1)} ${dCopy.rating}`
+                        : dCopy.new}
                     </span>
                     <span className="flex items-center gap-0.5">
                       {[1, 2, 3, 4, 5].map((i) => (

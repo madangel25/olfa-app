@@ -14,9 +14,33 @@ type LikeRow = {
   is_match: boolean;
 };
 
+const LIKES_COPY = {
+  en: {
+    loading: "Loading...",
+    emptyTitle: "You haven't started liking yet.",
+    emptySubtitle: "Find your life partner now!",
+    goDiscovery: "Go to Discovery",
+    title: "Likes",
+    subtitle: "Who liked you — like them back to match.",
+    unknown: "Unknown",
+    likeBack: "Like back",
+  },
+  ar: {
+    loading: "جاري التحميل…",
+    emptyTitle: "لم تبدأ رحلة الإعجاب بعد.",
+    emptySubtitle: "ابحث عن شريك حياتك الآن!",
+    goDiscovery: "الذهاب إلى البحث",
+    title: "الإعجابات",
+    subtitle: "من أعجب بك — يمكنك الإعجاب بهم للتوافق.",
+    unknown: "غير معروف",
+    likeBack: "اعجب به",
+  },
+} as const;
+
 export default function LikesPage() {
   const router = useRouter();
   const { locale, dir, t } = useLanguage();
+  const copy = LIKES_COPY[locale];
   const [currentUserGender, setCurrentUserGender] = useState<string | null>(null);
   const [rows, setRows] = useState<LikeRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +96,7 @@ export default function LikesPage() {
   if (loading) {
     return (
       <LoadingScreen
-        message={locale === "ar" ? "جاري التحميل…" : "Loading…"}
+        message={copy.loading}
         theme="sky"
       />
     );
@@ -82,16 +106,16 @@ export default function LikesPage() {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-zinc-100 bg-white px-6 py-16 text-center font-[family-name:var(--font-cairo)] shadow-sm">
         <p className="text-lg font-medium text-zinc-900">
-          {locale === "ar" ? "لم تبدأ رحلة الإعجاب بعد.." : "You haven't started liking yet."}
+          {copy.emptyTitle}
         </p>
         <p className="mt-2 text-zinc-700">
-          {locale === "ar" ? "ابحث عن شريك حياتك الآن!" : "Find your life partner now!"}
+          {copy.emptySubtitle}
         </p>
         <Link
           href="/dashboard/discovery"
           className="mt-6 rounded-xl border border-sky-300 bg-sky-50 px-6 py-3 text-sm font-medium text-sky-700 shadow-sm transition hover:bg-sky-100"
         >
-          {locale === "ar" ? "الذهاب إلى البحث" : "Go to Discovery"}
+          {copy.goDiscovery}
         </Link>
       </div>
     );
@@ -99,9 +123,9 @@ export default function LikesPage() {
 
   return (
     <div className="font-[family-name:var(--font-cairo)]">
-      <h1 className="text-xl font-semibold text-zinc-900">{locale === "ar" ? "الإعجابات" : "Likes"}</h1>
+      <h1 className="text-xl font-semibold text-zinc-900">{copy.title}</h1>
       <p className="mt-1 text-sm text-zinc-700">
-        {locale === "ar" ? "من أعجب بك — يمكنك الإعجاب بهم للتوافق." : "Who liked you — like them back to match."}
+        {copy.subtitle}
       </p>
       <ul className={`mt-6 space-y-3 ${isRtl ? "text-right" : "text-left"}`}>
         {rows.map((u) => {
@@ -121,7 +145,7 @@ export default function LikesPage() {
                   {(u.full_name ?? "?").slice(0, 1)}
                 </div>
                 <div>
-                  <p className="font-medium text-zinc-900">{u.full_name ?? "Unknown"}</p>
+                  <p className="font-medium text-zinc-900">{u.full_name ?? copy.unknown}</p>
                   <p className="text-xs text-zinc-600">{u.gender ?? ""}</p>
                 </div>
               </div>
@@ -138,7 +162,7 @@ export default function LikesPage() {
                     href="/dashboard/discovery"
                     className="rounded-xl border border-sky-300 bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700 shadow-sm hover:bg-sky-100"
                   >
-                    {locale === "ar" ? "اعجب به" : "Like back"}
+                    {copy.likeBack}
                   </Link>
                 )
               ) : (

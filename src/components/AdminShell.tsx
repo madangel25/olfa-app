@@ -4,27 +4,38 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Settings, Menu, X } from "lucide-react";
-
-const NAV_ITEMS = [
-  { href: "/admin/dashboard", label: "لوحة التحكم", labelEn: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/dashboard/settings", label: "إعدادات الموقع", labelEn: "Site Settings", icon: Settings },
-];
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { locale, dir } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isRtl = dir === "rtl";
+
+  const navItems = [
+    {
+      href: "/admin/dashboard",
+      label: locale === "ar" ? "لوحة التحكم" : "Dashboard",
+      icon: LayoutDashboard,
+    },
+    {
+      href: "/admin/dashboard/settings",
+      label: locale === "ar" ? "إعدادات الموقع" : "Site Settings",
+      icon: Settings,
+    },
+  ];
 
   return (
     <div
       className="flex min-h-screen bg-[var(--theme-bg)] font-[family-name:var(--font-cairo)] text-zinc-900"
-      dir="rtl"
+      dir={dir}
     >
       {/* Mobile menu button */}
       <button
         type="button"
         onClick={() => setSidebarOpen((o) => !o)}
         className="fixed top-4 right-4 z-50 flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 bg-white shadow-sm text-zinc-600 hover:bg-zinc-50 md:hidden"
-        aria-label={sidebarOpen ? "إغلاق القائمة" : "فتح القائمة"}
+        aria-label={sidebarOpen ? (locale === "ar" ? "إغلاق القائمة" : "Close menu") : (locale === "ar" ? "فتح القائمة" : "Open menu")}
       >
         {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
@@ -39,13 +50,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       )}
 
       <aside
-        className={`fixed top-0 right-0 z-40 h-screen w-56 shrink-0 border-l border-zinc-200 bg-white shadow-sm transition-transform md:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"
+        className={`fixed top-0 z-40 h-screen w-56 shrink-0 border-zinc-200 bg-white shadow-sm transition-transform md:translate-x-0 ${
+          isRtl ? "right-0 border-l" : "left-0 border-r"
+        } ${
+          sidebarOpen ? "translate-x-0" : `${isRtl ? "translate-x-full" : "-translate-x-full"} md:translate-x-0`
         }`}
-        aria-label="Admin navigation"
+        aria-label={locale === "ar" ? "تنقل الإدارة" : "Admin navigation"}
       >
         <nav className="flex flex-col gap-1 p-4">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const isActive =
               pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href));
             const Icon = item.icon;
@@ -54,11 +67,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 key={item.href}
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition flex-row-reverse text-right ${
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
                   isActive
                     ? "bg-sky-100 text-sky-600 border-r-2 border-r-sky-500"
                     : "text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900"
-                }`}
+                } ${isRtl ? "flex-row-reverse text-right" : "text-left"}`}
               >
                 <Icon className="h-5 w-5 shrink-0" />
                 <span className="flex-1">{item.label}</span>
@@ -69,16 +82,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <Link
               href="/dashboard"
               onClick={() => setSidebarOpen(false)}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 flex-row-reverse text-right"
+              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 ${isRtl ? "flex-row-reverse text-right" : "text-left"}`}
             >
               <LayoutDashboard className="h-5 w-5 shrink-0" />
-              <span className="flex-1">العودة للمستخدم</span>
+              <span className="flex-1">{locale === "ar" ? "العودة للمستخدم" : "Back to user"}</span>
             </Link>
           </div>
         </nav>
       </aside>
 
-      <main className="flex-1 min-w-0 pr-4 md:pr-56">
+      <main className={`flex-1 min-w-0 ${isRtl ? "pr-4 md:pr-56" : "pl-4 md:pl-56"}`}>
         {children}
       </main>
     </div>

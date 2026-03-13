@@ -131,7 +131,7 @@ export function Navbar() {
     <nav
       className="sticky top-0 z-50 h-16 border-b border-zinc-200 bg-white/95 shadow-sm backdrop-blur-sm font-[family-name:var(--font-cairo)]"
       role="navigation"
-      aria-label="Main"
+      aria-label={locale === "ar" ? "القائمة الرئيسية" : "Main"}
     >
       <div className="mx-auto flex h-full w-full max-w-7xl items-center px-4 py-2.5 sm:px-6">
         {/* Top-level: use dir="ltr" so flex order is only from our flex-row / flex-row-reverse, not from page dir. */}
@@ -144,7 +144,7 @@ export function Navbar() {
             <Link
               href="/"
               className={`flex items-center gap-2 text-lg font-semibold text-zinc-900 transition ${accentClass} hover:opacity-90`}
-              aria-label="Home"
+              aria-label={locale === "ar" ? "الرئيسية" : "Home"}
             >
               {logoUrl ? (
                 <img src={logoUrl} alt="Olfa" className="h-8 w-auto object-contain" />
@@ -162,7 +162,7 @@ export function Navbar() {
               <Link
                 href="/dashboard/notifications"
                 className={`relative rounded-xl border ${borderClass} bg-white p-2 text-[var(--theme-primary)] transition ${hoverBgClass} hover:opacity-90`}
-                aria-label="Notifications"
+                aria-label={locale === "ar" ? "الإشعارات" : "Notifications"}
               >
                 <Bell className="h-5 w-5" />
                 {hasNewNotifications && (
@@ -255,9 +255,7 @@ export function Navbar() {
                         onClick={() => setDropdownOpen(false)}
                       >
                         <Settings className="h-4 w-4 shrink-0 text-[var(--theme-primary)]" />
-                        {locale === "ar"
-                          ? "الإعدادات والخصوصية"
-                          : "Settings & privacy"}
+                        {locale === "ar" ? "الإعدادات والخصوصية" : "Settings & Privacy"}
                       </Link>
                       <button
                         type="button"
@@ -283,7 +281,7 @@ export function Navbar() {
                 className={`flex items-center justify-center rounded-xl border ${borderClass} bg-white p-2 text-[var(--theme-primary)] transition ${hoverBgClass} hover:opacity-90`}
                 aria-expanded={langDropdownOpen}
                 aria-haspopup="true"
-                aria-label={locale === "ar" ? "Language" : "اللغة"}
+                aria-label={locale === "ar" ? "اللغة" : "Language"}
               >
                 <Globe className="h-5 w-5" />
               </button>
@@ -298,7 +296,7 @@ export function Navbar() {
                   <div
                     className={`absolute top-full z-50 mt-2 min-w-[10rem] overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-xl ${locale === "ar" ? "left-0" : "right-0"}`}
                     role="menu"
-                    aria-label={locale === "ar" ? "Language" : "اللغة"}
+                    aria-label={locale === "ar" ? "اللغة" : "Language"}
                   >
                     <button
                       type="button"
