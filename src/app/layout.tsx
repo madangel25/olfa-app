@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Cairo } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LayoutWithNavbar } from "@/components/LayoutWithNavbar";
@@ -37,14 +36,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${cairo.variable} antialiased`}
       >
-        {/* Providers at the very top so DashboardShell, Navbar, and all UI are inside them. */}
-        <AuthProvider>
-          <LanguageProvider>
-            <ThemeProvider>
-              <LayoutWithNavbar>{children}</LayoutWithNavbar>
-            </ThemeProvider>
-          </LanguageProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <ThemeProvider>
+            <LayoutWithNavbar>{children}</LayoutWithNavbar>
+          </ThemeProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Check, CheckCheck, MoreVertical, Flag, ImagePlus, Eye, Plus, Mic, Loader2, X, Play, Pause, Sparkles, Zap, Gauge, Home, User, Search, MapPin, Heart, MessageCircle, Phone, Paperclip, Send } from "lucide-react";
+import { Check, CheckCheck, MoreVertical, Flag, ImagePlus, Eye, Plus, Mic, Loader2, X, Play, Pause, Sparkles, Zap, Gauge } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useOnlinePresence } from "@/components/DashboardShell";
@@ -61,26 +61,6 @@ const REPORT_REASONS = [
   { value: "inappropriate", label: "Inappropriate Content", labelAr: "محتوى غير لائق" },
   { value: "other", label: "Other", labelAr: "أخرى" },
 ] as const;
-
-const BRAND_TEAL = "#0ABFBD";
-const BRAND_TEAL_DARK = "#07908e";
-const AVATAR_GRADIENTS: Record<string, string> = {
-  default: "linear-gradient(135deg, #0ABFBD, #07908e)",
-  orange_red: "linear-gradient(135deg, #f97316, #ef4444)",
-  purple_indigo: "linear-gradient(135deg, #8b5cf6, #6366f1)",
-  emerald_green: "linear-gradient(135deg, #10b981, #059669)",
-  amber_orange: "linear-gradient(135deg, #f59e0b, #d97706)",
-};
-function getAvatarGradient(name: string | null, isCurrentUser?: boolean): string {
-  if (isCurrentUser) return AVATAR_GRADIENTS.default;
-  const key = (name || "")
-    .toLowerCase()
-    .replace(/\s+/g, "_");
-  const hash = key.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const keys = Object.keys(AVATAR_GRADIENTS).filter((k) => k !== "default");
-  return AVATAR_GRADIENTS[keys[hash % keys.length]] ?? AVATAR_GRADIENTS.default;
-}
-const WAVEFORM_HEIGHTS = [6, 14, 10, 18, 8, 20, 12, 16, 6, 10, 18, 8];
 
 const MAX_MEDIA_BYTES = 5 * 1024 * 1024; // 5MB
 
@@ -309,8 +289,6 @@ export default function MessagesPage() {
   const [uploadingMedia, setUploadingMedia] = useState<"image" | "audio" | null>(null);
   const [revealedViewOnceUrls, setRevealedViewOnceUrls] = useState<Record<string, string>>({});
   const [mediaUrls, setMediaUrls] = useState<Record<string, string>>({});
-  const [conversationFilter, setConversationFilter] = useState<"all" | "unread" | "matches">("all");
-  const [conversationSearch, setConversationSearch] = useState("");
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingChunksRef = useRef<Blob[]>([]);
@@ -1105,259 +1083,388 @@ export default function MessagesPage() {
     return <LoadingScreen message={copy.loading} theme="sky" />;
   }
 
-  const filteredConversations = useMemo(() => {
-    let list = conversations ?? [];
-    if (conversationSearch.trim()) {
-      const q = conversationSearch.trim().toLowerCase();
-      list = list.filter(
-        (c) =>
-          (c.partner_name || "").toLowerCase().includes(q) ||
-          (c.last_message || "").toLowerCase().includes(q)
-      );
-    }
-    if (conversationFilter === "unread") list = list.filter((c) => c.hasUnread);
-    return list;
-  }, [conversations, conversationSearch, conversationFilter]);
-
-  const messagesPageStyles = {
-    "--olfa-bg-primary": "#ffffff",
-    "--olfa-bg-secondary": "#f5f5f5",
-    "--olfa-bg-tertiary": "#ebebeb",
-    "--olfa-text-primary": "#171717",
-    "--olfa-text-secondary": "#525252",
-    "--olfa-text-tertiary": "#737373",
-    "--olfa-border-tertiary": "rgba(0,0,0,0.15)",
-  } as React.CSSProperties;
-
   return (
-    <div className="font-[family-name:var(--font-cairo)] box-border h-full" dir={dir} style={messagesPageStyles}>
-      {error && (
-        <div className="mx-3 mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          {error}
-        </div>
-      )}
-      <div className="flex h-[calc(100vh-8rem)] min-h-[400px] w-full overflow-hidden rounded-xl border-[0.5px] border-[var(--olfa-border-tertiary)] box-border">
-        {/* 1. Sidebar 68px */}
-        <aside className="flex w-[68px] shrink-0 flex-col items-center gap-1.5 border-r-[0.5px] border-[var(--olfa-border-tertiary)] bg-[var(--olfa-bg-secondary)] py-4">
-          <div className="mb-3 text-[15px] font-medium tracking-tight text-[var(--olfa-text-primary)]" style={{ letterSpacing: "-0.5px" }}>O</div>
-          <Link href="/dashboard" className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--olfa-text-secondary)] transition-[background] duration-150 hover:bg-[var(--olfa-bg-primary)]" aria-label="Home"><Home className="h-5 w-5" strokeWidth={1.5} fill="none" /></Link>
-          <Link href="/dashboard/profile" className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--olfa-text-secondary)] transition-[background] duration-150 hover:bg-[var(--olfa-bg-primary)]" aria-label="Profile"><User className="h-5 w-5" strokeWidth={1.5} fill="none" /></Link>
-          <Link href="/dashboard/discovery" className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--olfa-text-secondary)] transition-[background] duration-150 hover:bg-[var(--olfa-bg-primary)]" aria-label="Discovery"><Search className="h-5 w-5" strokeWidth={1.5} fill="none" /></Link>
-          <Link href="/dashboard/discover-near-me" className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--olfa-text-secondary)] transition-[background] duration-150 hover:bg-[var(--olfa-bg-primary)]" aria-label="Near Me"><MapPin className="h-5 w-5" strokeWidth={1.5} fill="none" /></Link>
-          <Link href="/dashboard/likes" className="flex h-11 w-11 items-center justify-center rounded-lg text-[var(--olfa-text-secondary)] transition-[background] duration-150 hover:bg-[var(--olfa-bg-primary)]" aria-label="Likes"><Heart className="h-5 w-5" strokeWidth={1.5} fill="none" /></Link>
-          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-[var(--olfa-bg-primary)] text-[#0ABFBD] ring-[0.5px] ring-[rgba(10,191,189,0.3)]" aria-current="page"><MessageCircle className="h-5 w-5" strokeWidth={1.5} fill="none" /></div>
-          <div className="mt-auto flex h-9 w-9 items-center justify-center rounded-full text-[13px] font-medium text-white" style={{ background: AVATAR_GRADIENTS.default }}>م</div>
-        </aside>
-
-        {/* 2. Conversation list 300px */}
-        <aside className="flex w-[300px] shrink-0 flex-col border-r-[0.5px] border-[var(--olfa-border-tertiary)] bg-[var(--olfa-bg-primary)]">
-          <div className="border-b-[0.5px] border-[var(--olfa-border-tertiary)] px-4 pb-3 pt-5">
-            <h2 className="mb-3 text-[16px] font-medium text-[var(--olfa-text-primary)]">{copy.title}</h2>
-            <div className="flex items-center gap-2 rounded-lg border-[0.5px] border-[var(--olfa-border-tertiary)] bg-[var(--olfa-bg-secondary)] px-3 py-2">
-              <Search className="h-3.5 w-3.5 shrink-0 text-[var(--olfa-text-tertiary)]" strokeWidth={1.5} fill="none" />
-              <input type="text" value={conversationSearch} onChange={(e) => setConversationSearch(e.target.value)} placeholder="Search conversations…" className="min-w-0 flex-1 border-0 bg-transparent text-[13px] text-[var(--olfa-text-primary)] outline-none placeholder:text-[var(--olfa-text-tertiary)]" />
+    <div className="font-[family-name:var(--font-cairo)]" dir={dir}>
+      <div className="h-[calc(100vh-160px)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex h-full w-full flex-col">
+          {error && (
+            <div className="mx-3 mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              {error}
             </div>
-          </div>
-          <div className="flex gap-2 border-b-[0.5px] border-[var(--olfa-border-tertiary)] px-4 py-2.5">
-            {(["all", "unread", "matches"] as const).map((tab) => (
-              <button key={tab} type="button" onClick={() => setConversationFilter(tab)} className={`rounded-[20px] border-[0.5px] px-2.5 py-1 text-[12px] transition-colors duration-150 cursor-pointer ${tab === conversationFilter ? "border-[#0ABFBD] bg-[#0ABFBD] text-white" : "border-[var(--olfa-border-tertiary)] bg-transparent text-[var(--olfa-text-secondary)]"}`}>{tab === "all" ? "All" : tab === "unread" ? copy.unread : "Matches"}</button>
-            ))}
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {filteredConversations.length === 0 ? (
-              <p className="p-4 text-[13px] text-[var(--olfa-text-tertiary)]">{copy.noConversations}</p>
-            ) : (
-              filteredConversations.map((c) => {
-                const selected = selectedConversationId === c.id;
-                const isPartnerOnline = onlineUserIds.has(c.partner_id) || isOnline(c.partner_last_seen_at);
-                const isVoice = (c.last_message || "").toLowerCase().includes("voice") || (c.last_message === (locale === "ar" ? "صوت" : "Voice"));
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => { setSelectedConversationId(c.id); setConversations((prev) => prev.map((conv) => (conv.id === c.id ? { ...conv, hasUnread: false } : conv))); }}
-                    className={`flex w-full cursor-pointer items-center gap-3 border-b-[0.5px] border-[var(--olfa-border-tertiary)] px-4 py-3 text-left transition-colors duration-150 hover:bg-[var(--olfa-bg-secondary)] ${selected ? "border-s-2 border-s-[#0ABFBD] bg-[rgba(10,191,189,0.06)]" : ""}`}
-                  >
-                    <div className="relative h-[46px] w-[46px] shrink-0 overflow-hidden rounded-full" style={{ background: getAvatarGradient(c.partner_name, false) }}>
-                      {c.partner_photo ? <img src={c.partner_photo} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center text-[14px] font-medium text-white">{(c.partner_name || "?").slice(0, 1)}</span>}
-                      <span className={`absolute bottom-0 right-0 h-[11px] w-[11px] rounded-full border-2 border-white ${isPartnerOnline ? "bg-[#22c55e]" : "bg-zinc-300"}`} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[14px] font-medium text-[var(--olfa-text-primary)]">{c.partner_name}</p>
-                      <p className="truncate text-[12px] text-[var(--olfa-text-secondary)]">{c.last_message || copy.startChat}</p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-0.5">
-                      <span className="text-[11px] text-[var(--olfa-text-tertiary)]">{formatTime(c.last_message_at)}</span>
-                      {c.hasUnread && <span className="rounded-[10px] bg-[#0ABFBD] px-1.5 py-0.5 text-[10px] font-medium text-white">1</span>}
-                      {isVoice && !c.hasUnread && <span className="rounded-[10px] bg-[rgba(10,191,189,0.1)] px-1.5 py-0.5 text-[10px] text-[#0ABFBD]">🎙 Voice · 1:41</span>}
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </div>
-        </aside>
+          )}
 
-        {/* 3. Chat panel flex-1 */}
-        <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[var(--olfa-bg-primary)]">
-          {/* Chat header: 16px 20px, border-bottom 0.5px, avatar 40, name 15px weight 500, status green 12px, Phone + menu 36x36 */}
-          <div className="flex flex-shrink-0 items-center gap-3 border-b-[0.5px] border-[var(--olfa-border-tertiary)] px-5 py-4">
-            {selectedConversation ? (
-              <>
-                <Link href={`/profile/${selectedConversation.partner_id}`} className="flex min-w-0 flex-1 items-center gap-3 no-underline">
-                  <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full" style={{ background: getAvatarGradient(selectedConversation.partner_name, false) }}>
-                    {selectedConversation.partner_photo ? <img src={selectedConversation.partner_photo} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center text-[14px] font-medium text-white">{(selectedConversation.partner_name || "?").slice(0, 1)}</span>}
-                    <span className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${(onlineUserIds.has(selectedConversation.partner_id) || isOnline(selectedConversation.partner_last_seen_at)) ? "bg-[#22c55e]" : "bg-zinc-300"}`} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[15px] font-medium text-[var(--olfa-text-primary)]">{selectedConversation.partner_name}</p>
-                    <p className="text-[12px] text-[#22c55e]">
-                      {isPartnerTyping ? copy.typingNow : (onlineUserIds.has(selectedConversation.partner_id) || isOnline(selectedConversation.partner_last_seen_at)) ? copy.onlineNow : selectedConversation.partner_last_seen_at ? `${copy.lastSeen} ${formatTime(selectedConversation.partner_last_seen_at)}` : ""}
-                    </p>
-                  </div>
-                </Link>
-                <div className="flex shrink-0 items-center gap-2">
-                  <button type="button" className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border-[0.5px] border-[var(--olfa-border-tertiary)] bg-transparent text-[var(--olfa-text-secondary)] transition-colors duration-150 hover:bg-[var(--olfa-bg-secondary)]" aria-label="Phone"><Phone className="h-5 w-5" strokeWidth={1.5} fill="none" /></button>
-                  <div className="relative">
-                    <button type="button" onClick={() => setHeaderMenuOpen((o) => !o)} className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border-[0.5px] border-[var(--olfa-border-tertiary)] bg-transparent text-[var(--olfa-text-secondary)] transition-colors duration-150 hover:bg-[var(--olfa-bg-secondary)]" aria-label={copy.menu}><MoreVertical className="h-5 w-5" strokeWidth={1.5} fill="none" /></button>
-                    {headerMenuOpen && (
-                      <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border-[0.5px] border-[var(--olfa-border-tertiary)] bg-[var(--olfa-bg-primary)] py-1">
-                        <button type="button" onClick={() => { setHeaderMenuOpen(false); setReportModalOpen(true); }} className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-[13px] text-[var(--olfa-text-primary)] hover:bg-red-50 hover:text-red-600"><Flag className="h-4 w-4" strokeWidth={1.5} fill="none" />{copy.reportUser}</button>
-                        <button type="button" onClick={() => setShowInsightsPanel((v) => !v)} className="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-[13px] text-[var(--olfa-text-primary)] hover:bg-[var(--olfa-bg-secondary)]"><Sparkles className="h-4 w-4" strokeWidth={1.5} fill="none" />{copy.insights}</button>
+          <div className="grid min-h-0 flex-1 w-full grid-cols-1 overflow-hidden md:grid-cols-[260px_1fr]">
+        {/* Conversation list */}
+        <aside className="overflow-y-auto border-b border-zinc-200 bg-zinc-50/60 md:border-b-0 md:border-l">
+          {(conversations ?? []).map((c) => {
+            const selected = selectedConversationId === c.id;
+            const isPartnerOnline = onlineUserIds.has(c.partner_id) || isOnline(c.partner_last_seen_at);
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => {
+                  setSelectedConversationId(c.id);
+                  setConversations((prev) =>
+                    prev.map((conv) =>
+                      conv.id === c.id ? { ...conv, hasUnread: false } : conv
+                    )
+                  );
+                }}
+                className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-right transition ${selected ? "bg-slate-100" : "hover:bg-zinc-100/80"}`}
+              >
+                <div className="relative h-10 w-10 shrink-0">
+                  <div className="h-10 w-10 overflow-hidden rounded-full bg-zinc-100">
+                    {c.partner_photo ? (
+                      <img src={c.partner_photo} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-zinc-500">
+                        {(c.partner_name || "?").slice(0, 1)}
                       </div>
                     )}
                   </div>
+                  <span
+                    className={`ml-1 inline-flex h-2.5 w-2.5 rounded-full border border-white ${
+                      isPartnerOnline ? "bg-emerald-500" : "bg-zinc-300"
+                    }`}
+                  />
                 </div>
-              </>
-            ) : (
-              <p className="text-[15px] font-medium text-[var(--olfa-text-tertiary)]">{copy.selectConversation}</p>
-            )}
-          </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate text-xs font-semibold text-zinc-900">{c.partner_name}</p>
+                    <span className="flex shrink-0 items-center gap-1">
+                      {c.hasUnread && (
+                        <span className="h-2 w-2 rounded-full bg-red-500" title={copy.unread} />
+                      )}
+                      <span className="text-[10px] text-zinc-500">{formatTime(c.last_message_at)}</span>
+                    </span>
+                  </div>
+                  <p className="truncate text-[11px] text-zinc-600">{c.last_message || copy.startChat}</p>
+                </div>
+              </button>
+            );
+          })}
+          {conversations.length === 0 && (
+            <p className="p-4 text-sm text-zinc-500">{copy.noConversations}</p>
+          )}
 
-          {/* Chat body: flex 1, padding 20px, overflow-y auto, bg tertiary, gap 16px */}
-          <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-[var(--olfa-bg-tertiary)] p-5">
-            {!selectedConversationId ? (
-              <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center text-[var(--olfa-text-tertiary)]">
-                <p className="text-[13px]">{copy.selectConversationToStart}</p>
-              </div>
-            ) : loadingMessages ? (
-              <p className="text-center text-[13px] text-[var(--olfa-text-tertiary)]">{copy.loading}</p>
-            ) : messages.length === 0 ? (
-              <p className="text-center text-[13px] text-[var(--olfa-text-tertiary)]">{copy.noMessages}</p>
-            ) : (
+        </aside>
+
+        {/* Message thread */}
+        <section className="flex min-h-0 flex-col overflow-visible">
+          <div className="relative z-30 border-b border-zinc-200 px-4 py-3">
+            {selectedConversation ? (
               <>
-                {/* Day divider */}
-                <div className="relative flex items-center justify-center py-2">
-                  <div className="absolute inset-0 flex items-center"><div className="h-[0.5px] w-full bg-[var(--olfa-border-tertiary)]" /></div>
-                  <span className="relative bg-[var(--olfa-bg-tertiary)] px-3 text-[11px] text-[var(--olfa-text-tertiary)]">Today</span>
-                </div>
-                <ul className="flex flex-col gap-4">
-                  {(messages ?? []).map((m) => {
-                    const mine = m.sender_id === currentUserId;
-                    const isImage = m.message_type === "image";
-                    const isAudio = m.message_type === "audio";
-                    const viewOnceNotViewed = isImage && m.is_temporary && !mine && !m.temporary_viewed_at && !revealedViewOnceUrls[m.id];
-                    const imageUrl = isImage && m.attachment_url ? revealedViewOnceUrls[m.id] || (viewOnceNotViewed ? null : mediaUrls[m.attachment_url]) : null;
-                    const audioUrl = isAudio && m.attachment_url ? mediaUrls[m.attachment_url] : null;
-                    const isLoadingMedia = (isImage && m.attachment_url && !viewOnceNotViewed && !imageUrl) || (isAudio && m.attachment_url && !audioUrl);
-                    const partnerName = selectedConversation?.partner_name ?? "";
-
-                    return (
-                      <li key={m.id} className={`flex gap-2 ${mine ? "flex-row-reverse" : ""}`}>
-                        <div className="flex h-8 w-8 shrink-0 items-end justify-center overflow-hidden rounded-full text-[12px] font-medium text-white" style={{ background: getAvatarGradient(mine ? "" : partnerName, mine) }}>{mine ? "م" : (selectedConversation?.partner_name || "?").slice(0, 1)}</div>
-                        <div className={`max-w-[260px] rounded-2xl px-3.5 py-2.5 text-[13px] leading-relaxed ${mine ? "rounded-br-md bg-[#0ABFBD] text-white" : "rounded-bl-md border-[0.5px] border-[var(--olfa-border-tertiary)] bg-[var(--olfa-bg-primary)] text-[var(--olfa-text-primary)]"}`}>
-                          {isImage && m.attachment_url && (
-                            <div className="min-h-[100px] min-w-[120px]">
-                              {viewOnceNotViewed ? (
-                                <button type="button" onClick={() => void revealViewOnce(m.id, m.attachment_url!)} className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-[var(--olfa-border-tertiary)] bg-[var(--olfa-bg-secondary)] px-3 py-2 text-[13px] text-[var(--olfa-text-secondary)]"><Eye className="h-4 w-4" strokeWidth={1.5} fill="none" />{copy.tapToView}</button>
-                              ) : isLoadingMedia ? (
-                                <div className="flex justify-center py-6"><Loader2 className="h-6 w-6 animate-spin text-[var(--olfa-text-tertiary)]" strokeWidth={1.5} /></div>
-                              ) : imageUrl ? (
-                                <img src={imageUrl} alt="" className="max-h-64 max-w-[280px] rounded-xl object-contain" />
-                              ) : (
-                                <span className="text-[12px] text-[var(--olfa-text-tertiary)]">{copy.image}</span>
-                              )}
-                              {m.is_temporary && <p className="mt-1 text-[10px] text-[var(--olfa-text-tertiary)]">{copy.viewOnce}</p>}
-                            </div>
-                          )}
-                          {isAudio && m.attachment_url && (
-                            <div className="min-w-[200px]">
-                              {audioUrl ? (
-                                <div className="flex items-center gap-2">
-                                  <button type="button" onClick={() => { const a = new Audio(audioUrl); a.play(); }} className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[rgba(10,191,189,0.15)] text-[#0ABFBD] transition-transform duration-200 hover:scale-105">
-                                    <Play className="h-3.5 w-3.5 ml-0.5" strokeWidth={1.5} fill="currentColor" />
-                                  </button>
-                                  <div className="flex flex-1 items-center gap-1">
-                                    {WAVEFORM_HEIGHTS.map((h, i) => (
-                                      <div key={i} className="w-0.5 rounded-sm bg-[rgba(10,191,189,0.5)]" style={{ height: `${h}px` }} />
-                                    ))}
-                                  </div>
-                                  <span className="text-[11px] text-[var(--olfa-text-tertiary)]">1:41</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2 py-2"><Loader2 className="h-4 w-4 animate-spin text-[var(--olfa-text-tertiary)]" strokeWidth={1.5} /><span className="text-[12px] text-[var(--olfa-text-tertiary)]">{copy.loadingVoice}</span></div>
-                              )}
-                            </div>
-                          )}
-                          {!isImage && !isAudio && <p className="whitespace-pre-wrap break-words">{m.content}</p>}
-                          <div className={`mt-1 text-right text-[10px] ${mine ? "text-white/70" : "text-[var(--olfa-text-tertiary)]"}`}>
-                            {formatTime(m.created_at)}
-                            {mine && (m.is_read ? <CheckCheck className="ml-1 inline h-3.5 w-3.5" strokeWidth={1.5} /> : <Check className="ml-1 inline h-3.5 w-3.5" strokeWidth={1.5} />)}
-                          </div>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/profile/${selectedConversation.partner_id}`}
+                    className="flex flex-1 min-w-0 items-center gap-3 no-underline outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-1 rounded-lg -m-1 p-1"
+                  >
+                    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-zinc-200">
+                      {selectedConversation.partner_photo ? (
+                        <img
+                          src={selectedConversation.partner_photo}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-zinc-500">
+                          {(selectedConversation.partner_name || "?").slice(0, 1)}
                         </div>
-                      </li>
-                    );
-                  })}
-                  <div ref={messagesEndRef} />
-                </ul>
+                      )}
+                    </div>
+                    <p className="text-sm font-semibold text-zinc-900 truncate">
+                      {selectedConversation.partner_name}
+                    </p>
+                  </Link>
+                  <div className="relative shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setShowInsightsPanel((v) => !v)}
+                      className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
+                      aria-label={copy.insights}
+                    >
+                      <Sparkles className="h-5 w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHeaderMenuOpen((o) => !o)}
+                      className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
+                      aria-label={copy.menu}
+                    >
+                      <MoreVertical className="h-5 w-5" />
+                    </button>
+                    {headerMenuOpen && (
+                      <>
+                        <div className="mt-1 w-48 rounded-xl border border-zinc-200 bg-white py-1 shadow-xl">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setHeaderMenuOpen(false);
+                              setReportModalOpen(true);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-red-50 hover:text-red-700"
+                          >
+                            <Flag className="h-4 w-4" />
+                            {copy.reportUser}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                {(() => {
+                  const online =
+                    onlineUserIds.has(selectedConversation.partner_id) ||
+                    isOnline(selectedConversation.partner_last_seen_at);
+                  let status: string | null = null;
+                  if (isPartnerTyping) {
+                    status = copy.typingNow;
+                  } else if (online) {
+                    status = copy.onlineNow;
+                  } else if (selectedConversation.partner_last_seen_at) {
+                    status = `${copy.lastSeen} ${formatTime(selectedConversation.partner_last_seen_at)}`;
+                  }
+                  return status ? (
+                    <p className="mt-0.5 text-xs text-zinc-500">{status}</p>
+                  ) : null;
+                })()}
               </>
+            ) : (
+              <p className="text-sm font-semibold text-zinc-500">{copy.selectConversation}</p>
             )}
           </div>
 
-          {/* Chat input: padding 16px 20px, top border 0.5px, flex row align-end gap 10px */}
-          {selectedConversationId && (
-            <div className="flex flex-shrink-0 items-end gap-2.5 border-t-[0.5px] border-[var(--olfa-border-tertiary)] px-5 py-4">
-              {recording !== null && (
-                <div className="mb-2 flex w-full items-center justify-between rounded-xl border-[0.5px] border-[var(--olfa-border-tertiary)] bg-[var(--olfa-bg-secondary)] px-3 py-2">
-                  <span className="text-[13px] text-[var(--olfa-text-secondary)]">{copy.recording} {Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, "0")}</span>
-                  <div className="flex gap-2">
-                    <button type="button" onClick={cancelRecording} className="cursor-pointer rounded-lg px-3 py-1.5 text-[13px] font-medium text-[var(--olfa-text-secondary)] hover:bg-[var(--olfa-bg-tertiary)]">{copy.cancel}</button>
-                    <button type="button" onClick={sendRecording} className="cursor-pointer rounded-lg bg-[#0ABFBD] px-3 py-1.5 text-[13px] font-medium text-white hover:opacity-90">{copy.send}</button>
+          {selectedConversation && showInsightsPanel && (
+            <div className="border-b border-zinc-200 bg-zinc-50/70 px-4 py-3">
+              {!myIsVip ? (
+                <div className={`space-y-2 ${dir === "rtl" ? "text-right" : "text-left"}`}>
+                  <p className="text-sm font-medium text-zinc-800">{copy.vipInsightsLocked}</p>
+                  <Link href="/dashboard" className="inline-flex rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600">
+                    {copy.vipUpgrade}
+                  </Link>
+                </div>
+              ) : (
+    <div>
+                  <p className="mb-3 text-sm font-semibold text-zinc-800">{copy.personalityInsights}</p>
+                  <div className="space-y-3">
+                    <div className="rounded-xl bg-white/80 p-2">
+                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-zinc-600"><Zap className="h-3.5 w-3.5 text-slate-600" /> {copy.responseSpeed}</p>
+                      <p className="text-sm font-semibold text-zinc-900">{personalityInsights.responseSpeedLabel}</p>
+                    </div>
+                    <div className="rounded-xl bg-white/80 p-2">
+                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-zinc-600"><Gauge className="h-3.5 w-3.5 text-slate-600" /> {copy.engagement}</p>
+                      <p className="text-sm font-semibold text-zinc-900">{personalityInsights.engagementLabel}</p>
+                    </div>
+                    <div className="rounded-xl bg-white/80 p-2">
+                      <p className="mb-1 text-xs font-medium text-zinc-600">{copy.seriousnessScore}</p>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200">
+                        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${personalityInsights.score}%` }} />
+                      </div>
+                      <p className="mt-1 text-xs font-semibold text-zinc-800">{personalityInsights.score}%</p>
+                    </div>
                   </div>
                 </div>
               )}
-              <div className="flex min-w-0 flex-1 items-center gap-2 rounded-[20px] border-[0.5px] border-[var(--olfa-border-tertiary)] bg-[var(--olfa-bg-secondary)] px-4 py-2.5">
-                <span className="text-[16px] text-[var(--olfa-text-tertiary)]" aria-hidden>☺</span>
-                <input
-                  value={draft}
-                  onChange={(e) => { setDraft(e.target.value); sendTypingStatus(true); }}
-                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleSend(); } }}
-                  placeholder={copy.typeMessage}
-                  className="min-w-0 flex-1 border-0 bg-transparent text-[13px] text-[var(--olfa-text-primary)] outline-none placeholder:text-[var(--olfa-text-tertiary)]"
-                />
+            </div>
+          )}
+
+          <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50 px-3 py-4">
+            {!selectedConversationId ? (
+              <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center text-zinc-500">
+                <p className="text-sm">{copy.selectConversationToStart}</p>
+              </div>
+            ) : loadingMessages ? (
+              <p className="text-center text-sm text-zinc-500">{copy.loading}</p>
+            ) : messages.length === 0 ? (
+              <p className="text-center text-sm text-zinc-500">{copy.noMessages}</p>
+            ) : (
+              <ul className="space-y-2">
+                {(messages ?? []).map((m) => {
+                  const mine = m.sender_id === currentUserId;
+                  const isImage = m.message_type === "image";
+                  const isAudio = m.message_type === "audio";
+                  const viewOnceNotViewed =
+                    isImage && m.is_temporary && !mine && !m.temporary_viewed_at && !revealedViewOnceUrls[m.id];
+                  const imageUrl =
+                    isImage && m.attachment_url
+                      ? revealedViewOnceUrls[m.id] || (viewOnceNotViewed ? null : mediaUrls[m.attachment_url])
+                      : null;
+                  const audioUrl = isAudio && m.attachment_url ? mediaUrls[m.attachment_url] : null;
+                  const isLoadingMedia =
+                    (isImage && m.attachment_url && !viewOnceNotViewed && !imageUrl) ||
+                    (isAudio && m.attachment_url && !audioUrl);
+
+                  return (
+                    <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                      <div
+                        className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm font-medium shadow-sm border ${
+                          mine
+                            ? "bg-slate-100 border-slate-200 text-zinc-800"
+                            : "bg-white border-slate-200 text-zinc-800"
+                        }`}
+                      >
+                        {isImage && m.attachment_url && (
+                          <div className="min-w-[120px] min-h-[100px]">
+                            {viewOnceNotViewed ? (
+                              <button
+                                type="button"
+                                onClick={() => void revealViewOnce(m.id, m.attachment_url!)}
+                                className="flex items-center gap-2 rounded-lg border border-dashed border-zinc-300 bg-white/80 px-4 py-3 text-sm text-zinc-600 hover:bg-white"
+                              >
+                                <Eye className="h-4 w-4" />
+                                {copy.tapToView}
+                              </button>
+                            ) : isLoadingMedia ? (
+                              <div className="flex items-center justify-center py-8">
+                                <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+                              </div>
+                            ) : imageUrl ? (
+                              <img src={imageUrl} alt="" className="max-h-64 max-w-[300px] rounded-xl object-contain shadow-sm" />
+                            ) : (
+                              <span className="text-xs text-zinc-500">{copy.image}</span>
+                            )}
+                            {m.is_temporary && (
+                              <p className="mt-1 text-[10px] text-zinc-500">{copy.viewOnce}</p>
+                            )}
+                          </div>
+                        )}
+                        {isAudio && m.attachment_url && (
+                          <div className="min-w-[230px]">
+                            {audioUrl ? (
+                              <AudioMiniPlayer src={audioUrl} />
+                            ) : (
+                              <div className="flex items-center gap-2 py-2">
+                                <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
+                                <span className="text-xs text-zinc-500">{copy.loadingVoice}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {(!isImage && !isAudio) && (
+                          <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                        )}
+                        <div className="mt-1 flex items-center gap-1 text-[11px] text-zinc-500">
+                          <span>{formatTime(m.created_at)}</span>
+                          {mine && (
+                            <span className="flex items-center">
+                              {m.is_read ? (
+                                <CheckCheck size={15} className="text-slate-600" />
+                              ) : (
+                                <Check size={15} className="text-slate-400" />
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </ul>
+            )}
+          </div>
+
+          {selectedConversationId && (
+            <div className="border-t border-zinc-200 p-3">
+              {recording !== null && (
+                <div className="mb-2 flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
+                  <span className="text-sm text-zinc-600">
+                    {copy.recording} {Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, "0")}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={cancelRecording}
+                      className="rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-600 hover:bg-zinc-200"
+                    >
+                      {copy.cancel}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={sendRecording}
+                      className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
+                    >
+                      {copy.send}
+                    </button>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
                 <div className="relative shrink-0">
-                  <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImageSelect} />
-                  <button type="button" onClick={() => setShowMediaMenu((o) => !o)} className="flex cursor-pointer items-center justify-center rounded-lg p-1 text-[var(--olfa-text-tertiary)] hover:bg-[var(--olfa-bg-tertiary)]" aria-label={copy.attach}><Paperclip className="h-4 w-4" strokeWidth={1.5} fill="none" /></button>
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleImageSelect}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowMediaMenu((o) => !o)}
+                    className="rounded-xl p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
+                    aria-label={copy.attach}
+                  >
+                    <Plus className="h-5 w-5" />
+                  </button>
                   {showMediaMenu && (
-                    <div className="absolute bottom-full right-0 z-50 mb-1 flex gap-1 rounded-xl border-[0.5px] border-[var(--olfa-border-tertiary)] bg-[var(--olfa-bg-primary)] p-1">
-                      <button type="button" onClick={() => { imageInputRef.current?.click(); setShowMediaMenu(false); }} className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-[var(--olfa-text-primary)] hover:bg-[var(--olfa-bg-secondary)]"><ImagePlus className="h-4 w-4" strokeWidth={1.5} fill="none" />{copy.photo}</button>
-                      <button type="button" onClick={() => { setShowMediaMenu(false); void startRecording(); }} className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-[13px] text-[var(--olfa-text-primary)] hover:bg-[var(--olfa-bg-secondary)]"><Mic className="h-4 w-4" strokeWidth={1.5} fill="none" />{copy.voice}</button>
-                    </div>
+                    <>
+                      <div className="mt-2 flex gap-1 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg">
+                        <button
+                          type="button"
+                          onClick={() => { imageInputRef.current?.click(); setShowMediaMenu(false); }}
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                        >
+                          <ImagePlus className="h-4 w-4" />
+                          {copy.photo}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setShowMediaMenu(false); void startRecording(); }}
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                        >
+                          <Mic className="h-4 w-4" />
+                          {copy.voice}
+                        </button>
+                      </div>
+                    </>
                   )}
                 </div>
+                <input
+                  value={draft}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setDraft(value);
+                    sendTypingStatus(true);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      void handleSend();
+                    }
+                  }}
+                  placeholder={copy.typeMessage}
+                  className="flex-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => void handleSend()}
+                  disabled={!draft.trim() || !!uploadingMedia}
+                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                >
+                  {uploadingMedia ? <Loader2 className="h-5 w-5 animate-spin" /> : copy.send}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => void handleSend()}
-                disabled={!draft.trim() || !!uploadingMedia}
-                className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border-0 bg-[#0ABFBD] text-white transition-transform duration-200 hover:opacity-90 disabled:opacity-50"
-                aria-label={copy.send}
-              >
-                {uploadingMedia ? <Loader2 className="h-5 w-5 animate-spin" strokeWidth={1.5} /> : <Send className="h-5 w-5" strokeWidth={1.5} fill="none" />}
-              </button>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <p className="text-[11px] text-zinc-500">
+                  {copy.helperVip}
+                </p>
+              </div>
             </div>
           )}
         </section>
+          </div>
+        </div>
       </div>
 
       {/* Image preview modal (before send) */}

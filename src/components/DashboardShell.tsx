@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useMemo, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -81,9 +81,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const { dir, locale } = useLanguage();
   const { theme } = useTheme();
   const [profileComplete, setProfileComplete] = useState<number | null>(null);
-  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(() => new Set());
+  const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
   const [isAdmin, setIsAdmin] = useState(false);
-  const presenceChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   const isRtl = dir === "rtl";
   const linkActiveClass = isRtl ? THEME_ACTIVE_RTL[theme] : THEME_ACTIVE_LTR[theme];
@@ -122,9 +121,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
   }, []);
 
-  // Global online presence: single channel, created once on mount; ref prevents re-subscribing on re-renders.
+  // Global online presence: any open dashboard tab marks user as online.
   useEffect(() => {
     let active = true;
+    let channel: any = null;
 
     const init = async () => {
       const {
@@ -132,7 +132,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       } = await supabase.auth.getUser();
       if (!user || !active) return;
 
-      const channel = supabase
+      channel = supabase
         .channel("global_presence", {
           config: {
             presence: {
@@ -141,10 +141,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           },
         })
         .on("presence", { event: "sync" }, () => {
-          if (!active) return;
-          const ch = presenceChannelRef.current;
-          if (!ch) return;
-          const state = ch.presenceState() as Record<string, Array<{ user_id?: string }>>;
+          const state = channel.presenceState() as Record<string, Array<{ user_id?: string }>>;
           const ids = new Set<string>();
           Object.values(state).forEach((entries) => {
             entries.forEach((entry) => {
@@ -154,7 +151,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           setOnlineUserIds(ids);
         });
 
-      presenceChannelRef.current = channel;
       channel.subscribe((status: string) => {
         if (status === "SUBSCRIBED") {
           void channel.track({ user_id: user.id });
@@ -165,24 +161,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     void init();
     return () => {
       active = false;
-      const ch = presenceChannelRef.current;
-      if (ch) {
-        supabase.removeChannel(ch);
-        presenceChannelRef.current = null;
+      if (channel) {
+        supabase.removeChannel(channel);
       }
     };
   }, []);
 
   const sidebarBorder = isRtl ? SIDEBAR_BORDER_RTL[theme] : SIDEBAR_BORDER_LTR[theme];
 
-  const contextValue = useMemo(
-    () => ({ onlineUserIds }),
-    [onlineUserIds]
-  );
-
   return (
-    <OnlinePresenceContext.Provider value={contextValue}>
-      <div className="flex min-h-screen overflow-hidden bg-[#f8fafc] font-[family-name:var(--font-cairo)] text-zinc-900" dir={dir}>
+    <OnlinePresenceContext.Provider value={{ onlineUserIds }}>
+      <div className="min-h-screen bg-[#f1f5f9] font-[family-name:var(--font-cairo)] text-zinc-900">
         <aside
           className={`fixed inset-y-0 hidden w-[240px] border-zinc-200 bg-white md:block ${locale === "ar" ? "right-0 border-l" : "left-0 border-r"} ${sidebarBorder}`}
           aria-label="Dashboard navigation"
@@ -249,10 +238,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             compact
             className={`${locale === "ar" ? "left-0 right-0 md:right-[240px]" : "left-0 right-0 md:left-[240px]"}`}
           />
-          <main className="mt-[60px] flex-1 overflow-y-auto">
-            <div className="p-4 md:p-8">
-              {children}
-            </div>
+          <main className="mt-[60px] h-[calc(100vh-60px)] overflow-y-auto p-8">
+            {children}
           </main>
         </div>
       </div>
