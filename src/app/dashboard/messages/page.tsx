@@ -1085,17 +1085,17 @@ export default function MessagesPage() {
 
   return (
     <div className="font-[family-name:var(--font-cairo)]" dir={dir}>
-      <div className="h-[calc(100vh-140px)] bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="relative h-full w-full">
+      <div className="h-[calc(100vh-120px)] bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="flex h-full w-full flex-col">
           {error && (
-            <div className="absolute inset-x-3 top-3 z-50 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            <div className="mx-3 mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
               {error}
             </div>
           )}
 
-          <div className="grid h-full w-full grid-cols-1 overflow-hidden md:grid-cols-[320px_1fr]">
+          <div className="grid min-h-0 flex-1 w-full grid-cols-1 overflow-hidden md:grid-cols-[260px_1fr]">
         {/* Conversation list */}
-        <aside className="overflow-y-auto border-b border-zinc-200 md:border-b-0 md:border-l">
+        <aside className="overflow-y-auto border-b border-zinc-200 bg-zinc-50/60 md:border-b-0 md:border-l">
           {(conversations ?? []).map((c) => {
             const selected = selectedConversationId === c.id;
             const isPartnerOnline = onlineUserIds.has(c.partner_id) || isOnline(c.partner_last_seen_at);
@@ -1111,10 +1111,10 @@ export default function MessagesPage() {
                     )
                   );
                 }}
-                className={`flex w-full items-center gap-3 px-4 py-3 text-right transition ${selected ? "bg-sky-50" : "hover:bg-zinc-50"}`}
+                className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-right transition ${selected ? "bg-sky-50" : "hover:bg-zinc-100/80"}`}
               >
-                <div className="relative h-11 w-11 shrink-0">
-                  <div className="h-11 w-11 overflow-hidden rounded-full bg-zinc-100">
+                <div className="relative h-10 w-10 shrink-0">
+                  <div className="h-10 w-10 overflow-hidden rounded-full bg-zinc-100">
                     {c.partner_photo ? (
                       <img src={c.partner_photo} alt="" className="h-full w-full object-cover" />
                     ) : (
@@ -1131,15 +1131,15 @@ export default function MessagesPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-sm font-semibold text-zinc-900">{c.partner_name}</p>
+                    <p className="truncate text-xs font-semibold text-zinc-900">{c.partner_name}</p>
                     <span className="flex shrink-0 items-center gap-1">
                       {c.hasUnread && (
                         <span className="h-2 w-2 rounded-full bg-red-500" title={copy.unread} />
                       )}
-                      <span className="text-[11px] text-zinc-500">{formatTime(c.last_message_at)}</span>
+                      <span className="text-[10px] text-zinc-500">{formatTime(c.last_message_at)}</span>
                     </span>
                   </div>
-                  <p className="truncate text-xs text-zinc-600">{c.last_message || copy.startChat}</p>
+                  <p className="truncate text-[11px] text-zinc-600">{c.last_message || copy.startChat}</p>
                 </div>
               </button>
             );
@@ -1151,7 +1151,7 @@ export default function MessagesPage() {
         </aside>
 
         {/* Message thread */}
-        <section className="relative flex min-h-0 flex-col overflow-visible">
+        <section className="flex min-h-0 flex-col overflow-visible">
           <div className="relative z-30 border-b border-zinc-200 px-4 py-3">
             {selectedConversation ? (
               <>
@@ -1196,11 +1196,6 @@ export default function MessagesPage() {
                     </button>
                     {headerMenuOpen && (
                       <>
-                        <div
-                          className="fixed inset-0 z-10"
-                          aria-hidden
-                          onClick={() => setHeaderMenuOpen(false)}
-                        />
                         <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-xl border border-zinc-200 bg-white py-1 shadow-xl">
                           <button
                             type="button"
@@ -1241,9 +1236,9 @@ export default function MessagesPage() {
           </div>
 
           {selectedConversation && showInsightsPanel && (
-            <div className={`absolute top-20 z-40 w-72 rounded-2xl border border-white/50 bg-white/50 p-3 shadow-xl backdrop-blur-md ${dir === "rtl" ? "left-4" : "right-4"}`}>
+            <div className="border-b border-zinc-200 bg-zinc-50/70 px-4 py-3">
               {!myIsVip ? (
-                <div className="space-y-2 text-center">
+                <div className={`space-y-2 ${dir === "rtl" ? "text-right" : "text-left"}`}>
                   <p className="text-sm font-medium text-zinc-800">{copy.vipInsightsLocked}</p>
                   <Link href="/dashboard" className="inline-flex rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600">
                     {copy.vipUpgrade}
@@ -1414,7 +1409,6 @@ export default function MessagesPage() {
                   </button>
                   {showMediaMenu && (
                     <>
-                      <div className="fixed inset-0 z-10" aria-hidden onClick={() => setShowMediaMenu(false)} />
                       <div className="absolute bottom-full left-0 z-50 mb-1 flex gap-1 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg">
                         <button
                           type="button"

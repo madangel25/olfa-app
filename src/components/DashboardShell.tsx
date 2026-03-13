@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Navbar } from "@/components/Navbar";
 import { supabase } from "@/lib/supabaseClient";
 import {
   getProfileCompleteness,
@@ -171,16 +172,14 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <OnlinePresenceContext.Provider value={{ onlineUserIds }}>
       <div
-        className="min-h-screen font-[family-name:var(--font-cairo)] text-zinc-900"
-        style={{ background: "var(--theme-bg)" }}
+        className="flex min-h-screen font-[family-name:var(--font-cairo)] text-zinc-900 bg-[#f8fafc]"
       >
-        <div className="relative min-h-screen">
-        {/* Sidebar: starts at top-16 (below navbar), z-40, height calc(100vh - 64px). */}
+        {/* Slim sidebar */}
         <aside
-          className={`fixed top-16 z-40 hidden h-[calc(100vh-4rem)] w-64 border-t-0 bg-white md:block ${locale === "ar" ? "right-0 border-l" : "left-0 border-r"} ${sidebarBorder}`}
+          className={`hidden h-screen w-64 shrink-0 border-zinc-200 bg-white/90 backdrop-blur-md md:block ${locale === "ar" ? "order-2 border-l" : "order-1 border-r"} ${sidebarBorder}`}
           aria-label="Dashboard navigation"
         >
-          <div className="sticky top-4 px-3 py-4">
+          <div className="h-full overflow-y-auto px-2 py-4">
             <nav className="flex flex-col gap-1" dir={locale === "ar" ? "rtl" : "ltr"}>
               {NAV_ITEMS.map((item) => {
                 const isActive =
@@ -198,13 +197,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                    className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium transition ${
                       isActive
                         ? linkActiveClass
                         : `text-zinc-700 ${hoverSidebar}`
                     } ${locale === "ar" ? "flex-row-reverse text-right" : "text-left"}`}
                   >
-                    <Icon className="h-5 w-5 shrink-0" />
+                    <Icon className="h-4 w-4 shrink-0" />
                     <span className="flex-1" lang={locale === "ar" ? "ar" : "en"}>
                       {label}
                     </span>
@@ -220,13 +219,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                    className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium transition ${
                       isActive
                         ? linkActiveClass
                         : `text-zinc-700 ${hoverSidebar}`
                     } ${locale === "ar" ? "flex-row-reverse text-right" : "text-left"}`}
                   >
-                    <Icon className="h-5 w-5 shrink-0" />
+                    <Icon className="h-4 w-4 shrink-0" />
                     <span className="flex-1" lang={locale === "ar" ? "ar" : "en"}>
                       {label}
                     </span>
@@ -237,15 +236,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        {/* Main: pt-16 (below navbar), px-8 breathing room, md:pl-64/md:pr-64 for sidebar (only md+). */}
-        <main
-          className={`min-w-0 w-full flex-1 pt-16 px-8 py-4 ${
-            locale === "ar" ? "md:pr-64" : "md:pl-64"
-          }`}
-        >
-          <div className="w-full">{children}</div>
-        </main>
-      </div>
+        <div className={`relative flex min-w-0 flex-1 flex-col ${locale === "ar" ? "order-1" : "order-2"}`}>
+          <Navbar
+            compact
+            className={`${locale === "ar" ? "left-0 right-0 md:right-64" : "left-0 right-0 md:left-64"}`}
+          />
+          <main className="mt-14 h-[calc(100vh-56px)] overflow-y-auto p-4 md:p-6">
+            {children}
+          </main>
+        </div>
       </div>
     </OnlinePresenceContext.Provider>
   );

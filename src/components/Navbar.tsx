@@ -18,7 +18,12 @@ import {
   Settings,
 } from "lucide-react";
 
-export function Navbar() {
+type NavbarProps = {
+  compact?: boolean;
+  className?: string;
+};
+
+export function Navbar({ compact = false, className = "" }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { locale, dir, setLocale, t } = useLanguage();
@@ -113,6 +118,12 @@ export function Navbar() {
   const isLoggedIn = !!user;
   const isRtl = dir === "rtl";
   const initials = (userName ?? "U").trim().charAt(0).toUpperCase();
+  const heightClass = compact ? "h-14" : "h-16";
+  const navPaddingClass = compact ? "px-4 py-2 sm:px-5" : "px-4 py-2.5 sm:px-6";
+  const navModeClass = compact
+    ? "fixed top-0 bg-white/80 backdrop-blur-md"
+    : "sticky top-0 bg-white/95 backdrop-blur-sm";
+  const logoHeightClass = compact ? "h-7" : "h-8";
 
   const statusLabel =
     accountStatus === "hidden"
@@ -129,11 +140,11 @@ export function Navbar() {
 
   return (
     <nav
-      className="sticky top-0 z-50 h-16 border-b border-zinc-200 bg-white/95 shadow-sm backdrop-blur-sm font-[family-name:var(--font-cairo)]"
+      className={`${navModeClass} z-50 ${heightClass} border-b border-zinc-200 shadow-sm font-[family-name:var(--font-cairo)] ${className}`}
       role="navigation"
       aria-label={locale === "ar" ? "القائمة الرئيسية" : "Main"}
     >
-      <div className="mx-auto flex h-full w-full max-w-7xl items-center px-4 py-2.5 sm:px-6">
+      <div className={`mx-auto flex h-full w-full max-w-7xl items-center ${navPaddingClass}`}>
         {/* Top-level: use dir="ltr" so flex order is only from our flex-row / flex-row-reverse, not from page dir. */}
         <div
           dir="ltr"
@@ -147,7 +158,7 @@ export function Navbar() {
               aria-label={locale === "ar" ? "الرئيسية" : "Home"}
             >
               {logoUrl ? (
-                <img src={logoUrl} alt="Olfa" className="h-8 w-auto object-contain" />
+                <img src={logoUrl} alt="Olfa" className={`${logoHeightClass} w-auto object-contain`} />
               ) : (
                 "Olfa"
               )}
