@@ -392,15 +392,15 @@ export default function DiscoveryPage() {
               type="button"
               onClick={() => handleIgnore(u.id)}
               disabled={ignoringId === u.id}
-              className="flex h-9 items-center gap-1 rounded-lg border border-stone-200 bg-transparent px-2.5 text-xs font-medium text-stone-500 transition hover:bg-stone-50 hover:text-stone-700 disabled:opacity-50"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-transparent text-stone-500 transition hover:bg-stone-50 hover:text-stone-700 disabled:opacity-50"
               title={copy.ignore}
+              aria-label={copy.ignore}
             >
               {ignoringId === u.id ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <UserMinus className="h-3.5 w-3.5" />
+                <UserMinus className="h-4 w-4" />
               )}
-              {copy.ignore}
             </button>
           )}
           {canCommunicate && (
@@ -413,23 +413,24 @@ export default function DiscoveryPage() {
                 >
                   <MessageCircle className="h-4 w-4" />
                 </Link>
-              ) : u.i_liked ? (
-                <span className="flex h-9 items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 px-2.5 text-xs font-medium text-stone-500">
-                  <Heart className="h-3.5 w-3.5 fill-current" /> {copy.liked}
+              ) :               u.i_liked ? (
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-stone-50 text-stone-500" title={copy.liked}>
+                  <Heart className="h-4 w-4 fill-current" />
                 </span>
               ) : (
                 <button
                   type="button"
                   onClick={() => handleLike(u.id)}
                   disabled={likingId === u.id}
-                  className="flex h-9 items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 text-xs font-medium text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
+                  title={copy.like}
+                  aria-label={copy.like}
                 >
                   {likingId === u.id ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <Heart className="h-3.5 w-3.5" />
+                    <Heart className="h-4 w-4" />
                   )}
-                  {copy.like}
                 </button>
               )}
             </>

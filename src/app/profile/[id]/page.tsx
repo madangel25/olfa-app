@@ -403,10 +403,11 @@ export default function PublicProfilePage() {
                     if (!error) setIIgnoredThem(true);
                     setIgnoringId(false);
                   }}
-                  className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-transparent px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 disabled:opacity-50"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 bg-transparent text-zinc-600 transition hover:bg-zinc-50 disabled:opacity-50"
+                  title={locale === "ar" ? "تجاهل" : "Ignore"}
+                  aria-label={locale === "ar" ? "تجاهل" : "Ignore"}
                 >
                   {ignoringId ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserMinus className="h-4 w-4" />}
-                  {locale === "ar" ? "تجاهل" : "Ignore"}
                 </button>
               )
             )}
