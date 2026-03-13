@@ -1084,20 +1084,17 @@ export default function MessagesPage() {
   }
 
   return (
-    <div
-      className="absolute inset-0 flex flex-col bg-white overflow-hidden font-[family-name:var(--font-cairo)]"
-      dir={dir}
-    >
-      {error && (
-        <div className="absolute left-3 right-3 top-3 z-50 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          {error}
-        </div>
-      )}
+    <div className="h-[calc(100vh-4rem)] w-full overflow-hidden font-[family-name:var(--font-cairo)]" dir={dir}>
+      <div className="relative h-full w-full">
+        {error && (
+          <div className="absolute inset-x-3 top-3 z-50 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            {error}
+          </div>
+        )}
 
-      <div className="flex-1 min-h-0 flex flex-col">
-        <div className="grid flex-1 min-h-0 w-full grid-cols-1 overflow-hidden md:grid-cols-[320px_1fr]">
-          {/* Conversation list */}
-          <aside className="h-full overflow-y-auto border-b border-zinc-200 md:border-b-0 md:border-l">
+        <div className="grid h-full w-full grid-cols-1 overflow-hidden bg-white md:grid-cols-[320px_1fr]">
+        {/* Conversation list */}
+        <aside className="overflow-y-auto border-b border-zinc-200 md:border-b-0 md:border-l">
           {(conversations ?? []).map((c) => {
             const selected = selectedConversationId === c.id;
             const isPartnerOnline = onlineUserIds.has(c.partner_id) || isOnline(c.partner_last_seen_at);
@@ -1150,10 +1147,10 @@ export default function MessagesPage() {
             <p className="p-4 text-sm text-zinc-500">{copy.noConversations}</p>
           )}
 
-          </aside>
+        </aside>
 
-          {/* Message thread */}
-          <section className="relative h-full flex min-h-0 flex-col overflow-hidden">
+        {/* Message thread */}
+        <section className="relative flex min-h-0 flex-col overflow-visible">
           <div className="relative z-30 border-b border-zinc-200 px-4 py-3">
             {selectedConversation ? (
               <>
@@ -1470,8 +1467,8 @@ export default function MessagesPage() {
               </div>
             </div>
           )}
-          </section>
-        </div>
+        </section>
+      </div>
       </div>
 
       {/* Image preview modal (before send) */}
