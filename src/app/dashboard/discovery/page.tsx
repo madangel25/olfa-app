@@ -15,6 +15,7 @@ import {
   Users,
   SlidersHorizontal,
   Loader2,
+  UserMinus,
 } from "lucide-react";
 
 type UserCard = {
@@ -59,8 +60,12 @@ export default function DiscoveryPage() {
   const [currentUserGender, setCurrentUserGender] = useState<string | null>(null);
   const [users, setUsers] = useState<UserCard[]>([]);
   const [likes, setLikes] = useState<Set<string>>(new Set());
+  const [ignoredByMe, setIgnoredByMe] = useState<Set<string>>(new Set());
+  const [ignoredMe, setIgnoredMe] = useState<Set<string>>(new Set());
+  const [visitedIds, setVisitedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [likingId, setLikingId] = useState<string | null>(null);
+  const [ignoringId, setIgnoringId] = useState<string | null>(null);
   const [matchToast, setMatchToast] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("new");
 
@@ -100,6 +105,9 @@ export default function DiscoveryPage() {
     joinedRecently: locale === "ar" ? "انضم حديثاً" : "Joined recently",
     clearFilters: locale === "ar" ? "مسح الفلاتر" : "Clear filters",
     all: locale === "ar" ? "الكل" : "All",
+    ignore: locale === "ar" ? "تجاهل" : "Ignore",
+    ignored: locale === "ar" ? "تم التجاهل" : "Ignored",
+    visited: locale === "ar" ? "زرت هذا الملف" : "Visited",
   };
 
   useEffect(() => {
@@ -162,6 +170,23 @@ export default function DiscoveryPage() {
         const toSet = new Set((likesTo ?? []).map((r) => r.from_user_id));
         setLikes(fromSet);
 
+        const { data: iIgnored } = await supabase
+          .from("ignores")
+          .select("ignored_user_id")
+          .eq("user_id", user.id);
+        const { data: ignoredMeRows } = await supabase
+          .from("ignores")
+          .select("user_id")
+          .eq("ignored_user_id", user.id);
+        setIgnoredByMe(new Set((iIgnored ?? []).map((r) => (r as { ignored_user_id: string }).ignored_user_id)));
+        setIgnoredMe(new Set((ignoredMeRows ?? []).map((r) => (r as { user_id: string }).user_id)));
+
+        const { data: visits } = await supabase
+          .from("profile_visits")
+          .select("visited_id")
+          .eq("visitor_id", user.id);
+        setVisitedIds(new Set((visits ?? []).map((r) => (r as { visited_id: string }).visited_id)));
+
         const cards: UserCard[] = (profiles ?? []).map((p) => {
           const raw = p as Record<string, unknown>;
           let photo_urls: string[] = [];
@@ -220,6 +245,19 @@ export default function DiscoveryPage() {
       );
     }
     setLikingId(null);
+  };
+
+  const handleIgnore = async (targetUserId: string) => {
+    if (!currentUserId || ignoringId) return;
+    setIgnoringId(targetUserId);
+    const { error } = await supabase.from("ignores").insert({
+      user_id: currentUserId,
+      ignored_user_id: targetUserId,
+    });
+    if (!error) {
+      setIgnoredByMe((prev) => new Set(prev).add(targetUserId));
+    }
+    setIgnoringId(null);
   };
 
   const newMembers = useMemo(() => {
@@ -288,7 +326,11 @@ export default function DiscoveryPage() {
     const primaryPhoto = u.photo_urls[u.primary_photo_index] ?? u.photo_urls[0];
     const blurPhoto = u.photo_privacy_blur && !u.is_match;
     const sameGender = currentUserGender != null && u.gender != null && currentUserGender === u.gender;
-    const canCommunicate = !sameGender;
+    const iIgnoredThem = ignoredByMe.has(u.id);
+    const theyIgnoredMe = ignoredMe.has(u.id);
+    const isIgnored = iIgnoredThem || theyIgnoredMe;
+    const canCommunicate = !sameGender && !isIgnored;
+    const haveVisited = visitedIds.has(u.id);
     const location = [u.city, u.country].filter(Boolean).join(", ");
     const maritalKey = u.marital_status ? MARITAL_KEYS[u.marital_status.toLowerCase()] : null;
     const maritalLabel = maritalKey ? t(`profile.${maritalKey}`) : null;
@@ -296,7 +338,7 @@ export default function DiscoveryPage() {
     return (
       <div
         key={u.id}
-        className="flex items-center gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,.05)] transition hover:shadow-md"
+        className={`flex items-center gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,.05)] transition hover:shadow-md ${isIgnored ? "opacity-60 grayscale" : ""}`}
       >
         {/* Avatar */}
         <Link href={`/profile/${u.id}`} className="relative shrink-0">
@@ -320,6 +362,11 @@ export default function DiscoveryPage() {
           <div className="flex items-center gap-1.5">
             <p className="truncate text-[14px] font-semibold text-stone-900">{u.full_name ?? "—"}</p>
             {u.age != null && <span className="shrink-0 text-xs text-stone-400">{u.age} {copy.years}</span>}
+            {haveVisited && (
+              <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium text-stone-500" title={copy.visited}>
+                {copy.visited}
+              </span>
+            )}
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0 text-xs text-stone-500">
             {location && (
@@ -334,38 +381,60 @@ export default function DiscoveryPage() {
           </p>
         </Link>
 
-        {/* Action */}
-        {canCommunicate && (
-          <div className="flex shrink-0 items-center gap-1.5">
-            {u.is_match ? (
-              <Link
-                href={`/dashboard/messages?with=${u.id}`}
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-500 text-white transition hover:bg-rose-600"
-                title={copy.message}
-              >
-                <MessageCircle className="h-4 w-4" />
-              </Link>
-            ) : u.i_liked ? (
-              <span className="flex h-9 items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 px-2.5 text-xs font-medium text-stone-500">
-                <Heart className="h-3.5 w-3.5 fill-current" /> {copy.liked}
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleLike(u.id)}
-                disabled={likingId === u.id}
-                className="flex h-9 items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 text-xs font-medium text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
-              >
-                {likingId === u.id ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Heart className="h-3.5 w-3.5" />
-                )}
-                {copy.like}
-              </button>
-            )}
-          </div>
-        )}
+        {/* Action: Ignore (ghost) or Ignored label */}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {iIgnoredThem ? (
+            <span className="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2 text-[11px] font-medium text-stone-500">
+              {copy.ignored}
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleIgnore(u.id)}
+              disabled={ignoringId === u.id}
+              className="flex h-9 items-center gap-1 rounded-lg border border-stone-200 bg-transparent px-2.5 text-xs font-medium text-stone-500 transition hover:bg-stone-50 hover:text-stone-700 disabled:opacity-50"
+              title={copy.ignore}
+            >
+              {ignoringId === u.id ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <UserMinus className="h-3.5 w-3.5" />
+              )}
+              {copy.ignore}
+            </button>
+          )}
+          {canCommunicate && (
+            <>
+              {u.is_match ? (
+                <Link
+                  href={`/dashboard/messages?with=${u.id}`}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-500 text-white transition hover:bg-rose-600"
+                  title={copy.message}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                </Link>
+              ) : u.i_liked ? (
+                <span className="flex h-9 items-center gap-1 rounded-lg border border-stone-200 bg-stone-50 px-2.5 text-xs font-medium text-stone-500">
+                  <Heart className="h-3.5 w-3.5 fill-current" /> {copy.liked}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleLike(u.id)}
+                  disabled={likingId === u.id}
+                  className="flex h-9 items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 text-xs font-medium text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
+                >
+                  {likingId === u.id ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Heart className="h-3.5 w-3.5" />
+                  )}
+                  {copy.like}
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </div>
     );
   };

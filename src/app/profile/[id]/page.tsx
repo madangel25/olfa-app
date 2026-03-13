@@ -24,6 +24,8 @@ import {
   FileText,
   User,
   Share2,
+  UserMinus,
+  Loader2,
 } from "lucide-react";
 
 type ProfileData = {
@@ -131,6 +133,9 @@ export default function PublicProfilePage() {
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [shareToast, setShareToast] = useState(false);
+  const [iIgnoredThem, setIIgnoredThem] = useState(false);
+  const [theyIgnoredMe, setTheyIgnoredMe] = useState(false);
+  const [ignoringId, setIgnoringId] = useState(false);
 
   const showToast = useCallback((message: string) => {
     setToast(message);
@@ -228,6 +233,28 @@ export default function PublicProfilePage() {
         .maybeSingle();
       if (myRatingRow) setMyRating((myRatingRow as { rating_value: number }).rating_value);
 
+      if (profileUserId && profileUserId !== user.id) {
+        await supabase.from("profile_visits").insert({
+          visitor_id: user.id,
+          visited_id: profileUserId,
+        });
+      }
+
+      const { data: ignoreAB } = await supabase
+        .from("ignores")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("ignored_user_id", profileUserId)
+        .maybeSingle();
+      const { data: ignoreBA } = await supabase
+        .from("ignores")
+        .select("id")
+        .eq("user_id", profileUserId)
+        .eq("ignored_user_id", user.id)
+        .maybeSingle();
+      setIIgnoredThem(Boolean(ignoreAB));
+      setTheyIgnoredMe(Boolean(ignoreBA));
+
       setLoading(false);
     };
     run();
@@ -273,7 +300,8 @@ export default function PublicProfilePage() {
   const themeStarFill = isFemale ? "text-pink-500" : "text-sky-500";
   const themeIcon = isFemale ? "text-pink-500" : "text-sky-500";
   const sameGender = currentUserGender != null && profile?.gender != null && currentUserGender === profile.gender;
-  const canCommunicate = !sameGender;
+  const isIgnored = iIgnoredThem || theyIgnoredMe;
+  const canCommunicate = !sameGender && !isIgnored;
 
   const strengthPercent = profile ? getProfileStrength(profile) : 0;
   const charismaOutOf10 = getCharismaRating(strengthPercent);
@@ -354,8 +382,34 @@ export default function PublicProfilePage() {
 
         {/* Single unified master card: white, rounded-3xl, soft shadow */}
         <div className={`overflow-hidden rounded-3xl border border-zinc-200/80 bg-white shadow-lg ${themeBorder}`}>
-          {/* Share Profile at top of card */}
-          <div className={`flex items-center justify-end border-b border-zinc-100 px-6 py-3 ${isRtl ? "flex-row-reverse" : ""}`}>
+          {/* Share Profile & Ignore at top of card */}
+          <div className={`flex items-center justify-end gap-2 border-b border-zinc-100 px-6 py-3 ${isRtl ? "flex-row-reverse" : ""}`}>
+            {profileUserId !== currentUserId && (
+              iIgnoredThem ? (
+                <span className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-medium text-zinc-500">
+                  {locale === "ar" ? "تم التجاهل" : "Ignored"}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  disabled={ignoringId}
+                  onClick={async () => {
+                    if (!profileUserId || !currentUserId || ignoringId) return;
+                    setIgnoringId(true);
+                    const { error } = await supabase.from("ignores").insert({
+                      user_id: currentUserId,
+                      ignored_user_id: profileUserId,
+                    });
+                    if (!error) setIIgnoredThem(true);
+                    setIgnoringId(false);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-transparent px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 disabled:opacity-50"
+                >
+                  {ignoringId ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserMinus className="h-4 w-4" />}
+                  {locale === "ar" ? "تجاهل" : "Ignore"}
+                </button>
+              )
+            )}
             <button
               type="button"
               onClick={async () => {
@@ -457,7 +511,7 @@ export default function PublicProfilePage() {
                   <p className="text-sm text-zinc-500">{locale === "ar" ? "لا توجد تقييمات بعد" : "No ratings yet"}</p>
                 )}
               </div>
-              {!sameGender && (
+              {!sameGender && !isIgnored && (
                 <div>
                   <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.rateThisProfile")}</p>
                   {hasInteraction ? (
