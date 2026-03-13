@@ -90,6 +90,8 @@ function optLabel(t: (k: string) => string, value: string | null): string | null
   return out && out !== `profile.${key}` ? out : value;
 }
 
+const EDIT_PROFILE_HREF = "/dashboard/profile/edit";
+
 export default function ProfilePage() {
   const pathname = usePathname();
   const router = useRouter();
