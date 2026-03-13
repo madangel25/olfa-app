@@ -706,15 +706,7 @@ export default function ProfilePage() {
     `inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium outline-none transition-all ${theme.focusRing} focus:ring-2 disabled:opacity-60`;
 
   return (
-    <div className="min-h-full bg-[var(--theme-bg)] pb-8 font-[family-name:var(--font-cairo)]" dir={dir}>
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 space-y-6">
-      {/* Page header: title and subtitle only — no Save buttons here; only "Save Changes" and "Save & Return" at bottom */}
-      <header className={`mb-2 ${dir === "rtl" ? "text-right" : "text-left"}`}>
-        <h1 className="text-2xl font-semibold text-zinc-900">{t("profile.title")}</h1>
-        <p className="mt-2 text-sm text-zinc-500">{t("profile.subtitle")}</p>
-      </header>
-
+    <div className="font-[family-name:var(--font-cairo)]" dir={dir}>
       {toast && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -729,6 +721,12 @@ export default function ProfilePage() {
           {toast.message}
         </motion.div>
       )}
+      <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 p-8 space-y-6">
+      {/* Page header */}
+      <header className={`mb-6 ${dir === "rtl" ? "text-right" : "text-left"}`}>
+        <h1 className="text-2xl font-semibold text-zinc-900">{t("profile.title")}</h1>
+        <p className="mt-2 text-sm text-zinc-500">{t("profile.subtitle")}</p>
+      </header>
 
       {/* Stepper */}
       <nav
@@ -1203,7 +1201,6 @@ export default function ProfilePage() {
           {t("profile.saveAndReturn")}
         </button>
       </div>
-        </div>
       </div>
     </div>
   );

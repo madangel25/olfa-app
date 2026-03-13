@@ -1085,7 +1085,7 @@ export default function MessagesPage() {
 
   return (
     <div className="font-[family-name:var(--font-cairo)]" dir={dir}>
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden h-[calc(100vh-160px)]">
+      <div className="h-[calc(100vh-140px)] bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="relative h-full w-full">
           {error && (
             <div className="absolute inset-x-3 top-3 z-50 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
