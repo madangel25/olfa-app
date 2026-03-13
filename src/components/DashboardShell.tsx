@@ -237,12 +237,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
+        {/* Main: pt-16 (below navbar), px-8 breathing room, md:pl-64/md:pr-64 for sidebar (only md+). */}
         <main
-          className={`min-w-0 w-full flex-1 pt-20 pb-8 px-4 md:px-10 lg:px-12 bg-[#f8fafc] min-h-screen overflow-y-auto ${
-            locale === "ar" ? "md:pr-[17.5rem]" : "md:pl-[17.5rem]"
+          className={`min-w-0 w-full flex-1 pt-16 px-8 py-4 ${
+            locale === "ar" ? "md:pr-64" : "md:pl-64"
           }`}
         >
-          {children}
+          <div className="w-full">{children}</div>
         </main>
       </div>
       </div>
