@@ -1084,20 +1084,15 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-6rem)] font-[family-name:var(--font-cairo)]" dir={dir}>
-      <div className={`mx-auto h-full w-full max-w-[1240px] px-4 md:px-8 ${dir === "rtl" ? "md:pr-8" : "md:pl-8"}`}>
-        <div className="mb-3 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-zinc-900">{copy.title}</h1>
-          <span />
-        </div>
-
+    <div className="h-[calc(100vh-4rem)] w-full overflow-hidden font-[family-name:var(--font-cairo)]" dir={dir}>
+      <div className="relative h-full w-full">
         {error && (
-          <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          <div className="absolute inset-x-3 top-3 z-50 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
             {error}
           </div>
         )}
 
-        <div className="grid h-[calc(100%-2.5rem)] grid-cols-1 overflow-visible rounded-3xl border border-zinc-200 bg-white shadow-xl md:grid-cols-[320px_1fr]">
+        <div className="grid h-full w-full grid-cols-1 overflow-hidden bg-white md:grid-cols-[320px_1fr]">
         {/* Conversation list */}
         <aside className="overflow-y-auto border-b border-zinc-200 md:border-b-0 md:border-l">
           {(conversations ?? []).map((c) => {
