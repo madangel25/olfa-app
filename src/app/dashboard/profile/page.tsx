@@ -104,33 +104,33 @@ export default function DashboardProfileViewPage() {
 
   useEffect(() => {
     const run = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
         router.replace("/login");
-        return;
-      }
-      const { data, error } = await supabase
-        .from("profiles")
-        .select(
+          return;
+        }
+        const { data, error } = await supabase
+          .from("profiles")
+          .select(
           "full_name, gender, age, job_title, education_level, marital_status, height_cm, weight_kg, country, city, nationality, skin_tone, smoking_status, religious_commitment, desire_children, about_me, ideal_partner, photo_urls, primary_photo_index"
-        )
-        .eq("id", user.id)
-        .maybeSingle();
+          )
+          .eq("id", user.id)
+          .maybeSingle();
 
       if (error || !data) {
-        setLoading(false);
-        return;
-      }
+          setLoading(false);
+          return;
+        }
       setUserId(user.id);
 
-      const raw = data as Record<string, unknown>;
-      let photo_urls: string[] = [];
-      if (Array.isArray(raw.photo_urls)) {
-        photo_urls = raw.photo_urls.filter((u): u is string => typeof u === "string");
-      }
+          const raw = data as Record<string, unknown>;
+          let photo_urls: string[] = [];
+            if (Array.isArray(raw.photo_urls)) {
+              photo_urls = raw.photo_urls.filter((u): u is string => typeof u === "string");
+            }
       const primary_photo_index = typeof raw.primary_photo_index === "number" ? raw.primary_photo_index : 0;
       const ageVal = raw.age;
-      setProfile({
+          setProfile({
         full_name: (raw.full_name as string) ?? null,
         gender: (raw.gender as string) ?? null,
         age: ageVal != null ? String(ageVal) : null,
@@ -148,7 +148,7 @@ export default function DashboardProfileViewPage() {
         desire_children: (raw.desire_children as string) ?? null,
         about_me: (raw.about_me as string) ?? null,
         ideal_partner: (raw.ideal_partner as string) ?? null,
-        photo_urls,
+            photo_urls,
         primary_photo_index,
       });
 
@@ -250,8 +250,8 @@ export default function DashboardProfileViewPage() {
                 <img src={primaryPhoto} alt="" className="h-full w-full object-cover" />
               ) : (
                 (profile.full_name ?? "?").slice(0, 1)
-              )}
-            </div>
+                    )}
+                  </div>
             <div className="min-w-0 flex-1">
               <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">{profile.full_name ?? "—"}</h1>
               <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-base font-medium text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}>
@@ -264,21 +264,21 @@ export default function DashboardProfileViewPage() {
                   <span className={`inline-flex items-center gap-1 ${themeAccent}`}>
                     <Heart className="h-4 w-4" />
                     {maritalLabel}
-                  </span>
-                )}
+                        </span>
+                      )}
               </div>
               {location && (
                 <p className="mt-1 flex items-center gap-1 text-sm text-zinc-600">
                   <MapPin className="h-4 w-4 shrink-0" />
                   {location}
                 </p>
-              )}
-            </div>
-          </div>
+                      )}
+                    </div>
+                  </div>
 
           <div className="border-t border-zinc-100 bg-zinc-50/50 px-6 py-4">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div>
                 <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.profileStrength")}</p>
                 <div className="flex items-center gap-2">
                   <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-200">
@@ -286,8 +286,8 @@ export default function DashboardProfileViewPage() {
                   </div>
                   <span className="w-9 shrink-0 text-sm font-medium text-zinc-900">{strengthPercent}%</span>
                 </div>
-              </div>
-              <div>
+                  </div>
+                  <div>
                 <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.charismaRating")}</p>
                 <div className={`flex items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
                   <div className="flex gap-0.5">
@@ -297,8 +297,8 @@ export default function DashboardProfileViewPage() {
                   </div>
                   <span className={`text-sm font-medium ${themeAccent}`}>{charismaOutOf10}/10</span>
                 </div>
-              </div>
-              <div>
+                  </div>
+                  <div>
                 <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.communityRating")}</p>
                 {communityRating !== null && communityRating.count > 0 ? (
                   <div className={`flex items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
@@ -311,8 +311,8 @@ export default function DashboardProfileViewPage() {
                   </div>
                 ) : (
                   <p className="text-sm text-zinc-500">{locale === "ar" ? "لا توجد تقييمات بعد" : "No ratings yet"}</p>
-                )}
-              </div>
+                    )}
+                  </div>
             </div>
           </div>
 
@@ -328,7 +328,7 @@ export default function DashboardProfileViewPage() {
                     </div>
                   </div>
                 ))}
-              </div>
+                </div>
             </div>
           )}
 
@@ -336,7 +336,7 @@ export default function DashboardProfileViewPage() {
             <h2 className={`flex items-center gap-2 text-base font-semibold text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}>
               <FileText className={`h-4 w-4 shrink-0 ${themeIcon}`} />
               {t("profile.aboutMe")}
-            </h2>
+                  </h2>
             {hasAboutMe ? (
               <p className="mt-3 text-base leading-relaxed text-zinc-900 whitespace-pre-wrap">{profile.about_me}</p>
             ) : (
@@ -347,8 +347,8 @@ export default function DashboardProfileViewPage() {
                   {t("profile.letAiWriteBioNow")}
                 </Link>
               </div>
-            )}
-          </div>
+                    )}
+                  </div>
 
           <div className="border-t border-zinc-100 px-6 py-5">
             <h2 className={`flex items-center gap-2 text-base font-semibold text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}>
@@ -366,7 +366,7 @@ export default function DashboardProfileViewPage() {
                 </Link>
               </div>
             )}
-          </div>
+                    </div>
 
           <div className={`flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 px-6 py-4 ${isRtl ? "flex-row-reverse" : ""}`}>
             <div className={`flex flex-wrap items-center gap-3 ${isRtl ? "flex-row-reverse" : ""}`}>
@@ -374,17 +374,17 @@ export default function DashboardProfileViewPage() {
                 <Pencil className="h-4 w-4" />
                 {t("profile.editProfile")}
               </Link>
-              <button
-                type="button"
+                      <button
+                        type="button"
                 onClick={() => setViewAsPublic((v) => !v)}
                 className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium shadow-sm transition ${themeButton}`}
-              >
+                      >
                 <Eye className="h-4 w-4" />
                 {t("profile.viewAsOthersSeeMe")}
-              </button>
-            </div>
-            <button
-              type="button"
+                      </button>
+                    </div>
+                      <button
+                        type="button"
               onClick={async () => {
                 if (!userId) return;
                 const url = `${typeof window !== "undefined" ? window.location.origin : ""}/profile/${userId}`;
@@ -397,9 +397,9 @@ export default function DashboardProfileViewPage() {
             >
               <Share2 className="h-4 w-4" />
               {t("profile.shareProfile")}
-            </button>
-          </div>
-        </div>
+                      </button>
+                    </div>
+                  </div>
       </div>
     </div>
   );
