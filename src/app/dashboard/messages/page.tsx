@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Check, CheckCheck, MoreVertical, Flag, ImagePlus, Eye, Plus, Mic, Loader2, X, Play, Pause, Sparkles, Zap, Gauge } from "lucide-react";
+import { Check, CheckCheck, MoreVertical, Flag, ImagePlus, Eye, Plus, Mic, Loader2, X, Play, Pause, Sparkles, Zap, Gauge, MessageCircle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useOnlinePresence } from "@/components/DashboardShell";
@@ -1084,131 +1084,142 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="font-[family-name:var(--font-cairo)]" dir={dir}>
-      <div className="h-[calc(100vh-140px)] bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="relative h-full w-full">
-          {error && (
-            <div className="absolute inset-x-3 top-3 z-50 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              {error}
-            </div>
-          )}
+    <div className="-mx-4 md:-mx-10 lg:-mx-12 -mt-0 -mb-8 h-[calc(100vh-5rem)] overflow-hidden font-[family-name:var(--font-cairo)]" dir={dir}>
+      {error && (
+        <div className="absolute inset-x-4 top-2 z-50 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800 shadow-sm">
+          {error}
+        </div>
+      )}
 
-          <div className="grid h-full w-full grid-cols-1 overflow-hidden md:grid-cols-[320px_1fr]">
-        {/* Conversation list */}
-        <aside className="overflow-y-auto border-b border-zinc-200 md:border-b-0 md:border-l">
-          {(conversations ?? []).map((c) => {
-            const selected = selectedConversationId === c.id;
-            const isPartnerOnline = onlineUserIds.has(c.partner_id) || isOnline(c.partner_last_seen_at);
-            return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => {
-                  setSelectedConversationId(c.id);
-                  setConversations((prev) =>
-                    prev.map((conv) =>
-                      conv.id === c.id ? { ...conv, hasUnread: false } : conv
-                    )
-                  );
-                }}
-                className={`flex w-full items-center gap-3 px-4 py-3 text-right transition ${selected ? "bg-sky-50" : "hover:bg-zinc-50"}`}
-              >
-                <div className="relative h-11 w-11 shrink-0">
-                  <div className="h-11 w-11 overflow-hidden rounded-full bg-zinc-100">
-                    {c.partner_photo ? (
-                      <img src={c.partner_photo} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-zinc-500">
-                        {(c.partner_name || "?").slice(0, 1)}
-                      </div>
-                    )}
-                  </div>
-                  <span
-                    className={`absolute bottom-0 right-0 h-2.5 w-2.5 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-white ${
-                      isPartnerOnline ? "bg-emerald-500" : "bg-zinc-300"
-                    }`}
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-sm font-semibold text-zinc-900">{c.partner_name}</p>
-                    <span className="flex shrink-0 items-center gap-1">
-                      {c.hasUnread && (
-                        <span className="h-2 w-2 rounded-full bg-red-500" title={copy.unread} />
-                      )}
-                      <span className="text-[11px] text-zinc-500">{formatTime(c.last_message_at)}</span>
-                    </span>
-                  </div>
-                  <p className="truncate text-xs text-zinc-600">{c.last_message || copy.startChat}</p>
-                </div>
-              </button>
-            );
-          })}
-          {conversations.length === 0 && (
-            <p className="p-4 text-sm text-zinc-500">{copy.noConversations}</p>
-          )}
+      <div className="grid h-full grid-cols-1 md:grid-cols-[340px_1fr]">
+        {/* ── Conversation sidebar ── */}
+        <aside className={`flex h-full flex-col border-zinc-200/80 bg-white ${dir === "rtl" ? "md:border-l" : "md:border-r"}`}>
+          <div className="flex items-center justify-between px-5 py-4">
+            <h1 className="text-lg font-bold text-zinc-900">{copy.title}</h1>
+          </div>
 
-        </aside>
-
-        {/* Message thread */}
-        <section className="relative flex min-h-0 flex-col overflow-visible">
-          <div className="relative z-30 border-b border-zinc-200 px-4 py-3">
-            {selectedConversation ? (
-              <>
-                <div className="flex items-center gap-2">
-                  <Link
-                    href={`/profile/${selectedConversation.partner_id}`}
-                    className="flex flex-1 min-w-0 items-center gap-3 no-underline outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-1 rounded-lg -m-1 p-1"
-                  >
-                    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-zinc-200">
-                      {selectedConversation.partner_photo ? (
-                        <img
-                          src={selectedConversation.partner_photo}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {(conversations ?? []).map((c) => {
+              const selected = selectedConversationId === c.id;
+              const isPartnerOnline = onlineUserIds.has(c.partner_id) || isOnline(c.partner_last_seen_at);
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedConversationId(c.id);
+                    setConversations((prev) =>
+                      prev.map((conv) =>
+                        conv.id === c.id ? { ...conv, hasUnread: false } : conv
+                      )
+                    );
+                  }}
+                  className={`flex w-full items-center gap-3 px-5 py-3.5 transition-colors ${
+                    selected
+                      ? "bg-sky-50/80 border-sky-200"
+                      : "hover:bg-zinc-50"
+                  } ${dir === "rtl" ? "text-right" : "text-left"}`}
+                >
+                  <div className="relative h-12 w-12 shrink-0">
+                    <div className="h-12 w-12 overflow-hidden rounded-full bg-zinc-100 ring-2 ring-white">
+                      {c.partner_photo ? (
+                        <img src={c.partner_photo} alt="" className="h-full w-full object-cover" />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-zinc-500">
-                          {(selectedConversation.partner_name || "?").slice(0, 1)}
+                        <div className="flex h-full w-full items-center justify-center text-sm font-bold text-zinc-400">
+                          {(c.partner_name || "?").slice(0, 1)}
                         </div>
                       )}
                     </div>
-                    <p className="text-sm font-semibold text-zinc-900 truncate">
+                    <span
+                      className={`absolute bottom-0 ${dir === "rtl" ? "left-0" : "right-0"} h-3 w-3 rounded-full border-2 border-white ${
+                        isPartnerOnline ? "bg-emerald-500" : "bg-zinc-300"
+                      }`}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate text-sm font-semibold text-zinc-900">{c.partner_name}</p>
+                      <span className="flex shrink-0 items-center gap-1.5">
+                        {c.hasUnread && (
+                          <span className="h-2.5 w-2.5 rounded-full bg-sky-500" />
+                        )}
+                        <span className="text-[11px] text-zinc-400">{formatTime(c.last_message_at)}</span>
+                      </span>
+                    </div>
+                    <p className="mt-0.5 truncate text-xs text-zinc-500">{c.last_message || copy.startChat}</p>
+                  </div>
+                </button>
+              );
+            })}
+            {conversations.length === 0 && (
+              <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+                <MessageCircle className="mb-3 h-10 w-10 text-zinc-300" />
+                <p className="text-sm text-zinc-500">{copy.noConversations}</p>
+              </div>
+            )}
+          </div>
+        </aside>
+
+        {/* ── Chat thread ── */}
+        <section className="relative flex h-full min-h-0 flex-col bg-[#f8fafc]">
+          {/* Thread header */}
+          <div className={`z-30 flex items-center justify-between border-b border-zinc-200/80 bg-white px-5 py-3 ${dir === "rtl" ? "flex-row-reverse" : ""}`}>
+            {selectedConversation ? (
+              <>
+                <Link
+                  href={`/profile/${selectedConversation.partner_id}`}
+                  className={`flex min-w-0 flex-1 items-center gap-3 rounded-xl p-1 no-underline transition-colors hover:bg-zinc-50 ${dir === "rtl" ? "flex-row-reverse" : ""}`}
+                >
+                  <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-zinc-200 ring-2 ring-zinc-100">
+                    {selectedConversation.partner_photo ? (
+                      <img src={selectedConversation.partner_photo} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-sm font-bold text-zinc-400">
+                        {(selectedConversation.partner_name || "?").slice(0, 1)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-zinc-900">
                       {selectedConversation.partner_name}
                     </p>
-                  </Link>
-                  <div className="relative shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setShowInsightsPanel((v) => !v)}
-                      className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
-                      aria-label={copy.insights}
-                    >
-                      <Sparkles className="h-5 w-5" />
-                    </button>
+                    {(() => {
+                      const online =
+                        onlineUserIds.has(selectedConversation.partner_id) ||
+                        isOnline(selectedConversation.partner_last_seen_at);
+                      if (isPartnerTyping) return <p className="text-xs font-medium text-sky-600">{copy.typingNow}</p>;
+                      if (online) return <p className="flex items-center gap-1 text-xs text-emerald-600"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{copy.onlineNow}</p>;
+                      if (selectedConversation.partner_last_seen_at) return <p className="text-xs text-zinc-400">{copy.lastSeen} {formatTime(selectedConversation.partner_last_seen_at)}</p>;
+                      return null;
+                    })()}
+                  </div>
+                </Link>
+                <div className={`flex items-center gap-1 ${dir === "rtl" ? "flex-row-reverse" : ""}`}>
+                  <button
+                    type="button"
+                    onClick={() => setShowInsightsPanel((v) => !v)}
+                    className="rounded-xl p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
+                    aria-label={copy.insights}
+                  >
+                    <Sparkles className="h-5 w-5" />
+                  </button>
+                  <div className="relative">
                     <button
                       type="button"
                       onClick={() => setHeaderMenuOpen((o) => !o)}
-                      className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
+                      className="rounded-xl p-2 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
                       aria-label={copy.menu}
                     >
                       <MoreVertical className="h-5 w-5" />
                     </button>
                     {headerMenuOpen && (
                       <>
-                        <div
-                          className="fixed inset-0 z-10"
-                          aria-hidden
-                          onClick={() => setHeaderMenuOpen(false)}
-                        />
-                        <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-xl border border-zinc-200 bg-white py-1 shadow-xl">
+                        <div className="fixed inset-0 z-10" aria-hidden onClick={() => setHeaderMenuOpen(false)} />
+                        <div className={`absolute top-full z-50 mt-1 w-48 rounded-xl border border-zinc-200 bg-white py-1 shadow-xl ${dir === "rtl" ? "right-0" : "left-0"}`}>
                           <button
                             type="button"
-                            onClick={() => {
-                              setHeaderMenuOpen(false);
-                              setReportModalOpen(true);
-                            }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-red-50 hover:text-red-700"
+                            onClick={() => { setHeaderMenuOpen(false); setReportModalOpen(true); }}
+                            className={`flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-700 hover:bg-red-50 hover:text-red-700 ${dir === "rtl" ? "flex-row-reverse text-right" : "text-left"}`}
                           >
                             <Flag className="h-4 w-4" />
                             {copy.reportUser}
@@ -1218,55 +1229,40 @@ export default function MessagesPage() {
                     )}
                   </div>
                 </div>
-                {(() => {
-                  const online =
-                    onlineUserIds.has(selectedConversation.partner_id) ||
-                    isOnline(selectedConversation.partner_last_seen_at);
-                  let status: string | null = null;
-                  if (isPartnerTyping) {
-                    status = copy.typingNow;
-                  } else if (online) {
-                    status = copy.onlineNow;
-                  } else if (selectedConversation.partner_last_seen_at) {
-                    status = `${copy.lastSeen} ${formatTime(selectedConversation.partner_last_seen_at)}`;
-                  }
-                  return status ? (
-                    <p className="mt-0.5 text-xs text-zinc-500">{status}</p>
-                  ) : null;
-                })()}
               </>
             ) : (
-              <p className="text-sm font-semibold text-zinc-500">{copy.selectConversation}</p>
+              <p className="text-sm font-medium text-zinc-400">{copy.selectConversation}</p>
             )}
           </div>
 
+          {/* Insights panel */}
           {selectedConversation && showInsightsPanel && (
-            <div className={`absolute top-20 z-40 w-72 rounded-2xl border border-white/50 bg-white/50 p-3 shadow-xl backdrop-blur-md ${dir === "rtl" ? "left-4" : "right-4"}`}>
+            <div className={`absolute top-16 z-40 w-72 rounded-2xl border border-zinc-100 bg-white p-4 shadow-xl ${dir === "rtl" ? "left-4" : "right-4"}`}>
               {!myIsVip ? (
-                <div className="space-y-2 text-center">
-                  <p className="text-sm font-medium text-zinc-800">{copy.vipInsightsLocked}</p>
-                  <Link href="/dashboard" className="inline-flex rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600">
+                <div className="space-y-3 text-center">
+                  <p className="text-sm font-medium text-zinc-700">{copy.vipInsightsLocked}</p>
+                  <Link href="/dashboard" className="inline-flex rounded-xl bg-amber-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-600">
                     {copy.vipUpgrade}
                   </Link>
                 </div>
               ) : (
                 <div>
-                  <p className="mb-3 text-sm font-semibold text-zinc-800">{copy.personalityInsights}</p>
-                  <div className="space-y-3">
-                    <div className="rounded-xl bg-white/80 p-2">
-                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-zinc-600"><Zap className="h-3.5 w-3.5 text-sky-600" /> {copy.responseSpeed}</p>
+                  <p className="mb-3 text-sm font-bold text-zinc-800">{copy.personalityInsights}</p>
+                  <div className="space-y-2.5">
+                    <div className="rounded-xl bg-zinc-50 p-3">
+                      <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><Zap className="h-3.5 w-3.5 text-sky-500" /> {copy.responseSpeed}</p>
                       <p className="text-sm font-semibold text-zinc-900">{personalityInsights.responseSpeedLabel}</p>
                     </div>
-                    <div className="rounded-xl bg-white/80 p-2">
-                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-zinc-600"><Gauge className="h-3.5 w-3.5 text-violet-600" /> {copy.engagement}</p>
+                    <div className="rounded-xl bg-zinc-50 p-3">
+                      <p className="mb-1 flex items-center gap-1.5 text-xs font-medium text-zinc-500"><Gauge className="h-3.5 w-3.5 text-violet-500" /> {copy.engagement}</p>
                       <p className="text-sm font-semibold text-zinc-900">{personalityInsights.engagementLabel}</p>
                     </div>
-                    <div className="rounded-xl bg-white/80 p-2">
-                      <p className="mb-1 text-xs font-medium text-zinc-600">{copy.seriousnessScore}</p>
+                    <div className="rounded-xl bg-zinc-50 p-3">
+                      <p className="mb-1 text-xs font-medium text-zinc-500">{copy.seriousnessScore}</p>
                       <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200">
-                        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${personalityInsights.score}%` }} />
+                        <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${personalityInsights.score}%` }} />
                       </div>
-                      <p className="mt-1 text-xs font-semibold text-zinc-800">{personalityInsights.score}%</p>
+                      <p className="mt-1.5 text-xs font-bold text-zinc-700">{personalityInsights.score}%</p>
                     </div>
                   </div>
                 </div>
@@ -1274,17 +1270,25 @@ export default function MessagesPage() {
             </div>
           )}
 
-          <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50 px-3 py-4">
+          {/* Messages area */}
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 md:px-6">
             {!selectedConversationId ? (
-              <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center text-zinc-500">
-                <p className="text-sm">{copy.selectConversationToStart}</p>
+              <div className="flex h-full flex-col items-center justify-center text-center">
+                <div className="rounded-2xl bg-white p-8 shadow-sm border border-zinc-100">
+                  <MessageCircle className="mx-auto mb-3 h-12 w-12 text-zinc-300" />
+                  <p className="text-sm font-medium text-zinc-500">{copy.selectConversationToStart}</p>
+                </div>
               </div>
             ) : loadingMessages ? (
-              <p className="text-center text-sm text-zinc-500">{copy.loading}</p>
+              <div className="flex h-full items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+              </div>
             ) : messages.length === 0 ? (
-              <p className="text-center text-sm text-zinc-500">{copy.noMessages}</p>
+              <div className="flex h-full items-center justify-center">
+                <p className="text-sm text-zinc-400">{copy.noMessages}</p>
+              </div>
             ) : (
-              <ul className="space-y-2">
+              <ul className="mx-auto max-w-3xl space-y-3">
                 {(messages ?? []).map((m) => {
                   const mine = m.sender_id === currentUserId;
                   const isImage = m.message_type === "image";
@@ -1303,10 +1307,10 @@ export default function MessagesPage() {
                   return (
                     <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div
-                        className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm font-medium shadow-sm border ${
+                        className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm shadow-sm ${
                           mine
-                            ? "bg-sky-50 border-sky-100 text-zinc-800"
-                            : "bg-pink-50 border-pink-100 text-zinc-800"
+                            ? "bg-sky-500 text-white"
+                            : "bg-white border border-zinc-100 text-zinc-800"
                         }`}
                       >
                         {isImage && m.attachment_url && (
@@ -1315,7 +1319,7 @@ export default function MessagesPage() {
                               <button
                                 type="button"
                                 onClick={() => void revealViewOnce(m.id, m.attachment_url!)}
-                                className="flex items-center gap-2 rounded-lg border border-dashed border-zinc-300 bg-white/80 px-4 py-3 text-sm text-zinc-600 hover:bg-white"
+                                className="flex items-center gap-2 rounded-xl border border-dashed border-zinc-300 bg-white/80 px-4 py-3 text-sm text-zinc-600 hover:bg-white"
                               >
                                 <Eye className="h-4 w-4" />
                                 {copy.tapToView}
@@ -1325,12 +1329,12 @@ export default function MessagesPage() {
                                 <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
                               </div>
                             ) : imageUrl ? (
-                              <img src={imageUrl} alt="" className="max-h-64 max-w-[300px] rounded-xl object-contain shadow-sm" />
+                              <img src={imageUrl} alt="" className="max-h-64 max-w-[300px] rounded-xl object-contain" />
                             ) : (
-                              <span className="text-xs text-zinc-500">{copy.image}</span>
+                              <span className="text-xs opacity-70">{copy.image}</span>
                             )}
                             {m.is_temporary && (
-                              <p className="mt-1 text-[10px] text-zinc-500">{copy.viewOnce}</p>
+                              <p className={`mt-1 text-[10px] ${mine ? "text-white/70" : "text-zinc-400"}`}>{copy.viewOnce}</p>
                             )}
                           </div>
                         )}
@@ -1341,22 +1345,22 @@ export default function MessagesPage() {
                             ) : (
                               <div className="flex items-center gap-2 py-2">
                                 <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
-                                <span className="text-xs text-zinc-500">{copy.loadingVoice}</span>
+                                <span className="text-xs opacity-70">{copy.loadingVoice}</span>
                               </div>
                             )}
                           </div>
                         )}
                         {(!isImage && !isAudio) && (
-                          <p className="whitespace-pre-wrap break-words">{m.content}</p>
+                          <p className="whitespace-pre-wrap break-words leading-relaxed">{m.content}</p>
                         )}
-                        <div className="mt-1 flex items-center gap-1 text-[11px] text-zinc-500">
+                        <div className={`mt-1.5 flex items-center gap-1 text-[11px] ${mine ? "text-white/60" : "text-zinc-400"}`}>
                           <span>{formatTime(m.created_at)}</span>
                           {mine && (
                             <span className="flex items-center">
                               {m.is_read ? (
-                                <CheckCheck size={15} className="text-sky-600" />
+                                <CheckCheck size={14} className="text-white/80" />
                               ) : (
-                                <Check size={15} className="text-sky-400" />
+                                <Check size={14} className="text-white/50" />
                               )}
                             </span>
                           )}
@@ -1370,44 +1374,32 @@ export default function MessagesPage() {
             )}
           </div>
 
+          {/* Composer */}
           {selectedConversationId && (
-            <div className="border-t border-zinc-200 p-3">
+            <div className="border-t border-zinc-200/80 bg-white px-4 py-3 md:px-6">
               {recording !== null && (
-                <div className="mb-2 flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
-                  <span className="text-sm text-zinc-600">
+                <div className="mb-3 flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5">
+                  <span className="flex items-center gap-2 text-sm text-zinc-600">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
                     {copy.recording} {Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, "0")}
                   </span>
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={cancelRecording}
-                      className="rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-600 hover:bg-zinc-200"
-                    >
+                    <button type="button" onClick={cancelRecording} className="rounded-xl px-3 py-1.5 text-sm font-medium text-zinc-600 hover:bg-zinc-200">
                       {copy.cancel}
                     </button>
-                    <button
-                      type="button"
-                      onClick={sendRecording}
-                      className="rounded-lg bg-sky-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-600"
-                    >
+                    <button type="button" onClick={sendRecording} className="rounded-xl bg-sky-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-600">
                       {copy.send}
                     </button>
                   </div>
                 </div>
               )}
-              <div className="flex items-center gap-2">
+              <div className="mx-auto flex max-w-3xl items-center gap-3">
                 <div className="relative shrink-0">
-                  <input
-                    ref={imageInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={handleImageSelect}
-                  />
+                  <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImageSelect} />
                   <button
                     type="button"
                     onClick={() => setShowMediaMenu((o) => !o)}
-                    className="rounded-xl p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
+                    className="rounded-xl p-2.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
                     aria-label={copy.attach}
                   >
                     <Plus className="h-5 w-5" />
@@ -1415,22 +1407,12 @@ export default function MessagesPage() {
                   {showMediaMenu && (
                     <>
                       <div className="fixed inset-0 z-10" aria-hidden onClick={() => setShowMediaMenu(false)} />
-                      <div className="absolute bottom-full left-0 z-50 mb-1 flex gap-1 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg">
-                        <button
-                          type="button"
-                          onClick={() => { imageInputRef.current?.click(); setShowMediaMenu(false); }}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
-                        >
-                          <ImagePlus className="h-4 w-4" />
-                          {copy.photo}
+                      <div className="absolute bottom-full left-0 z-50 mb-2 flex gap-1 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-xl">
+                        <button type="button" onClick={() => { imageInputRef.current?.click(); setShowMediaMenu(false); }} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50">
+                          <ImagePlus className="h-4 w-4" /> {copy.photo}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => { setShowMediaMenu(false); void startRecording(); }}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
-                        >
-                          <Mic className="h-4 w-4" />
-                          {copy.voice}
+                        <button type="button" onClick={() => { setShowMediaMenu(false); void startRecording(); }} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50">
+                          <Mic className="h-4 w-4" /> {copy.voice}
                         </button>
                       </div>
                     </>
@@ -1438,39 +1420,23 @@ export default function MessagesPage() {
                 </div>
                 <input
                   value={draft}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setDraft(value);
-                    sendTypingStatus(true);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      void handleSend();
-                    }
-                  }}
+                  onChange={(e) => { setDraft(e.target.value); sendTypingStatus(true); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleSend(); } }}
                   placeholder={copy.typeMessage}
-                  className="flex-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                  className="flex-1 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-2.5 text-sm text-zinc-900 transition-colors focus:border-sky-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                 />
                 <button
                   type="button"
                   onClick={() => void handleSend()}
                   disabled={!draft.trim() || !!uploadingMedia}
-                  className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white hover:bg-sky-600 disabled:opacity-50"
+                  className="rounded-xl bg-sky-500 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-sky-600 disabled:opacity-40"
                 >
                   {uploadingMedia ? <Loader2 className="h-5 w-5 animate-spin" /> : copy.send}
                 </button>
               </div>
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <p className="text-[11px] text-zinc-500">
-                  {copy.helperVip}
-                </p>
-              </div>
             </div>
           )}
         </section>
-          </div>
-        </div>
       </div>
 
       {/* Image preview modal (before send) */}
