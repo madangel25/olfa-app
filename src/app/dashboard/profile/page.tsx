@@ -1,1206 +1,405 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
-import {
-  dispatchProfileUpdated,
-  getProfileCompleteness,
-  type ProfileForCompleteness,
-} from "@/lib/profileCompleteness";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
-import { COUNTRIES, getFlagEmoji } from "@/lib/countries";
-import PhoneInput from "react-phone-number-input/max";
-import "react-phone-number-input/style.css";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  ImagePlus,
-  Trash2,
-  Star,
-  Eye,
-  EyeOff,
-  Phone,
-  CheckCircle,
-  User,
-  Ruler,
-  Heart,
-  Briefcase,
-  FileText,
-  Save,
-  Loader2,
-  Camera,
-  Wand2,
-  ChevronDown,
-  Copy,
-} from "lucide-react";
+import { Pencil, Eye, Wand2, Star, Briefcase, GraduationCap, Ruler, Heart, MapPin, Scale, Globe, Palette, Cigarette, BookOpen, Baby, FileText, User, Share2 } from "lucide-react";
 
-const BUCKET = "user-assets";
-const MAX_COUNTRY_VISIBLE = 50;
-
-function getCountryDisplayName(code: string, locale: string, fallback: string): string {
-  if (locale === "ar") {
-    try {
-      const dn = new Intl.DisplayNames(["ar"], { type: "region" });
-      return dn.of(code.toUpperCase()) ?? fallback;
-    } catch {
-      return fallback;
-    }
-  }
-  return fallback;
-}
-
-function SearchableCountrySelect({
-  value,
-  onChange,
-  placeholder,
-  className,
-  inputClass,
-  locale = "en",
-}: {
-  value: string;
-  onChange: (name: string) => void;
-  placeholder: string;
-  className?: string;
-  inputClass: string;
-  locale?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const containerRef = useRef<HTMLDivElement>(null);
-  const isAr = locale === "ar";
-  const searchLower = search.trim().toLowerCase();
-  const filtered =
-    searchLower.length === 0
-      ? COUNTRIES.slice(0, 200)
-      : COUNTRIES.filter((c) => {
-          const nameEn = c.name.toLowerCase();
-          const nameAr = isAr ? getCountryDisplayName(c.code, "ar", "").toLowerCase() : "";
-          return nameEn.includes(searchLower) || (nameAr && nameAr.includes(searchLower));
-        }).slice(0, 100);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const displayValue = value || "";
-  const selectedCountry = COUNTRIES.find((c) => c.name === value);
-  const displayLabel = selectedCountry
-    ? getCountryDisplayName(selectedCountry.code, locale, selectedCountry.name)
-    : displayValue || placeholder;
-
-  return (
-    <div ref={containerRef} className={`relative ${className ?? ""}`}>
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className={`flex w-full min-h-[2.75rem] items-center justify-between gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-3 text-left text-zinc-900 shadow-sm outline-none transition-all focus:ring-2 focus:ring-sky-500 placeholder:text-zinc-400 ${!displayValue ? "text-zinc-400" : ""}`}
-      >
-        <span className="flex items-center gap-2 truncate">
-          {selectedCountry ? (
-            <>
-              <span className="text-lg leading-none">{getFlagEmoji(selectedCountry.code)}</span>
-              <span>{displayLabel}</span>
-            </>
-          ) : (
-            placeholder
-          )}
-        </span>
-        <ChevronDown className={`h-4 w-4 shrink-0 text-zinc-400 transition ${open ? "rotate-180" : ""}`} />
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            className="mt-1 max-h-72 w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-xl"
-          >
-            <div className="border-b border-zinc-200 p-2">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={placeholder}
-                className={inputClass + " py-2"}
-                autoFocus
-              />
-            </div>
-            <ul className="max-h-60 overflow-y-auto py-1">
-              {filtered.slice(0, MAX_COUNTRY_VISIBLE).map((c) => (
-                <li key={c.code}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onChange(c.name);
-                      setOpen(false);
-                      setSearch("");
-                    }}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-zinc-700 hover:bg-zinc-100"
-                  >
-                    <span className="text-lg leading-none">{getFlagEmoji(c.code)}</span>
-                    <span>{getCountryDisplayName(c.code, locale, c.name)}</span>
-                  </button>
-                </li>
-              ))}
-              {filtered.length === 0 && (
-                <li className="px-4 py-3 text-sm text-zinc-500">{locale === "ar" ? "لا توجد نتائج" : "No matches"}</li>
-              )}
-            </ul>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-const MAX_PHOTOS = 5;
-
-type Toast = { type: "success" | "error"; message: string } | null;
-
-type ProfileState = {
-  full_name: string;
-  gender: string;
-  email: string;
-  phone: string;
-  phone_verified: boolean;
-  nationality: string;
-  age: string;
-  marital_status: string;
-  height_cm: string;
-  weight_kg: string;
-  skin_tone: string;
-  smoking_status: string;
-  religious_commitment: string;
-  desire_children: string;
-  job_title: string;
-  education_level: string;
-  country: string;
-  country_code: string;
-  city: string;
-  about_me: string;
-  ideal_partner: string;
+type ProfileData = {
+  full_name: string | null;
+  gender: string | null;
+  age: string | null;
+  job_title: string | null;
+  education_level: string | null;
+  marital_status: string | null;
+  height_cm: string | null;
+  weight_kg: string | null;
+  country: string | null;
+  city: string | null;
+  nationality: string | null;
+  skin_tone: string | null;
+  smoking_status: string | null;
+  religious_commitment: string | null;
+  desire_children: string | null;
+  about_me: string | null;
+  ideal_partner: string | null;
   photo_urls: string[];
   primary_photo_index: number;
-  photo_privacy_blur: boolean;
 };
 
-const initialProfile: ProfileState = {
-  full_name: "",
-  gender: "",
-  email: "",
-  phone: "",
-  phone_verified: false,
-  nationality: "",
-  age: "",
-  marital_status: "",
-  height_cm: "",
-  weight_kg: "",
-  skin_tone: "",
-  smoking_status: "",
-  religious_commitment: "",
-  desire_children: "",
-  job_title: "",
-  education_level: "",
-  country: "",
-  country_code: "",
-  city: "",
-  about_me: "",
-  ideal_partner: "",
-  photo_urls: [],
-  primary_photo_index: 0,
-  photo_privacy_blur: false,
+function getProfileStrength(p: ProfileData): number {
+  const hasImage = p.photo_urls.length > 0;
+  const hasAboutMe = Boolean(p.about_me?.trim());
+  const hasPartnerInfo = Boolean(p.ideal_partner?.trim());
+  const hasJob = Boolean(p.job_title?.trim());
+  const hasAge = p.age != null && String(p.age).trim() !== "";
+  const hasLocation = Boolean(p.country?.trim() || p.city?.trim());
+  const jobAgeLocation = (hasJob ? 10 : 0) + (hasAge ? 10 : 0) + (hasLocation ? 10 : 0);
+  return (
+    (hasImage ? 25 : 0) +
+    (hasAboutMe ? 25 : 0) +
+    (hasPartnerInfo ? 20 : 0) +
+    jobAgeLocation
+  );
+}
+
+function getCharismaRating(strengthPercent: number): number {
+  return Math.round((strengthPercent / 100) * 10 * 10) / 10;
+}
+
+const EDUCATION_KEYS: Record<string, string> = {
+  high_school: "optHighSchool",
+  bachelors: "optBachelors",
+  masters: "optMasters",
+  doctorate: "optDoctorate",
+  other: "optOther",
 };
 
-const MARITAL_VALUES = ["", "single", "divorced", "widowed"] as const;
-const SKIN_VALUES = ["", "fair", "medium", "olive", "brown", "dark"] as const;
-const SMOKING_VALUES = ["", "never", "former", "occasionally", "yes"] as const;
-const RELIGIOUS_VALUES = ["", "practicing", "moderate", "revert", "seeking"] as const;
-const CHILDREN_VALUES = ["", "yes", "no", "open", "undecided"] as const;
-const EDUCATION_VALUES = ["", "high_school", "bachelors", "masters", "doctorate", "other"] as const;
+const MARITAL_KEYS: Record<string, string> = {
+  single: "optSingle",
+  divorced: "optDivorced",
+  widowed: "optWidowed",
+};
 
-/** Converts option value to translation key suffix, e.g. "high_school" -> "HighSchool". */
-function valueToKeySuffix(value: string): string {
-  return value
-    .split("_")
-    .map((s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())
-    .join("");
+const OPT_KEYS: Record<string, string> = {
+  fair: "optFair",
+  medium: "optMedium",
+  olive: "optOlive",
+  brown: "optBrown",
+  dark: "optDark",
+  never: "optNever",
+  former: "optFormer",
+  occasionally: "optOccasionally",
+  yes: "optYes",
+  no: "optNo",
+  open: "optOpen",
+  undecided: "optUndecided",
+  practicing: "optPracticing",
+  moderate: "optModerate",
+  revert: "optRevert",
+  seeking: "optSeeking",
+};
+
+function optLabel(t: (k: string) => string, value: string | null): string | null {
+  if (!value?.trim()) return null;
+  const key = OPT_KEYS[value.trim().toLowerCase()] ?? value;
+  const out = t(`profile.${key}`);
+  return out && out !== `profile.${key}` ? out : value;
 }
 
-/**
- * Returns gender-aware label for a dropdown option (Social Status, Education, etc.).
- * Male: e.g. Arabic أعزب only; Female: e.g. عزباء. Never shows combined "أعزب/عزباء" when a gendered key exists.
- */
-function getOptionLabel(
-  t: (key: string) => string,
-  value: string,
-  isFemale: boolean
-): string {
-  if (!value) return "";
-  const suffix = valueToKeySuffix(value);
-  const genderedKey = `profile.opt${suffix}${isFemale ? "Female" : "Male"}`;
-  const neutralKey = `profile.opt${suffix}`;
-  const gendered = t(genderedKey);
-  if (gendered && gendered !== genderedKey) return gendered;
-  return t(neutralKey);
-}
+const EDIT_PROFILE_HREF = "/dashboard/profile/edit";
 
-function toNum(s: string): number | null {
-  const n = parseInt(s, 10);
-  return Number.isFinite(n) ? n : null;
-}
-
-const STEP_ORDER = [
-  { id: 0, icon: User, key: "step1" as const },
-  { id: 1, icon: Ruler, key: "step2" as const },
-  { id: 2, icon: Camera, key: "step3" as const },
-  { id: 3, icon: FileText, key: "step4" as const },
-];
-
-export default function ProfilePage() {
+export default function DashboardProfileViewPage() {
   const router = useRouter();
   const { locale, dir, t } = useLanguage();
   const [userId, setUserId] = useState<string | null>(null);
-  const [profile, setProfile] = useState<ProfileState>(initialProfile);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [step, setStep] = useState(0);
-  const [toast, setToast] = useState<Toast>(null);
-  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
-  const [phoneOtpLoading, setPhoneOtpLoading] = useState(false);
-  const [phoneOtpCode, setPhoneOtpCode] = useState("");
-  const [phoneOtpConfirming, setPhoneOtpConfirming] = useState(false);
-  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
-  const [aiLoading, setAiLoading] = useState<"about_me" | "ideal_partner" | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [tone, setTone] = useState<"friendly" | "romantic" | "professional">("friendly");
-
-  const showToast = useCallback((type: "success" | "error", message: string) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 4000);
-  }, []);
+  const [viewAsPublic, setViewAsPublic] = useState(false);
+  const [communityRating, setCommunityRating] = useState<{ avg: number; count: number } | null>(null);
+  const [shareToast, setShareToast] = useState(false);
 
   useEffect(() => {
     const run = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
-          router.replace("/register");
-          return;
-        }
-        setUserId(user.id);
-        const { data, error } = await supabase
-          .from("profiles")
-          .select(
-            "full_name, gender, email, phone_verified, nationality, age, marital_status, height_cm, weight_kg, skin_tone, smoking_status, religious_commitment, desire_children, job_title, education_level, country, country_code, city, about_me, ideal_partner, photo_urls, primary_photo_index, photo_privacy_blur"
-          )
-          .eq("id", user.id)
-          .maybeSingle();
-
-        if (error) {
-          console.warn("Profile fetch error:", error);
-          setLoading(false);
-          return;
-        }
-
-        if (data && typeof data === "object") {
-          const raw = data as Record<string, unknown>;
-          const safeStr = (v: unknown) => (v != null && typeof v === "string" ? v : v != null ? String(v) : "");
-          const safeNum = (v: unknown, def: number) =>
-            typeof v === "number" && Number.isFinite(v) ? v : def;
-          let photo_urls: string[] = [];
-          try {
-            if (Array.isArray(raw.photo_urls)) {
-              photo_urls = raw.photo_urls.filter((u): u is string => typeof u === "string");
-            }
-          } catch {
-            photo_urls = [];
-          }
-
-          setProfile({
-            full_name: safeStr(raw.full_name),
-            gender: safeStr(raw.gender),
-            email: safeStr(raw.email),
-            phone: safeStr(raw.phone),
-            phone_verified: raw.phone_verified === true,
-            nationality: safeStr(raw.nationality),
-            age: raw.age != null ? String(raw.age) : "",
-            marital_status: safeStr(raw.marital_status),
-            height_cm: raw.height_cm != null ? String(raw.height_cm) : "",
-            weight_kg: raw.weight_kg != null ? String(raw.weight_kg) : "",
-            skin_tone: safeStr(raw.skin_tone),
-            smoking_status: safeStr(raw.smoking_status),
-            religious_commitment: safeStr(raw.religious_commitment),
-            desire_children: safeStr(raw.desire_children),
-            job_title: safeStr(raw.job_title),
-            education_level: safeStr(raw.education_level),
-            country: safeStr(raw.country),
-            country_code: safeStr(raw.country_code),
-            city: safeStr(raw.city),
-            about_me: safeStr(raw.about_me),
-            ideal_partner: safeStr(raw.ideal_partner),
-            photo_urls,
-            primary_photo_index: safeNum(raw.primary_photo_index, 0),
-            photo_privacy_blur: raw.photo_privacy_blur === true,
-          });
-        }
-      } catch (err) {
-        console.warn("Profile load failed:", err);
-      } finally {
-        setLoading(false);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.replace("/login");
+        return;
       }
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(
+          "full_name, gender, age, job_title, education_level, marital_status, height_cm, weight_kg, country, city, nationality, skin_tone, smoking_status, religious_commitment, desire_children, about_me, ideal_partner, photo_urls, primary_photo_index"
+        )
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (error || !data) {
+        setLoading(false);
+        return;
+      }
+      setUserId(user.id);
+
+      const raw = data as Record<string, unknown>;
+      let photo_urls: string[] = [];
+      if (Array.isArray(raw.photo_urls)) {
+        photo_urls = raw.photo_urls.filter((u): u is string => typeof u === "string");
+      }
+      const primary_photo_index = typeof raw.primary_photo_index === "number" ? raw.primary_photo_index : 0;
+      const ageVal = raw.age;
+      setProfile({
+        full_name: (raw.full_name as string) ?? null,
+        gender: (raw.gender as string) ?? null,
+        age: ageVal != null ? String(ageVal) : null,
+        job_title: (raw.job_title as string) ?? null,
+        education_level: (raw.education_level as string) ?? null,
+        marital_status: (raw.marital_status as string) ?? null,
+        height_cm: raw.height_cm != null ? String(raw.height_cm) : null,
+        weight_kg: raw.weight_kg != null ? String(raw.weight_kg) : null,
+        country: (raw.country as string) ?? null,
+        city: (raw.city as string) ?? null,
+        nationality: (raw.nationality as string) ?? null,
+        skin_tone: (raw.skin_tone as string) ?? null,
+        smoking_status: (raw.smoking_status as string) ?? null,
+        religious_commitment: (raw.religious_commitment as string) ?? null,
+        desire_children: (raw.desire_children as string) ?? null,
+        about_me: (raw.about_me as string) ?? null,
+        ideal_partner: (raw.ideal_partner as string) ?? null,
+        photo_urls,
+        primary_photo_index,
+      });
+
+      const { data: ratingRow } = await supabase.rpc("get_profile_rating", { p_to_user_id: user.id });
+      const row = Array.isArray(ratingRow) ? ratingRow[0] : ratingRow;
+      if (row && typeof (row as { avg_rating?: number }).avg_rating === "number") {
+        const r = row as { avg_rating: number; count_ratings: number };
+        setCommunityRating({ avg: r.avg_rating, count: Number(r.count_ratings) || 0 });
+      }
+      setLoading(false);
     };
     run();
   }, [router]);
 
-  const updateField = useCallback(<K extends keyof ProfileState>(key: K, value: ProfileState[K]) => {
-    setProfile((p) => ({ ...p, [key]: value }));
-  }, []);
-
-  const handleCopyBio = useCallback(
-    (text: string) => {
-      if (!text.trim()) return;
-      void navigator.clipboard.writeText(text.trim()).then(() => showToast("success", t("profile.copied")));
-    },
-    [showToast, t]
-  );
-
-  const performSave = async (): Promise<boolean> => {
-    if (!userId) return false;
-    const isMale = (profile.gender || "").toLowerCase() === "male";
-    const maritalStatus =
-      isMale ? "single" : (profile.marital_status?.trim() || null);
-    const payload: Record<string, unknown> = {
-      full_name: profile.full_name?.trim() || null,
-      gender: profile.gender?.trim() || null,
-      email: profile.email?.trim() || null,
-      phone: profile.phone?.trim() || null,
-      phone_verified: profile.phone_verified,
-      nationality: profile.nationality?.trim() || null,
-      age: toNum(profile.age),
-      marital_status: maritalStatus,
-      height_cm: toNum(profile.height_cm),
-      weight_kg: toNum(profile.weight_kg),
-      skin_tone: profile.skin_tone?.trim() || null,
-      smoking_status: profile.smoking_status?.trim() || null,
-      religious_commitment: profile.religious_commitment?.trim() || null,
-      desire_children: profile.desire_children?.trim() || null,
-      job_title: profile.job_title?.trim() || null,
-      education_level: profile.education_level?.trim() || null,
-      country: profile.country?.trim() || null,
-      country_code: profile.country_code?.trim() || null,
-      city: profile.city?.trim() || null,
-      about_me: profile.about_me?.trim() || null,
-      ideal_partner: profile.ideal_partner?.trim() || null,
-      photo_urls: Array.isArray(profile.photo_urls) ? profile.photo_urls : [],
-      primary_photo_index: typeof profile.primary_photo_index === "number" ? profile.primary_photo_index : 0,
-      photo_privacy_blur: profile.photo_privacy_blur === true,
-      profile_completion: getProfileCompleteness({
-        ...profile,
-        age: Number(profile.age) || 0,
-        height_cm: toNum(profile.height_cm) ?? undefined,
-        weight_kg: toNum(profile.weight_kg) ?? undefined,
-        primary_photo_index: typeof profile.primary_photo_index === "number" ? profile.primary_photo_index : 0,
-        photo_privacy_blur: profile.photo_privacy_blur === true,
-      } as unknown as ProfileForCompleteness),
-    };
-    const { error } = await supabase.from("profiles").update(payload).eq("id", userId);
-    if (error) throw error;
-    dispatchProfileUpdated();
-    return true;
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const ok = await performSave();
-      if (ok) showToast("success", t("profile.toastSaved"));
-    } catch (e) {
-      console.warn("Profile save failed:", e);
-      showToast("error", e instanceof Error ? e.message : t("profile.toastError"));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleSaveAndReturn = async () => {
-    setSaving(true);
-    try {
-      const ok = await performSave();
-      if (ok) {
-        showToast("success", t("profile.toastSaved"));
-        window.location.assign("/profile");
-        return;
-      }
-    } catch (e) {
-      console.warn("Profile save failed:", e);
-      showToast("error", e instanceof Error ? e.message : t("profile.toastError"));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handlePhoneVerify = async () => {
-    const phone = (profile.phone || "").trim();
-    if (!phone) {
-      showToast("error", t("profile.toastError"));
-      return;
-    }
-    setPhoneOtpLoading(true);
-    setPhoneOtpCode("");
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: phone.startsWith("+") ? phone : `+${phone}`,
-        options: { channel: "sms" },
-      });
-      if (error) {
-        setPhoneOtpSent(false);
-        showToast("error", error.message);
-        setPhoneOtpLoading(false);
-        return;
-      }
-      setPhoneOtpSent(true);
-      showToast("success", t("profile.enterCode"));
-    } catch {
-      showToast("error", t("profile.toastError"));
-    } finally {
-      setPhoneOtpLoading(false);
-    }
-  };
-
-  const handlePhoneOtpSimulate = () => {
-    setPhoneOtpSent(true);
-    setPhoneOtpCode("123456");
-    showToast("success", t("profile.enterCode"));
-  };
-
-  const handleConfirmOtp = async () => {
-    if (!userId) return;
-    const code = phoneOtpCode.replace(/\D/g, "").slice(0, 6);
-    if (code.length < 6) {
-      showToast("error", t("profile.enterCode"));
-      return;
-    }
-    setPhoneOtpConfirming(true);
-    try {
-      const { error } = await supabase.auth.verifyOtp({
-        phone: profile.phone.startsWith("+") ? profile.phone : `+${profile.phone}`,
-        token: code,
-        type: "sms",
-      });
-      if (error) {
-        showToast("error", error.message);
-        setPhoneOtpConfirming(false);
-        return;
-      }
-      await supabase.from("profiles").update({ phone_verified: true }).eq("id", userId);
-      updateField("phone_verified", true);
-      setPhoneOtpSent(false);
-      setPhoneOtpCode("");
-      showToast("success", t("profile.verified"));
-      dispatchProfileUpdated();
-    } catch {
-      showToast("error", t("profile.toastError"));
-    } finally {
-      setPhoneOtpConfirming(false);
-    }
-  };
-
-  const handleConfirmOtpSimulated = async () => {
-    if (!userId) return;
-    const code = phoneOtpCode.replace(/\D/g, "").slice(0, 6);
-    if (code.length < 6) {
-      showToast("error", t("profile.enterCode"));
-      return;
-    }
-    if (code !== "123456") {
-      showToast("error", t("profile.useSimulatedCode"));
-      return;
-    }
-    setPhoneOtpConfirming(true);
-    await new Promise((r) => setTimeout(r, 600));
-    await supabase.from("profiles").update({ phone_verified: true }).eq("id", userId);
-    updateField("phone_verified", true);
-    setPhoneOtpSent(false);
-    setPhoneOtpCode("");
-    showToast("success", t("profile.verified"));
-    dispatchProfileUpdated();
-    setPhoneOtpConfirming(false);
-  };
-
-  const handleMarkPhoneVerified = async () => {
-    if (!userId) return;
-    const { error } = await supabase.from("profiles").update({ phone_verified: true }).eq("id", userId);
-    if (error) {
-      showToast("error", error.message);
-      return;
-    }
-    updateField("phone_verified", true);
-    showToast("success", t("profile.verified"));
-    dispatchProfileUpdated();
-  };
-
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
-    if (!userId || !e.target.files?.[0]) return;
-    const file = e.target.files[0];
-    if (profile.photo_urls.length >= MAX_PHOTOS) {
-      showToast("error", `${MAX_PHOTOS}`);
-      return;
-    }
-    setUploadingIndex(index);
-    try {
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${userId}/${crypto.randomUUID()}.${ext}`;
-      const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, {
-        upsert: false,
-        contentType: file.type || "image/jpeg",
-      });
-      if (uploadError) {
-        const msg = String(uploadError.message || "").toLowerCase();
-        const isBucketError =
-          msg.includes("bucket") ||
-          msg.includes("not found") ||
-          msg.includes("404") ||
-          msg.includes("resource") ||
-          msg.includes("does not exist");
-        showToast("error", isBucketError ? t("profile.toastBucketMissing") : t("profile.toastUploadFailed"));
-        setUploadingIndex(null);
-        e.target.value = "";
-        return;
-      }
-      const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path);
-      const newUrls = [...profile.photo_urls];
-      newUrls.splice(index, 0, urlData.publicUrl);
-      const trimmed = newUrls.slice(0, MAX_PHOTOS);
-      updateField("photo_urls", trimmed);
-      if (trimmed.length === 1) updateField("primary_photo_index", 0);
-      showToast("success", t("profile.toastSaved"));
-    } catch (err) {
-      const msg = err instanceof Error ? String(err.message).toLowerCase() : "";
-      const isBucketError =
-        msg.includes("bucket") ||
-        msg.includes("not found") ||
-        msg.includes("404") ||
-        msg.includes("resource") ||
-        msg.includes("does not exist");
-      showToast("error", isBucketError ? t("profile.toastBucketMissing") : t("profile.toastUploadFailed"));
-    } finally {
-      setUploadingIndex(null);
-      e.target.value = "";
-    }
-  };
-
-  const handleDeletePhoto = (index: number) => {
-    const newUrls = profile.photo_urls.filter((_, i) => i !== index);
-    let newPrimary = profile.primary_photo_index;
-    if (profile.primary_photo_index >= newUrls.length && newUrls.length > 0) newPrimary = newUrls.length - 1;
-    else if (profile.primary_photo_index >= newUrls.length) newPrimary = 0;
-    else if (index < profile.primary_photo_index) newPrimary = profile.primary_photo_index - 1;
-    updateField("photo_urls", newUrls);
-    updateField("primary_photo_index", newPrimary);
-    showToast("success", t("profile.toastPhotoRemoved"));
-  };
-
-  const setPrimaryPhoto = (index: number) => {
-    updateField("primary_photo_index", index);
-    showToast("success", t("profile.toastPrimaryUpdated"));
-  };
-
-  const handleAiSuggest = async (field: "about_me" | "ideal_partner") => {
-    setAiLoading(field);
-    setIsLoading(true);
-    try {
-      const age = profile.age || "unknown";
-      const job = profile.job_title || "unknown";
-      const userGender = profile.gender === "female" ? "بنت" : "شاب";
-      const targetAudience =
-        profile.gender === "female"
-          ? "للشباب اللي بيزوروا بروفايلي"
-          : "للبنات اللي بيزوروا بروفايلي";
-      const toneText =
-        tone === "friendly" ? "رايق وكول" : tone === "romantic" ? "رومانسي وحالم" : "جاد وعملي";
-      const aboutMe = profile.about_me?.trim() || "(لم يذكر بعد)";
-      const partnerInfo = profile.ideal_partner?.trim() || "(لم يذكر بعد)";
-
-      const prompt =
-        field === "about_me"
-          ? `أنت كاتب محتوى بروفايلات محترف. اكتب نبذة تعريفية (Bio) تظهر في بروفايلي الشخصي ليقرأها الآخرون.
-المعطيات:
-- أنا ${userGender}، سني ${age}، وبشتغل ${job}.
-- عن نفسي: "${aboutMe}"
-- شريكي المنشود: "${partnerInfo}"
-- المود: ${toneText}
-
-المطلوب (بكل دقة):
-1. اكتب بلساني (أنا) بصيغة المتكلم، بس النص يكون موجه "للناس اللي بتقرأ بروفايلي" (مش ليا أنا).
-2. اللهجة: عربية بيضاء (مصرية/سعودية خفيفة) بعيدة عن الفصحى.
-3. ادمج كلامي عن نفسي مع تطلعاتي في "شريكي" في فقرة واحدة صايعة (أقصى حاجة 4 سطور).
-4. ابعد تماماً عن صيغة النصيحة أو المخاطبة ليا.. ابدأ فوراً في تقديم نفسي بأسلوب جذاب.
-5. النتيجة: النص فقط.`
-          : `أنت كاتب محتوى بروفايلات محترف. اكتب وصفاً قصيراً بالعربية (من 2 لـ 4 أسطر) عن الشريك المثالي لشخص ${userGender} عمره ${age} وبشتغل ${job}. الجمهور: ${targetAudience}. المود: ${toneText}. عن نفسه: "${aboutMe}". شريكي المنشود: "${partnerInfo}". النتيجة: النص فقط.`;
-
-      console.log("Gemini prompt (before send):", prompt);
-
-      const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-          }),
-        }
-      );
-
-      let text = "";
-      if (res.ok) {
-        const data = (await res.json()) as {
-          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-        };
-        text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
-        if (text) console.log("AI Response:", text);
-      } else {
-        console.warn("Gemini request failed:", res.status, await res.text());
-      }
-
-      if (text) updateField(field, text);
-      else showToast("error", t("profile.toastError"));
-    } catch (e) {
-      console.log(e);
-    } finally {
-      setAiLoading(null);
-      setIsLoading(false);
-    }
-  };
+  const isRtl = dir === "rtl";
+  const isFemale = profile?.gender === "female";
+  const themeBorder = isFemale ? "border-pink-200" : "border-sky-200";
+  const themeAccent = isFemale ? "text-pink-600" : "text-sky-600";
+  const themeAvatar = isFemale ? "bg-pink-100 text-pink-700" : "bg-sky-100 text-sky-700";
+  const themeButton = isFemale
+    ? "border-pink-300 bg-pink-50 text-pink-700 hover:bg-pink-100"
+    : "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100";
+  const themeIcon = isFemale ? "text-pink-500" : "text-sky-500";
+  const themeBg = isFemale ? "bg-pink-500 hover:bg-pink-600" : "bg-sky-500 hover:bg-sky-600";
+  const themeBgSoft = isFemale ? "bg-pink-50" : "bg-sky-50";
+  const themeBorderL = isFemale ? "border-l-pink-500" : "border-l-sky-500";
 
   if (loading) {
     return (
-      <LoadingScreen message={t("common.loading")} theme="sky" />
+      <LoadingScreen
+        message={locale === "ar" ? "جاري التحميل…" : "Loading…"}
+        theme="sky"
+      />
     );
   }
 
-  const isFemale = false;
-  const theme = {
-    accent: "slate",
-    bg: "bg-slate-100",
-    border: "border-slate-200",
-    text: "text-slate-700",
-    textMuted: "text-slate-700",
-    focusRing: "focus:ring-slate-400",
-    hoverBorder: "hover:border-slate-300",
-    hoverBg: "hover:bg-slate-100",
-    hoverText: "hover:text-slate-700",
-    fill: "fill-slate-700",
-    badge: "bg-slate-600",
-    primaryBtn: "bg-slate-900 hover:bg-slate-800 text-white border-0",
-  };
+  if (!profile) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-12 font-[family-name:var(--font-cairo)] text-center">
+        <p className="text-zinc-800">Could not load profile.</p>
+        <Link href={EDIT_PROFILE_HREF} className="mt-4 inline-block text-sky-600 hover:underline">
+          Go to Edit Profile
+        </Link>
+      </div>
+    );
+  }
 
-  const cardClass = "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6";
-  const inputClass =
-    `min-h-[2.75rem] w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 shadow-sm outline-none transition-all ${theme.focusRing} focus:ring-2 placeholder:text-zinc-400`;
-  const buttonClass =
-    `inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium outline-none transition-all ${theme.focusRing} focus:ring-2 disabled:opacity-60`;
+  const primaryPhoto = profile.photo_urls[profile.primary_photo_index] ?? profile.photo_urls[0];
+  const location = [profile.city, profile.country].filter(Boolean).join(", ") || null;
+  const hasAboutMe = Boolean(profile.about_me?.trim());
+  const hasIdealPartner = Boolean(profile.ideal_partner?.trim());
+
+  const strengthPercent = getProfileStrength(profile);
+  const charismaOutOf10 = getCharismaRating(strengthPercent);
+  const charismaStars = (charismaOutOf10 / 10) * 5;
+  const themeProgress = isFemale ? "bg-pink-500" : "bg-sky-500";
+  const themeStarFill = isFemale ? "text-pink-500" : "text-sky-500";
+
+  const maritalKey = profile.marital_status ? (MARITAL_KEYS[profile.marital_status] ?? "optSingle") + (isFemale ? "Female" : "Male") : null;
+  const maritalLabel = maritalKey ? t(`profile.${maritalKey}`) : null;
+  const educationKey = profile.education_level ? (EDUCATION_KEYS[profile.education_level] ?? "optOther") + (isFemale ? "Female" : "Male") : null;
+  const educationLabel = educationKey ? t(`profile.${educationKey}`) : null;
+
+  const attributeRows: { icon: React.ReactNode; label: string; value: string }[] = [];
+  if (profile.job_title?.trim()) attributeRows.push({ icon: <Briefcase className="h-4 w-4 shrink-0" />, label: t("profile.jobTitle"), value: profile.job_title });
+  if (educationLabel) attributeRows.push({ icon: <GraduationCap className="h-4 w-4 shrink-0" />, label: t("profile.education"), value: educationLabel });
+  if (profile.height_cm?.trim()) attributeRows.push({ icon: <Ruler className="h-4 w-4 shrink-0" />, label: t("profile.height"), value: `${profile.height_cm} cm` });
+  if (profile.weight_kg?.trim()) attributeRows.push({ icon: <Scale className="h-4 w-4 shrink-0" />, label: t("profile.weight"), value: `${profile.weight_kg} kg` });
+  if (profile.city?.trim()) attributeRows.push({ icon: <MapPin className="h-4 w-4 shrink-0" />, label: t("profile.city"), value: profile.city });
+  if (profile.country?.trim()) attributeRows.push({ icon: <Globe className="h-4 w-4 shrink-0" />, label: t("profile.country"), value: profile.country });
+  if (profile.nationality?.trim()) attributeRows.push({ icon: <User className="h-4 w-4 shrink-0" />, label: t("profile.nationality"), value: profile.nationality });
+  const skin = optLabel(t, profile.skin_tone) ?? profile.skin_tone?.trim();
+  if (skin) attributeRows.push({ icon: <Palette className="h-4 w-4 shrink-0" />, label: t("profile.skinTone"), value: skin });
+  const smoke = optLabel(t, profile.smoking_status) ?? profile.smoking_status?.trim();
+  if (smoke) attributeRows.push({ icon: <Cigarette className="h-4 w-4 shrink-0" />, label: t("profile.smoking"), value: smoke });
+  const relig = optLabel(t, profile.religious_commitment) ?? profile.religious_commitment?.trim();
+  if (relig) attributeRows.push({ icon: <BookOpen className="h-4 w-4 shrink-0" />, label: t("profile.religiousCommitment"), value: relig });
+  const children = optLabel(t, profile.desire_children) ?? profile.desire_children?.trim();
+  if (children) attributeRows.push({ icon: <Baby className="h-4 w-4 shrink-0" />, label: t("profile.desireChildren"), value: children });
 
   return (
-    <div className="font-[family-name:var(--font-cairo)]" dir={dir}>
-      {toast && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`rounded-xl border px-4 py-3 text-sm shadow-sm ${
-            toast.type === "success"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-              : "border-red-200 bg-red-50 text-red-800"
-          }`}
-          role="alert"
-        >
-          {toast.message}
-        </motion.div>
+    <div className="font-[family-name:var(--font-cairo)] text-zinc-900" dir={dir}>
+      {shareToast && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-sm" role="alert">
+          {t("profile.linkCopiedSuccess")}
+        </div>
       )}
-      <div className="mx-auto max-w-5xl space-y-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-      {/* Page header */}
-      <header className={`space-y-2 ${dir === "rtl" ? "text-right" : "text-left"}`}>
-        <h1 className="text-2xl font-semibold text-zinc-900">{t("profile.title")}</h1>
-        <p className="text-sm text-zinc-500">{t("profile.subtitle")}</p>
-      </header>
+      <div className="w-full px-0 py-2">
+        {viewAsPublic && (
+          <p className={`mb-4 text-sm text-zinc-600 ${isRtl ? "text-right" : "text-left"}`}>
+            {locale === "ar" ? "كما يراك الآخرون على صفحة الملف العام." : "As others see you on your public profile."}
+          </p>
+        )}
 
-      {/* Stepper */}
-      <nav
-        className="flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm sm:flex-nowrap"
-        aria-label="Profile sections"
-      >
-        {STEP_ORDER.map(({ id, icon: Icon, key }) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setStep(id)}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition ${
-              step === id
-                ? `${theme.bg} ${theme.text} border ${theme.border}`
-                : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
-            }`}
-          >
-            <Icon className="h-4 w-4 shrink-0" />
-            <span className="truncate">{t(`profile.${key}`)}</span>
-          </button>
-        ))}
-      </nav>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={step}
-          initial={{ opacity: 0, x: dir === "rtl" ? 20 : -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: dir === "rtl" ? -20 : 20 }}
-          transition={{ duration: 0.2 }}
-          className="min-h-[320px]"
-        >
-          {step === 0 && (
-            <div className="space-y-6">
-              <section className={cardClass}>
-                <h2 className={`mb-4 flex items-center gap-2 text-lg font-semibold ${theme.text}`}>
-                  <User className="h-5 w-5" />
-                  {t("profile.step1")}
-                </h2>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.fullName")}</label>
-                    <input
-                      type="text"
-                      value={profile.full_name}
-                      onChange={(e) => updateField("full_name", e.target.value)}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.gender")}</label>
-                    <select
-                      value={profile.gender || ""}
-                      disabled
-                      aria-readonly
-                      className={inputClass + " opacity-75 cursor-not-allowed"}
-                    >
-                      <option value="">{t("profile.selectOption")}</option>
-                      <option value="male">{t("profile.male")}</option>
-                      <option value="female">{t("profile.female")}</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.nationality")}</label>
-                    <SearchableCountrySelect
-                      value={profile.nationality}
-                      onChange={(name) => updateField("nationality", name)}
-                      placeholder={t("profile.selectOption")}
-                      inputClass={inputClass}
-                      locale={locale ?? "en"}
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.age")}</label>
-                    <input
-                      type="number"
-                      min={18}
-                      max={120}
-                      value={profile.age}
-                      onChange={(e) => updateField("age", e.target.value)}
-                      className={inputClass}
-                    />
-                    {!profile.age?.trim() && (
-                      <p className="mt-1 text-xs text-amber-600">{t("profile.completeFieldToBoostStrength")}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.maritalStatus")}</label>
-                    <select
-                      value={profile.gender?.toLowerCase() === "male" && profile.marital_status && profile.marital_status !== "single" ? "single" : profile.marital_status}
-                      onChange={(e) => updateField("marital_status", e.target.value)}
-                      className={inputClass}
-                    >
-                      <option value="">{t("profile.selectOption")}</option>
-                      {(profile.gender?.toLowerCase() === "male" ? ["single"] : MARITAL_VALUES.slice(1)).map((v) => (
-                        <option key={v} value={v}>{getOptionLabel(t, v, isFemale)}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.email")}</label>
-                    <input type="email" value={profile.email} readOnly disabled className={inputClass + " opacity-75 cursor-not-allowed"} />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.phoneVerification")}</label>
-                    <p className="mb-2 text-xs text-zinc-500">{t("profile.phoneVerifySubtitle")}</p>
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                      <PhoneInput
-                        international
-                        defaultCountry="EG"
-                        value={profile.phone || undefined}
-                        onChange={(val) => updateField("phone", val || "")}
-                        className="flex flex-1 rounded-xl border border-zinc-200 bg-white [&_.PhoneInputInput]:rounded-r-xl [&_.PhoneInputInput]:bg-transparent [&_.PhoneInputInput]:px-4 [&_.PhoneInputInput]:py-2.5 [&_.PhoneInputInput]:text-zinc-900 [&_.PhoneInputCountry]:rounded-l-xl [&_.PhoneInputCountry]:bg-zinc-50 [&_.PhoneInputCountry]:pl-3 [&_.PhoneInputCountrySelectArrow]:text-zinc-500"
-                      />
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={handlePhoneVerify}
-                          disabled={phoneOtpLoading || profile.phone_verified}
-                          className={`inline-flex items-center gap-2 rounded-xl border ${theme.border} ${theme.bg} px-4 py-2.5 text-sm font-medium ${theme.textMuted} disabled:opacity-60`}
-                        >
-                          {phoneOtpLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                          {t("profile.sendOtp")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handlePhoneOtpSimulate}
-                          disabled={profile.phone_verified || phoneOtpSent}
-                          className="rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-700 hover:bg-zinc-200 disabled:opacity-50"
-                        >
-                          {t("profile.simulateOtp")}
-                        </button>
-                      </div>
-                    </div>
-                    {phoneOtpSent && !profile.phone_verified && (
-                      <div className="mt-4 flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end">
-                        <div className="flex-1">
-                          <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.enterCode")}</label>
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            maxLength={6}
-                            value={phoneOtpCode}
-                            onChange={(e) => setPhoneOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                            className={inputClass + " max-w-[10rem] text-center text-lg tracking-[0.4em]"}
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <button type="button" onClick={handleConfirmOtpSimulated} disabled={phoneOtpCode.length < 6 || phoneOtpConfirming} className={`inline-flex items-center gap-2 rounded-xl border ${theme.border} ${theme.bg} px-4 py-2.5 text-sm font-medium ${theme.textMuted} disabled:opacity-60`}>
-                            {phoneOtpConfirming ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                            {t("profile.confirmSimulated")}
-                          </button>
-                          <button type="button" onClick={handleConfirmOtp} disabled={phoneOtpCode.length < 6 || phoneOtpConfirming} className="rounded-xl border border-zinc-200 bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-700 disabled:opacity-60">
-                            {t("profile.confirmRealSms")}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    <div className="mt-3 flex flex-wrap items-center gap-3">
-                      {profile.phone_verified && (
-                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-3 py-1.5 text-sm font-medium text-emerald-400">
-                          <CheckCircle className="h-4 w-4" />
-                          {t("profile.verified")}
-                        </span>
-                      )}
-                      {phoneOtpSent && !profile.phone_verified && (
-                        <button type="button" onClick={handleMarkPhoneVerified} className={`text-sm ${theme.text} underline opacity-90 hover:opacity-100`}>
-                          {t("profile.markVerified")}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </section>
+        <div className={`w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${themeBorder}`}>
+          <div className={`flex flex-col gap-6 p-6 sm:flex-row sm:items-center ${isRtl ? "sm:flex-row-reverse" : ""}`}>
+            <div className={`h-36 w-36 shrink-0 overflow-hidden rounded-2xl sm:h-44 sm:w-44 ${themeAvatar} flex items-center justify-center text-5xl font-semibold`}>
+              {primaryPhoto ? (
+                <img src={primaryPhoto} alt="" className="h-full w-full object-cover" />
+              ) : (
+                (profile.full_name ?? "?").slice(0, 1)
+              )}
             </div>
-          )}
-
-          {step === 1 && (
-            <div className="space-y-6">
-              <section className={cardClass}>
-                <h2 className={`mb-1 flex items-center gap-2 text-lg font-semibold ${theme.text}`}>
-                  <Ruler className="h-5 w-5" />
-                  {t("profile.appearance")}
-                </h2>
-                <p className="mb-4 text-xs text-slate-500">{t("profile.appearanceSub")}</p>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.height")}</label>
-                    <input type="number" min={100} max={250} value={profile.height_cm} onChange={(e) => updateField("height_cm", e.target.value)} className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.weight")}</label>
-                    <input type="number" min={30} max={300} value={profile.weight_kg} onChange={(e) => updateField("weight_kg", e.target.value)} className={inputClass} />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.skinTone")}</label>
-                    <select value={profile.skin_tone} onChange={(e) => updateField("skin_tone", e.target.value)} className={inputClass}>
-                      <option value="">{t("profile.selectOption")}</option>
-                      {SKIN_VALUES.slice(1).map((v) => (
-                        <option key={v} value={v}>{getOptionLabel(t, v, isFemale)}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </section>
-              <section className={cardClass}>
-                <h2 className={`mb-1 flex items-center gap-2 text-lg font-semibold ${theme.text}`}>
-                  <Heart className="h-5 w-5" />
-                  {t("profile.lifestyle")}
-                </h2>
-                <p className="mb-4 text-xs text-zinc-500">{t("profile.lifestyleSub")}</p>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.smoking")}</label>
-                    <select value={profile.smoking_status} onChange={(e) => updateField("smoking_status", e.target.value)} className={inputClass}>
-                      <option value="">{t("profile.selectOption")}</option>
-                      {SMOKING_VALUES.slice(1).map((v) => (
-                        <option key={v} value={v}>{getOptionLabel(t, v, isFemale)}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.religiousCommitment")}</label>
-                    <select value={profile.religious_commitment} onChange={(e) => updateField("religious_commitment", e.target.value)} className={inputClass}>
-                      <option value="">{t("profile.selectOption")}</option>
-                      {RELIGIOUS_VALUES.slice(1).map((v) => (
-                        <option key={v} value={v}>{getOptionLabel(t, v, isFemale)}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.desireChildren")}</label>
-                    <select value={profile.desire_children} onChange={(e) => updateField("desire_children", e.target.value)} className={inputClass}>
-                      <option value="">{t("profile.selectOption")}</option>
-                      {CHILDREN_VALUES.slice(1).map((v) => (
-                        <option key={v} value={v}>{getOptionLabel(t, v, isFemale)}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </section>
-              <section className={cardClass}>
-                <h2 className={`mb-1 flex items-center gap-2 text-lg font-semibold ${theme.text}`}>
-                  <Briefcase className="h-5 w-5" />
-                  {t("profile.career")}
-                </h2>
-                <p className="mb-4 text-xs text-zinc-500">{t("profile.careerSub")}</p>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.jobTitle")}</label>
-                    <input type="text" value={profile.job_title} onChange={(e) => updateField("job_title", e.target.value)} className={inputClass} />
-                    {!profile.job_title?.trim() && (
-                      <p className="mt-1 text-xs text-amber-600">{t("profile.completeFieldToBoostStrength")}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.education")}</label>
-                    <select value={profile.education_level} onChange={(e) => updateField("education_level", e.target.value)} className={inputClass}>
-                      <option value="">{t("profile.selectOption")}</option>
-                      {EDUCATION_VALUES.slice(1).map((v) => (
-                        <option key={v} value={v}>{getOptionLabel(t, v, isFemale)}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.country")}</label>
-                    <SearchableCountrySelect
-                      value={profile.country}
-                      onChange={(name) => {
-                        const c = COUNTRIES.find((x) => x.name === name);
-                        updateField("country", name);
-                        updateField("country_code", c ? c.code : "");
-                      }}
-                      locale={locale ?? "en"}
-                      placeholder={t("profile.selectOption")}
-                      inputClass={inputClass}
-                    />
-                    {!profile.country?.trim() && !profile.city?.trim() && (
-                      <p className="mt-1 text-xs text-amber-600">{t("profile.completeFieldToBoostStrength")}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("profile.city")}</label>
-                    <input type="text" value={profile.city} onChange={(e) => updateField("city", e.target.value)} className={inputClass} />
-                  </div>
-                </div>
-              </section>
-            </div>
-          )}
-
-          {step === 2 && (
-            <section className={cardClass}>
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className={`flex items-center gap-2 text-lg font-semibold ${theme.text}`}>
-                    <Camera className="h-5 w-5" />
-                    {t("profile.photos")}
-                  </h2>
-                  <p className="mt-1 text-xs text-zinc-500">{t("profile.photosSub")}</p>
-                  {profile.photo_urls.length === 0 && (
-                    <p className="mt-1 text-xs text-amber-600">{t("profile.completeFieldToBoostStrength")}</p>
-                  )}
-                </div>
-                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-100">
-                  <span className="flex items-center gap-1.5">
-                    {profile.photo_privacy_blur ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    {t("profile.blurNonMatches")}
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">{profile.full_name ?? "—"}</h1>
+              <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-base font-medium text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}>
+                {profile.age && (
+                  <span className={themeAccent}>
+                    {profile.age} {locale === "ar" ? "سنة" : "y/o"}
                   </span>
-                  <input type="checkbox" checked={profile.photo_privacy_blur} onChange={(e) => updateField("photo_privacy_blur", e.target.checked)} className={`h-4 w-4 rounded border-zinc-300 bg-white ${theme.focusRing} focus:ring-2`} />
-                </label>
+                )}
+                {maritalLabel && (
+                  <span className={`inline-flex items-center gap-1 ${themeAccent}`}>
+                    <Heart className="h-4 w-4" />
+                    {maritalLabel}
+                  </span>
+                )}
               </div>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
-                {Array.from({ length: MAX_PHOTOS }).map((_, i) => (
-                  <div key={i} className="group relative aspect-[3/4] overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
-                    {profile.photo_urls[i] ? (
-                      <>
-                        <img src={profile.photo_urls[i]} alt="" className={`h-full w-full object-cover ${profile.photo_privacy_blur ? "blur-md" : ""}`} />
-                        <div className="mt-2 flex flex-col items-center justify-center gap-2 rounded-lg bg-black/5 p-2">
-                          <button type="button" onClick={() => setPrimaryPhoto(i)} className={`rounded-lg bg-white/95 p-2.5 ${theme.text} shadow-lg hover:bg-zinc-100`} title={t("profile.setPrimary")}>
-                            <Star className={`h-5 w-5 ${profile.primary_photo_index === i ? theme.fill : ""}`} />
-                          </button>
-                          <button type="button" onClick={() => handleDeletePhoto(i)} className="rounded-lg bg-white/95 p-2.5 text-red-500 shadow-lg hover:bg-zinc-100" title={t("profile.delete")}>
-                            <Trash2 className="h-5 w-5" />
-                          </button>
-                        </div>
-                        {profile.primary_photo_index === i && (
-                          <span className={`mt-2 inline-flex rounded-md ${theme.badge} px-2 py-1 text-xs font-semibold text-white shadow`}>{t("profile.primary")}</span>
-                        )}
-                      </>
-                    ) : (
-                      <label className={`flex h-full w-full cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-300 text-zinc-500 ${theme.hoverBorder} hover:bg-zinc-100 ${theme.hoverText}`}>
-                        {uploadingIndex === i ? <Loader2 className="h-8 w-8 animate-spin" /> : <><ImagePlus className="h-10 w-10" /><span className="text-xs font-medium">{t("profile.addPhoto")}</span></>}
-                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoUpload(e, i)} disabled={uploadingIndex !== null} />
-                      </label>
-                    )}
+              {location && (
+                <p className="mt-1 flex items-center gap-1 text-sm text-zinc-600">
+                  <MapPin className="h-4 w-4 shrink-0" />
+                  {location}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="border-t border-zinc-100 bg-zinc-50/50 px-6 py-4">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.profileStrength")}</p>
+                <div className="flex items-center gap-2">
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-200">
+                    <div className={`h-full rounded-full ${themeProgress} transition-all duration-500`} style={{ width: `${strengthPercent}%` }} />
+                  </div>
+                  <span className="w-9 shrink-0 text-sm font-medium text-zinc-900">{strengthPercent}%</span>
+                </div>
+              </div>
+              <div>
+                <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.charismaRating")}</p>
+                <div className={`flex items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
+                  <div className="flex gap-0.5">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star key={i} className={`h-4 w-4 shrink-0 ${i <= charismaStars ? themeStarFill : "text-zinc-200"}`} fill={i <= charismaStars ? "currentColor" : "none"} />
+                    ))}
+                  </div>
+                  <span className={`text-sm font-medium ${themeAccent}`}>{charismaOutOf10}/10</span>
+                </div>
+              </div>
+              <div>
+                <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.communityRating")}</p>
+                {communityRating !== null && communityRating.count > 0 ? (
+                  <div className={`flex items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <Star key={i} className={`h-4 w-4 shrink-0 ${i <= Math.round(communityRating.avg) ? themeStarFill : "text-zinc-200"}`} fill={i <= Math.round(communityRating.avg) ? "currentColor" : "none"} />
+                      ))}
+                    </div>
+                    <span className="text-sm text-zinc-900">{communityRating.avg.toFixed(1)} ({communityRating.count})</span>
+                  </div>
+                ) : (
+                  <p className="text-sm text-zinc-500">{locale === "ar" ? "لا توجد تقييمات بعد" : "No ratings yet"}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {attributeRows.length > 0 && (
+            <div className="border-t border-zinc-100 px-6 py-5">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {attributeRows.map((row, idx) => (
+                  <div key={idx} className={`flex items-start gap-3 rounded-xl bg-zinc-50/80 px-4 py-3 ${isRtl ? "flex-row-reverse text-right" : ""}`}>
+                    <span className={themeIcon}>{row.icon}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-zinc-500">{row.label}</p>
+                      <p className="mt-0.5 text-sm font-medium text-zinc-900">{row.value}</p>
+                    </div>
                   </div>
                 ))}
               </div>
-            </section>
+            </div>
           )}
 
-          {step === 3 && (
-            <section className={cardClass}>
-              <h2 className={`mb-1 flex items-center gap-2 text-lg font-semibold ${theme.text}`}>
-                <FileText className="h-5 w-5" />
-                {t("profile.personalEssays")}
-              </h2>
-              <p className="mb-4 text-xs text-zinc-500">{t("profile.personalEssaysSub")}</p>
-              <div className="space-y-4">
-                <div>
-                  <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-                    <label className="text-xs font-medium text-zinc-500">{t("profile.aboutMe")}</label>
-                    {!profile.about_me?.trim() && (
-                      <span className="text-xs text-amber-600">{t("profile.completeFieldToBoostStrength")}</span>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={tone}
-                        onChange={(e) => setTone(e.target.value as "friendly" | "romantic" | "professional")}
-                        className={`rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm outline-none ${theme.focusRing} focus:ring-2`}
-                      >
-                        <option value="friendly">رايق</option>
-                        <option value="romantic">رومانسي</option>
-                        <option value="professional">جاد</option>
-                      </select>
-                      <button
-                        type="button"
-                        onClick={() => handleAiSuggest("about_me")}
-                        disabled={isLoading}
-                        className={`inline-flex items-center gap-1.5 rounded-xl border ${theme.border} ${theme.bg} px-2.5 py-1.5 text-xs font-medium ${theme.textMuted} ${theme.hoverBg} disabled:opacity-60`}
-                      >
-                        {aiLoading === "about_me" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
-                        {t("profile.magicWand")}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-                    <div className="flex justify-end border-b border-zinc-200 bg-zinc-50 px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={() => handleCopyBio(profile.about_me)}
-                        disabled={!profile.about_me.trim()}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-100 disabled:opacity-40"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                        Copy
-                      </button>
-                    </div>
-                    <textarea
-                      dir={dir}
-                      value={profile.about_me}
-                      onChange={(e) => updateField("about_me", e.target.value)}
-                      rows={5}
-                      placeholder={t("profile.aboutMePlaceholder")}
-                      className={inputClass + " min-h-0 resize-y rounded-t-none rounded-b-xl border-t-0 bg-transparent text-lg leading-relaxed"}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-                    <label className="text-xs font-medium text-zinc-700">{t("profile.idealPartner")}</label>
-                    {!profile.ideal_partner?.trim() && (
-                      <span className="text-xs text-amber-600">{t("profile.completeFieldToBoostStrength")}</span>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={tone}
-                        onChange={(e) => setTone(e.target.value as "friendly" | "romantic" | "professional")}
-                        className={`rounded-xl border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm outline-none ${theme.focusRing} focus:ring-2`}
-                      >
-                        <option value="friendly">رايق</option>
-                        <option value="romantic">رومانسي</option>
-                        <option value="professional">جاد</option>
-                      </select>
-                      <button
-                        type="button"
-                        onClick={() => handleAiSuggest("ideal_partner")}
-                        disabled={isLoading}
-                        className={`inline-flex items-center gap-1.5 rounded-xl border ${theme.border} ${theme.bg} px-2.5 py-1.5 text-xs font-medium ${theme.textMuted} ${theme.hoverBg} disabled:opacity-60`}
-                      >
-                        {aiLoading === "ideal_partner" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
-                        {t("profile.magicWand")}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-                    <div className="flex justify-end border-b border-zinc-200 bg-zinc-50 px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={() => handleCopyBio(profile.ideal_partner)}
-                        disabled={!profile.ideal_partner.trim()}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 shadow-sm transition hover:bg-zinc-100 disabled:opacity-40"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                        Copy
-                      </button>
-                    </div>
-                    <textarea
-                      dir={dir}
-                      value={profile.ideal_partner}
-                      onChange={(e) => updateField("ideal_partner", e.target.value)}
-                      rows={5}
-                      placeholder={t("profile.idealPartnerPlaceholder")}
-                      className={inputClass + " min-h-0 resize-y rounded-t-none rounded-b-xl border-t-0 bg-transparent text-lg leading-relaxed"}
-                    />
-                  </div>
-                </div>
+          <div className={`border-t border-zinc-100 px-6 py-5 ${hasAboutMe ? `${themeBgSoft} ${themeBorderL} border-l-4` : ""}`}>
+            <h2 className={`flex items-center gap-2 text-base font-semibold text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}>
+              <FileText className={`h-4 w-4 shrink-0 ${themeIcon}`} />
+              {t("profile.aboutMe")}
+            </h2>
+            {hasAboutMe ? (
+              <p className="mt-3 text-base leading-relaxed text-zinc-900 whitespace-pre-wrap">{profile.about_me}</p>
+            ) : (
+              <div className="mt-3">
+                <p className="text-sm text-zinc-500">{t("profile.aboutMePlaceholder")}</p>
+                <Link href={EDIT_PROFILE_HREF} className={`mt-3 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white shadow-sm transition ${themeBg}`}>
+                  <Wand2 className="h-4 w-4" />
+                  {t("profile.letAiWriteBioNow")}
+                </Link>
               </div>
-            </section>
-          )}
-        </motion.div>
-      </AnimatePresence>
+            )}
+          </div>
 
-      {/* Save actions at bottom only — consistent spacing from last field */}
-      <div className={`flex flex-wrap justify-end gap-3 ${dir === "rtl" ? "flex-row-reverse" : ""}`}>
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className={buttonClass + ` border ${theme.border} ${theme.primaryBtn}`}
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {t("profile.saveChanges")}
-        </button>
-        <button
-          type="button"
-          onClick={handleSaveAndReturn}
-          disabled={saving}
-          className={buttonClass + ` border ${theme.border} ${theme.primaryBtn}`}
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          {t("profile.saveAndReturn")}
-        </button>
-      </div>
+          <div className="border-t border-zinc-100 px-6 py-5">
+            <h2 className={`flex items-center gap-2 text-base font-semibold text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}>
+              <Heart className={`h-4 w-4 shrink-0 ${themeIcon}`} />
+              {t("profile.idealPartner")}
+            </h2>
+            {hasIdealPartner ? (
+              <p className="mt-3 text-base leading-relaxed text-zinc-900 whitespace-pre-wrap">{profile.ideal_partner}</p>
+            ) : (
+              <div className="mt-3">
+                <p className="text-sm text-zinc-500">{t("profile.idealPartnerPlaceholder")}</p>
+                <Link href={EDIT_PROFILE_HREF} className={`mt-3 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white shadow-sm transition ${themeBg}`}>
+                  <Wand2 className="h-4 w-4" />
+                  {t("profile.letAiWriteBioNow")}
+                </Link>
+              </div>
+            )}
+          </div>
+
+          <div className={`flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 px-6 py-4 ${isRtl ? "flex-row-reverse" : ""}`}>
+            <div className={`flex flex-wrap items-center gap-3 ${isRtl ? "flex-row-reverse" : ""}`}>
+              <Link href={EDIT_PROFILE_HREF} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-md transition ${themeBg}`}>
+                <Pencil className="h-4 w-4" />
+                {t("profile.editProfile")}
+              </Link>
+              <button
+                type="button"
+                onClick={() => setViewAsPublic((v) => !v)}
+                className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium shadow-sm transition ${themeButton}`}
+              >
+                <Eye className="h-4 w-4" />
+                {t("profile.viewAsOthersSeeMe")}
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!userId) return;
+                const url = `${typeof window !== "undefined" ? window.location.origin : ""}/profile/${userId}`;
+                await navigator.clipboard.writeText(url);
+                setShareToast(true);
+                setTimeout(() => setShareToast(false), 3000);
+              }}
+              disabled={!userId}
+              className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition hover:bg-zinc-100 ${themeAccent}`}
+            >
+              <Share2 className="h-4 w-4" />
+              {t("profile.shareProfile")}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

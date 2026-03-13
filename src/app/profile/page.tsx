@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -162,6 +162,13 @@ export default function ProfilePage() {
     run();
   }, [router]);
 
+  // When logged-in user visits /profile (own profile), show view inside dashboard so sidebar is visible
+  useEffect(() => {
+    if (pathname === "/profile" && userId && !loading) {
+      router.replace("/dashboard/profile");
+    }
+  }, [pathname, userId, loading, router]);
+
   const isRtl = dir === "rtl";
   const isFemale = profile?.gender === "female";
   const themeBorder = isFemale ? "border-pink-200" : "border-sky-200";
@@ -188,7 +195,7 @@ export default function ProfilePage() {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12 font-[family-name:var(--font-cairo)] text-center">
         <p className="text-zinc-800">Could not load profile.</p>
-        <Link href="/dashboard/profile" className="mt-4 inline-block text-sky-600 hover:underline">
+        <Link href={EDIT_PROFILE_HREF} className="mt-4 inline-block text-sky-600 hover:underline">
           Go to Edit Profile
         </Link>
       </div>
@@ -348,7 +355,7 @@ export default function ProfilePage() {
               <div className="mt-3">
                 <p className="text-sm text-zinc-500">{t("profile.aboutMePlaceholder")}</p>
                 <Link
-                  href="/dashboard/profile"
+                  href={EDIT_PROFILE_HREF}
                   className={`mt-3 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white shadow-sm transition ${themeBg}`}
                 >
                   <Wand2 className="h-4 w-4" />
@@ -370,7 +377,7 @@ export default function ProfilePage() {
               <div className="mt-3">
                 <p className="text-sm text-zinc-500">{t("profile.idealPartnerPlaceholder")}</p>
                 <Link
-                  href="/dashboard/profile"
+                  href={EDIT_PROFILE_HREF}
                   className={`mt-3 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white shadow-sm transition ${themeBg}`}
                 >
                   <Wand2 className="h-4 w-4" />
@@ -384,7 +391,7 @@ export default function ProfilePage() {
           <div className={`flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 px-6 py-4 ${isRtl ? "flex-row-reverse" : ""}`}>
             <div className={`flex flex-wrap items-center gap-3 ${isRtl ? "flex-row-reverse" : ""}`}>
               <Link
-                href="/dashboard/profile"
+                href={EDIT_PROFILE_HREF}
                 className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-md transition ${themeBg}`}
               >
                 <Pencil className="h-4 w-4" />
