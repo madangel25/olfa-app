@@ -222,7 +222,7 @@ function AudioMiniPlayer({ src }: { src: string }) {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="w-[230px] rounded-xl border border-zinc-200 bg-white/80 px-2.5 py-2 shadow-sm backdrop-blur">
+    <div className="w-[230px] rounded-xl border border-stone-200/60 bg-white/80 px-2.5 py-2 shadow-sm backdrop-blur">
       <audio
         ref={audioRef}
         src={src}
@@ -234,15 +234,15 @@ function AudioMiniPlayer({ src }: { src: string }) {
         <button
           type="button"
           onClick={() => void toggle()}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-white hover:bg-slate-800"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-stone-800 text-white hover:bg-stone-700"
         >
           {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
         </button>
         <div className="min-w-0 flex-1">
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
-            <div className="h-full rounded-full bg-slate-900 transition-all" style={{ width: `${progress}%` }} />
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-stone-200">
+            <div className="h-full rounded-full bg-amber-400 transition-all" style={{ width: `${progress}%` }} />
           </div>
-          <div className="mt-1 text-[10px] text-zinc-500">
+          <div className="mt-1 text-[10px] text-stone-400">
             {formatAudioTime(currentTime)} / {formatAudioTime(duration || 0)}
           </div>
         </div>
@@ -1085,7 +1085,7 @@ export default function MessagesPage() {
 
   return (
     <div className="font-[family-name:var(--font-cairo)]" dir={dir}>
-      <div className="h-[calc(100vh-160px)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="h-[calc(100vh-160px)] overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-sm">
         <div className="flex h-full w-full flex-col">
           {error && (
             <div className="mx-3 mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -1095,7 +1095,7 @@ export default function MessagesPage() {
 
           <div className="grid min-h-0 flex-1 w-full grid-cols-1 overflow-hidden md:grid-cols-[260px_1fr]">
         {/* Conversation list */}
-        <aside className="overflow-y-auto border-b border-zinc-200 bg-zinc-50/60 md:border-b-0 md:border-l">
+        <aside className="overflow-y-auto border-b border-stone-200/60 bg-stone-50/40 md:border-b-0 md:border-l md:border-l-stone-200/60">
           {(conversations ?? []).map((c) => {
             const selected = selectedConversationId === c.id;
             const isPartnerOnline = onlineUserIds.has(c.partner_id) || isOnline(c.partner_last_seen_at);
@@ -1111,56 +1111,56 @@ export default function MessagesPage() {
                     )
                   );
                 }}
-                className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-right transition ${selected ? "bg-slate-100" : "hover:bg-zinc-100/80"}`}
+                className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-right transition ${selected ? "bg-amber-50/70" : "hover:bg-stone-100/60"}`}
               >
                 <div className="relative h-10 w-10 shrink-0">
-                  <div className="h-10 w-10 overflow-hidden rounded-full bg-zinc-100">
+                  <div className="h-10 w-10 overflow-hidden rounded-full bg-stone-100">
                     {c.partner_photo ? (
                       <img src={c.partner_photo} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-zinc-500">
+                      <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-stone-400">
                         {(c.partner_name || "?").slice(0, 1)}
                       </div>
                     )}
                   </div>
                   <span
                     className={`ml-1 inline-flex h-2.5 w-2.5 rounded-full border border-white ${
-                      isPartnerOnline ? "bg-emerald-500" : "bg-zinc-300"
+                      isPartnerOnline ? "bg-emerald-500" : "bg-stone-300"
                     }`}
                   />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-xs font-semibold text-zinc-900">{c.partner_name}</p>
+                    <p className="truncate text-xs font-semibold text-stone-800">{c.partner_name}</p>
                     <span className="flex shrink-0 items-center gap-1">
                       {c.hasUnread && (
-                        <span className="h-2 w-2 rounded-full bg-red-500" title={copy.unread} />
+                        <span className="h-2 w-2 rounded-full bg-amber-500" title={copy.unread} />
                       )}
-                      <span className="text-[10px] text-zinc-500">{formatTime(c.last_message_at)}</span>
+                      <span className="text-[10px] text-stone-400">{formatTime(c.last_message_at)}</span>
                     </span>
                   </div>
-                  <p className="truncate text-[11px] text-zinc-600">{c.last_message || copy.startChat}</p>
+                  <p className="truncate text-[11px] text-stone-500">{c.last_message || copy.startChat}</p>
                 </div>
               </button>
             );
           })}
           {conversations.length === 0 && (
-            <p className="p-4 text-sm text-zinc-500">{copy.noConversations}</p>
+            <p className="p-4 text-sm text-stone-400">{copy.noConversations}</p>
           )}
 
         </aside>
 
         {/* Message thread */}
         <section className="flex min-h-0 flex-col overflow-visible">
-          <div className="relative z-30 border-b border-zinc-200 px-4 py-3">
+          <div className="relative z-30 border-b border-stone-200/60 px-4 py-3">
             {selectedConversation ? (
               <>
                 <div className="flex items-center gap-2">
                   <Link
                     href={`/profile/${selectedConversation.partner_id}`}
-                    className="flex flex-1 min-w-0 items-center gap-3 no-underline outline-none focus:ring-2 focus:ring-sky-400 focus:ring-offset-1 rounded-lg -m-1 p-1"
+                    className="flex flex-1 min-w-0 items-center gap-3 no-underline outline-none focus:ring-2 focus:ring-amber-400/40 focus:ring-offset-1 rounded-lg -m-1 p-1"
                   >
-                    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-zinc-200">
+                    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-stone-100">
                       {selectedConversation.partner_photo ? (
                         <img
                           src={selectedConversation.partner_photo}
@@ -1168,12 +1168,12 @@ export default function MessagesPage() {
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-zinc-500">
+                        <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-stone-400">
                           {(selectedConversation.partner_name || "?").slice(0, 1)}
                         </div>
                       )}
                     </div>
-                    <p className="text-sm font-semibold text-zinc-900 truncate">
+                    <p className="text-sm font-semibold text-stone-800 truncate">
                       {selectedConversation.partner_name}
                     </p>
                   </Link>
@@ -1181,7 +1181,7 @@ export default function MessagesPage() {
                     <button
                       type="button"
                       onClick={() => setShowInsightsPanel((v) => !v)}
-                      className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
+                      className="rounded-lg p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
                       aria-label={copy.insights}
                     >
                       <Sparkles className="h-5 w-5" />
@@ -1189,21 +1189,21 @@ export default function MessagesPage() {
                     <button
                       type="button"
                       onClick={() => setHeaderMenuOpen((o) => !o)}
-                      className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
+                      className="rounded-lg p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
                       aria-label={copy.menu}
                     >
                       <MoreVertical className="h-5 w-5" />
                     </button>
                     {headerMenuOpen && (
                       <>
-                        <div className="mt-1 w-48 rounded-xl border border-zinc-200 bg-white py-1 shadow-xl">
+                        <div className="mt-1 w-48 rounded-xl border border-stone-200 bg-white py-1 shadow-xl">
                           <button
                             type="button"
                             onClick={() => {
                               setHeaderMenuOpen(false);
                               setReportModalOpen(true);
                             }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 hover:bg-red-50 hover:text-red-700"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-stone-600 hover:bg-red-50 hover:text-red-700"
                           >
                             <Flag className="h-4 w-4" />
                             {copy.reportUser}
@@ -1226,42 +1226,42 @@ export default function MessagesPage() {
                     status = `${copy.lastSeen} ${formatTime(selectedConversation.partner_last_seen_at)}`;
                   }
                   return status ? (
-                    <p className="mt-0.5 text-xs text-zinc-500">{status}</p>
+                    <p className="mt-0.5 text-xs text-stone-400">{status}</p>
                   ) : null;
                 })()}
               </>
             ) : (
-              <p className="text-sm font-semibold text-zinc-500">{copy.selectConversation}</p>
+              <p className="text-sm font-semibold text-stone-400">{copy.selectConversation}</p>
             )}
           </div>
 
           {selectedConversation && showInsightsPanel && (
-            <div className="border-b border-zinc-200 bg-zinc-50/70 px-4 py-3">
+            <div className="border-b border-stone-200/60 bg-stone-50/40 px-4 py-3">
               {!myIsVip ? (
                 <div className={`space-y-2 ${dir === "rtl" ? "text-right" : "text-left"}`}>
-                  <p className="text-sm font-medium text-zinc-800">{copy.vipInsightsLocked}</p>
+                  <p className="text-sm font-medium text-stone-700">{copy.vipInsightsLocked}</p>
                   <Link href="/dashboard" className="inline-flex rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600">
                     {copy.vipUpgrade}
                   </Link>
                 </div>
               ) : (
     <div>
-                  <p className="mb-3 text-sm font-semibold text-zinc-800">{copy.personalityInsights}</p>
+                  <p className="mb-3 text-sm font-semibold text-stone-700">{copy.personalityInsights}</p>
                   <div className="space-y-3">
                     <div className="rounded-xl bg-white/80 p-2">
-                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-zinc-600"><Zap className="h-3.5 w-3.5 text-slate-600" /> {copy.responseSpeed}</p>
-                      <p className="text-sm font-semibold text-zinc-900">{personalityInsights.responseSpeedLabel}</p>
+                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-stone-500"><Zap className="h-3.5 w-3.5 text-amber-500" /> {copy.responseSpeed}</p>
+                      <p className="text-sm font-semibold text-stone-800">{personalityInsights.responseSpeedLabel}</p>
                     </div>
                     <div className="rounded-xl bg-white/80 p-2">
-                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-zinc-600"><Gauge className="h-3.5 w-3.5 text-slate-600" /> {copy.engagement}</p>
-                      <p className="text-sm font-semibold text-zinc-900">{personalityInsights.engagementLabel}</p>
+                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-stone-500"><Gauge className="h-3.5 w-3.5 text-amber-500" /> {copy.engagement}</p>
+                      <p className="text-sm font-semibold text-stone-800">{personalityInsights.engagementLabel}</p>
                     </div>
                     <div className="rounded-xl bg-white/80 p-2">
-                      <p className="mb-1 text-xs font-medium text-zinc-600">{copy.seriousnessScore}</p>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200">
-                        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${personalityInsights.score}%` }} />
+                      <p className="mb-1 text-xs font-medium text-stone-500">{copy.seriousnessScore}</p>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-stone-200">
+                        <div className="h-full rounded-full bg-amber-400" style={{ width: `${personalityInsights.score}%` }} />
                       </div>
-                      <p className="mt-1 text-xs font-semibold text-zinc-800">{personalityInsights.score}%</p>
+                      <p className="mt-1 text-xs font-semibold text-stone-700">{personalityInsights.score}%</p>
                     </div>
                   </div>
                 </div>
@@ -1269,15 +1269,15 @@ export default function MessagesPage() {
             </div>
           )}
 
-          <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50 px-3 py-4">
+          <div className="min-h-0 flex-1 overflow-y-auto bg-[#faf9f7] px-3 py-4">
             {!selectedConversationId ? (
-              <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center text-zinc-500">
+              <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center text-stone-400">
                 <p className="text-sm">{copy.selectConversationToStart}</p>
               </div>
             ) : loadingMessages ? (
-              <p className="text-center text-sm text-zinc-500">{copy.loading}</p>
+              <p className="text-center text-sm text-stone-400">{copy.loading}</p>
             ) : messages.length === 0 ? (
-              <p className="text-center text-sm text-zinc-500">{copy.noMessages}</p>
+              <p className="text-center text-sm text-stone-400">{copy.noMessages}</p>
             ) : (
               <ul className="space-y-2">
                 {(messages ?? []).map((m) => {
@@ -1300,8 +1300,8 @@ export default function MessagesPage() {
                       <div
                         className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm font-medium shadow-sm border ${
                           mine
-                            ? "bg-slate-100 border-slate-200 text-zinc-800"
-                            : "bg-white border-slate-200 text-zinc-800"
+                            ? "bg-amber-50/70 border-amber-200/60 text-stone-800"
+                            : "bg-white border-stone-200/60 text-stone-800"
                         }`}
                       >
                         {isImage && m.attachment_url && (
@@ -1310,22 +1310,22 @@ export default function MessagesPage() {
                               <button
                                 type="button"
                                 onClick={() => void revealViewOnce(m.id, m.attachment_url!)}
-                                className="flex items-center gap-2 rounded-lg border border-dashed border-zinc-300 bg-white/80 px-4 py-3 text-sm text-zinc-600 hover:bg-white"
+                                className="flex items-center gap-2 rounded-lg border border-dashed border-stone-300 bg-white/80 px-4 py-3 text-sm text-stone-500 hover:bg-white"
                               >
                                 <Eye className="h-4 w-4" />
                                 {copy.tapToView}
                               </button>
                             ) : isLoadingMedia ? (
                               <div className="flex items-center justify-center py-8">
-                                <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+                                <Loader2 className="h-8 w-8 animate-spin text-stone-300" />
                               </div>
                             ) : imageUrl ? (
                               <img src={imageUrl} alt="" className="max-h-64 max-w-[300px] rounded-xl object-contain shadow-sm" />
                             ) : (
-                              <span className="text-xs text-zinc-500">{copy.image}</span>
+                              <span className="text-xs text-stone-400">{copy.image}</span>
                             )}
                             {m.is_temporary && (
-                              <p className="mt-1 text-[10px] text-zinc-500">{copy.viewOnce}</p>
+                              <p className="mt-1 text-[10px] text-stone-400">{copy.viewOnce}</p>
                             )}
                           </div>
                         )}
@@ -1335,8 +1335,8 @@ export default function MessagesPage() {
                               <AudioMiniPlayer src={audioUrl} />
                             ) : (
                               <div className="flex items-center gap-2 py-2">
-                                <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
-                                <span className="text-xs text-zinc-500">{copy.loadingVoice}</span>
+                                <Loader2 className="h-4 w-4 animate-spin text-stone-300" />
+                                <span className="text-xs text-stone-400">{copy.loadingVoice}</span>
                               </div>
                             )}
                           </div>
@@ -1344,14 +1344,14 @@ export default function MessagesPage() {
                         {(!isImage && !isAudio) && (
                           <p className="whitespace-pre-wrap break-words">{m.content}</p>
                         )}
-                        <div className="mt-1 flex items-center gap-1 text-[11px] text-zinc-500">
+                        <div className="mt-1 flex items-center gap-1 text-[11px] text-stone-400">
                           <span>{formatTime(m.created_at)}</span>
                           {mine && (
                             <span className="flex items-center">
                               {m.is_read ? (
-                                <CheckCheck size={15} className="text-slate-600" />
+                                <CheckCheck size={15} className="text-amber-600" />
                               ) : (
-                                <Check size={15} className="text-slate-400" />
+                                <Check size={15} className="text-stone-300" />
                               )}
                             </span>
                           )}
@@ -1366,24 +1366,24 @@ export default function MessagesPage() {
           </div>
 
           {selectedConversationId && (
-            <div className="border-t border-zinc-200 p-3">
+            <div className="border-t border-stone-200/60 p-3">
               {recording !== null && (
-                <div className="mb-2 flex items-center justify-between rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
-                  <span className="text-sm text-zinc-600">
+                <div className="mb-2 flex items-center justify-between rounded-xl border border-stone-200 bg-stone-50 px-3 py-2">
+                  <span className="text-sm text-stone-600">
                     {copy.recording} {Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, "0")}
                   </span>
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={cancelRecording}
-                      className="rounded-lg px-3 py-1.5 text-sm font-medium text-zinc-600 hover:bg-zinc-200"
+                      className="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-500 hover:bg-stone-200"
                     >
                       {copy.cancel}
                     </button>
                     <button
                       type="button"
                       onClick={sendRecording}
-                      className="rounded-lg bg-slate-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-800"
+                      className="rounded-lg bg-stone-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-stone-700"
                     >
                       {copy.send}
                     </button>
@@ -1402,18 +1402,18 @@ export default function MessagesPage() {
                   <button
                     type="button"
                     onClick={() => setShowMediaMenu((o) => !o)}
-                    className="rounded-xl p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
+                    className="rounded-xl p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
                     aria-label={copy.attach}
                   >
                     <Plus className="h-5 w-5" />
                   </button>
                   {showMediaMenu && (
                     <>
-                      <div className="mt-2 flex gap-1 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg">
+                      <div className="mt-2 flex gap-1 rounded-xl border border-stone-200 bg-white p-1 shadow-lg">
                         <button
                           type="button"
                           onClick={() => { imageInputRef.current?.click(); setShowMediaMenu(false); }}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-stone-600 hover:bg-stone-50"
                         >
                           <ImagePlus className="h-4 w-4" />
                           {copy.photo}
@@ -1421,7 +1421,7 @@ export default function MessagesPage() {
                         <button
                           type="button"
                           onClick={() => { setShowMediaMenu(false); void startRecording(); }}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
+                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-stone-600 hover:bg-stone-50"
                         >
                           <Mic className="h-4 w-4" />
                           {copy.voice}
@@ -1444,19 +1444,19 @@ export default function MessagesPage() {
                     }
                   }}
                   placeholder={copy.typeMessage}
-                  className="flex-1 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-400/20"
+                  className="flex-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/20"
                 />
                 <button
                   type="button"
                   onClick={() => void handleSend()}
                   disabled={!draft.trim() || !!uploadingMedia}
-                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                  className="rounded-xl bg-stone-800 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50"
                 >
                   {uploadingMedia ? <Loader2 className="h-5 w-5 animate-spin" /> : copy.send}
                 </button>
               </div>
               <div className="mt-2 flex items-center justify-between gap-2">
-                <p className="text-[11px] text-zinc-500">
+                <p className="text-[11px] text-stone-400">
                   {copy.helperVip}
                 </p>
               </div>
@@ -1470,17 +1470,17 @@ export default function MessagesPage() {
       {/* Image preview modal (before send) */}
       {imagePreview && (
         <div className="mt-4 flex items-center justify-center bg-black/5 p-4">
-          <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl">
-            <div className="relative aspect-square overflow-hidden rounded-xl bg-zinc-100">
+          <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-4 shadow-xl">
+            <div className="relative aspect-square overflow-hidden rounded-xl bg-stone-50">
               <img src={imagePreview.objectUrl} alt={copy.photoPreviewAlt} className="h-full w-full object-contain" />
             </div>
-            <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-zinc-700">
+            <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-stone-600">
               <Eye className="h-4 w-4" />
               <input
                 type="checkbox"
                 checked={imagePreviewViewOnce}
                 onChange={(e) => setImagePreviewViewOnce(e.target.checked)}
-                className="rounded border-zinc-300 text-slate-600"
+                className="rounded border-stone-300 text-amber-600"
               />
               {copy.viewOnceLabel}
             </label>
@@ -1488,14 +1488,14 @@ export default function MessagesPage() {
               <button
                 type="button"
                 onClick={() => { URL.revokeObjectURL(imagePreview.objectUrl); setImagePreview(null); }}
-                className="flex-1 rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                className="flex-1 rounded-xl border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50"
               >
                 {copy.cancel}
               </button>
               <button
                 type="button"
                 onClick={() => void handleSendImage()}
-                className="flex-1 rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                className="flex-1 rounded-xl bg-stone-800 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700"
               >
                 {copy.send}
               </button>
@@ -1507,17 +1507,17 @@ export default function MessagesPage() {
       {/* Report User modal */}
       {reportModalOpen && selectedConversation && (
         <div className="mt-4 flex items-center justify-center bg-black/5 p-4">
-          <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl">
-            <h3 className="text-lg font-semibold text-zinc-900">{copy.reportTitle}</h3>
-            <p className="mt-1 text-sm text-zinc-600">
+          <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-4 shadow-xl">
+            <h3 className="text-lg font-semibold text-stone-800">{copy.reportTitle}</h3>
+            <p className="mt-1 text-sm text-stone-500">
               {copy.reportDescriptionPrefix} {selectedConversation.partner_name}? {copy.reportDescriptionSuffix}
             </p>
             <div className="mt-4">
-              <label className="block text-sm font-medium text-zinc-700">{copy.reason}</label>
+              <label className="block text-sm font-medium text-stone-600">{copy.reason}</label>
               <select
                 value={reportReason}
                 onChange={(e) => setReportReason(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-900"
+                className="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800"
               >
                 {REPORT_REASONS.map((r) => (
                   <option key={r.value} value={r.value}>
@@ -1530,7 +1530,7 @@ export default function MessagesPage() {
               <button
                 type="button"
                 onClick={() => setReportModalOpen(false)}
-                className="flex-1 rounded-xl border border-zinc-200 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                className="flex-1 rounded-xl border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50"
               >
                 {copy.cancel}
               </button>

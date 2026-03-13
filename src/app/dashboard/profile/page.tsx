@@ -165,16 +165,6 @@ export default function DashboardProfileViewPage() {
 
   const isRtl = dir === "rtl";
   const isFemale = profile?.gender === "female";
-  const themeBorder = isFemale ? "border-pink-200" : "border-sky-200";
-  const themeAccent = isFemale ? "text-pink-600" : "text-sky-600";
-  const themeAvatar = isFemale ? "bg-pink-100 text-pink-700" : "bg-sky-100 text-sky-700";
-  const themeButton = isFemale
-    ? "border-pink-300 bg-pink-50 text-pink-700 hover:bg-pink-100"
-    : "border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100";
-  const themeIcon = isFemale ? "text-pink-500" : "text-sky-500";
-  const themeBg = isFemale ? "bg-pink-500 hover:bg-pink-600" : "bg-sky-500 hover:bg-sky-600";
-  const themeBgSoft = isFemale ? "bg-pink-50" : "bg-sky-50";
-  const themeBorderL = isFemale ? "border-l-pink-500" : "border-l-sky-500";
 
   if (loading) {
     return (
@@ -188,8 +178,8 @@ export default function DashboardProfileViewPage() {
   if (!profile) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-12 font-[family-name:var(--font-cairo)] text-center">
-        <p className="text-zinc-800">Could not load profile.</p>
-        <Link href={EDIT_PROFILE_HREF} className="mt-4 inline-block text-sky-600 hover:underline">
+        <p className="text-stone-700">Could not load profile.</p>
+        <Link href={EDIT_PROFILE_HREF} className="mt-4 inline-block text-amber-700 hover:underline">
           Go to Edit Profile
         </Link>
       </div>
@@ -204,8 +194,6 @@ export default function DashboardProfileViewPage() {
   const strengthPercent = getProfileStrength(profile);
   const charismaOutOf10 = getCharismaRating(strengthPercent);
   const charismaStars = (charismaOutOf10 / 10) * 5;
-  const themeProgress = isFemale ? "bg-pink-500" : "bg-sky-500";
-  const themeStarFill = isFemale ? "text-pink-500" : "text-sky-500";
 
   const maritalKey = profile.marital_status ? (MARITAL_KEYS[profile.marital_status] ?? "optSingle") + (isFemale ? "Female" : "Male") : null;
   const maritalLabel = maritalKey ? t(`profile.${maritalKey}`) : null;
@@ -230,176 +218,188 @@ export default function DashboardProfileViewPage() {
   if (children) attributeRows.push({ icon: <Baby className="h-4 w-4 shrink-0" />, label: t("profile.desireChildren"), value: children });
 
   return (
-    <div className="font-[family-name:var(--font-cairo)] text-zinc-900" dir={dir}>
+    <div className="mx-auto max-w-4xl font-[family-name:var(--font-cairo)] text-stone-900" dir={dir}>
       {shareToast && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-sm" role="alert">
+        <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-sm" role="alert">
           {t("profile.linkCopiedSuccess")}
         </div>
       )}
-      <div className="w-full px-0 py-2">
-        {viewAsPublic && (
-          <p className={`mb-4 text-sm text-zinc-600 ${isRtl ? "text-right" : "text-left"}`}>
-            {locale === "ar" ? "كما يراك الآخرون على صفحة الملف العام." : "As others see you on your public profile."}
-          </p>
-        )}
 
-        <div className={`w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${themeBorder}`}>
-          <div className={`flex flex-col gap-6 p-6 sm:flex-row sm:items-center ${isRtl ? "sm:flex-row-reverse" : ""}`}>
-            <div className={`h-36 w-36 shrink-0 overflow-hidden rounded-2xl sm:h-44 sm:w-44 ${themeAvatar} flex items-center justify-center text-5xl font-semibold`}>
+      {viewAsPublic && (
+        <p className={`mb-4 text-sm text-stone-500 ${isRtl ? "text-right" : "text-left"}`}>
+          {locale === "ar" ? "كما يراك الآخرون على صفحة الملف العام." : "As others see you on your public profile."}
+        </p>
+      )}
+
+      <div className="overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-sm">
+        {/* Hero header */}
+        <div className="relative bg-gradient-to-br from-amber-50 via-orange-50/40 to-stone-50 px-6 py-8 sm:px-8 sm:py-10">
+          <div className={`flex flex-col gap-6 sm:flex-row sm:items-center ${isRtl ? "sm:flex-row-reverse" : ""}`}>
+            <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-2xl border-2 border-white shadow-md sm:h-40 sm:w-40">
               {primaryPhoto ? (
                 <img src={primaryPhoto} alt="" className="h-full w-full object-cover" />
               ) : (
-                (profile.full_name ?? "?").slice(0, 1)
-                    )}
-                  </div>
+                <div className="flex h-full w-full items-center justify-center bg-amber-100 text-4xl font-bold text-amber-600">
+                  {(profile.full_name ?? "?").slice(0, 1)}
+                </div>
+              )}
+            </div>
+
             <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-bold text-zinc-900 sm:text-3xl">{profile.full_name ?? "—"}</h1>
-              <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-base font-medium text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}>
+              <h1 className="text-2xl font-bold tracking-tight text-stone-900 sm:text-3xl">
+                {profile.full_name ?? "—"}
+              </h1>
+              <div className={`mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm ${isRtl ? "flex-row-reverse" : ""}`}>
                 {profile.age && (
-                  <span className={themeAccent}>
+                  <span className="rounded-full bg-white/80 px-3 py-0.5 font-medium text-stone-700 shadow-sm">
                     {profile.age} {locale === "ar" ? "سنة" : "y/o"}
                   </span>
                 )}
                 {maritalLabel && (
-                  <span className={`inline-flex items-center gap-1 ${themeAccent}`}>
-                    <Heart className="h-4 w-4" />
+                  <span className="inline-flex items-center gap-1 rounded-full bg-white/80 px-3 py-0.5 font-medium text-stone-700 shadow-sm">
+                    <Heart className="h-3.5 w-3.5 text-amber-500" />
                     {maritalLabel}
-                        </span>
-                      )}
+                  </span>
+                )}
               </div>
               {location && (
-                <p className="mt-1 flex items-center gap-1 text-sm text-zinc-600">
-                  <MapPin className="h-4 w-4 shrink-0" />
+                <p className="mt-2 flex items-center gap-1.5 text-sm text-stone-500">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
                   {location}
                 </p>
-                      )}
-                    </div>
-                  </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-          <div className="border-t border-zinc-100 bg-zinc-50/50 px-6 py-4">
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div>
-                <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.profileStrength")}</p>
-                <div className="flex items-center gap-2">
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-zinc-200">
-                    <div className={`h-full rounded-full ${themeProgress} transition-all duration-500`} style={{ width: `${strengthPercent}%` }} />
-                  </div>
-                  <span className="w-9 shrink-0 text-sm font-medium text-zinc-900">{strengthPercent}%</span>
+        {/* Stats bar */}
+        <div className="border-t border-stone-100 bg-stone-50/40 px-6 py-5 sm:px-8">
+          <div className="grid gap-5 sm:grid-cols-3">
+            <div>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-stone-400">{t("profile.profileStrength")}</p>
+              <div className="flex items-center gap-2.5">
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-stone-200/70">
+                  <div className="h-full rounded-full bg-amber-400 transition-all duration-500" style={{ width: `${strengthPercent}%` }} />
                 </div>
-                  </div>
-                  <div>
-                <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.charismaRating")}</p>
+                <span className="w-9 shrink-0 text-sm font-semibold text-stone-700">{strengthPercent}%</span>
+              </div>
+            </div>
+            <div>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-stone-400">{t("profile.charismaRating")}</p>
+              <div className={`flex items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
+                <div className="flex gap-0.5">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Star key={i} className={`h-4 w-4 shrink-0 ${i <= charismaStars ? "text-amber-400" : "text-stone-200"}`} fill={i <= charismaStars ? "currentColor" : "none"} />
+                  ))}
+                </div>
+                <span className="text-sm font-semibold text-stone-700">{charismaOutOf10}/10</span>
+              </div>
+            </div>
+            <div>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-stone-400">{t("profile.communityRating")}</p>
+              {communityRating !== null && communityRating.count > 0 ? (
                 <div className={`flex items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
                   <div className="flex gap-0.5">
                     {[1, 2, 3, 4, 5].map((i) => (
-                      <Star key={i} className={`h-4 w-4 shrink-0 ${i <= charismaStars ? themeStarFill : "text-zinc-200"}`} fill={i <= charismaStars ? "currentColor" : "none"} />
+                      <Star key={i} className={`h-4 w-4 shrink-0 ${i <= Math.round(communityRating.avg) ? "text-amber-400" : "text-stone-200"}`} fill={i <= Math.round(communityRating.avg) ? "currentColor" : "none"} />
                     ))}
                   </div>
-                  <span className={`text-sm font-medium ${themeAccent}`}>{charismaOutOf10}/10</span>
+                  <span className="text-sm text-stone-600">{communityRating.avg.toFixed(1)} ({communityRating.count})</span>
                 </div>
-                  </div>
-                  <div>
-                <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{t("profile.communityRating")}</p>
-                {communityRating !== null && communityRating.count > 0 ? (
-                  <div className={`flex items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
-                    <div className="flex gap-0.5">
-                      {[1, 2, 3, 4, 5].map((i) => (
-                        <Star key={i} className={`h-4 w-4 shrink-0 ${i <= Math.round(communityRating.avg) ? themeStarFill : "text-zinc-200"}`} fill={i <= Math.round(communityRating.avg) ? "currentColor" : "none"} />
-                      ))}
-                    </div>
-                    <span className="text-sm text-zinc-900">{communityRating.avg.toFixed(1)} ({communityRating.count})</span>
-                  </div>
-                ) : (
-                  <p className="text-sm text-zinc-500">{locale === "ar" ? "لا توجد تقييمات بعد" : "No ratings yet"}</p>
-                    )}
-                  </div>
+              ) : (
+                <p className="text-sm text-stone-400">{locale === "ar" ? "لا توجد تقييمات بعد" : "No ratings yet"}</p>
+              )}
             </div>
           </div>
+        </div>
 
-          {attributeRows.length > 0 && (
-            <div className="border-t border-zinc-100 px-6 py-5">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {attributeRows.map((row, idx) => (
-                  <div key={idx} className={`flex items-start gap-3 rounded-xl bg-zinc-50/80 px-4 py-3 ${isRtl ? "flex-row-reverse text-right" : ""}`}>
-                    <span className={themeIcon}>{row.icon}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium text-zinc-500">{row.label}</p>
-                      <p className="mt-0.5 text-sm font-medium text-zinc-900">{row.value}</p>
-                    </div>
+        {/* Attributes grid */}
+        {attributeRows.length > 0 && (
+          <div className="border-t border-stone-100 px-6 py-6 sm:px-8">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {attributeRows.map((row, idx) => (
+                <div key={idx} className={`flex items-start gap-3 rounded-xl bg-stone-50/80 px-4 py-3 ${isRtl ? "flex-row-reverse text-right" : ""}`}>
+                  <span className="text-amber-500">{row.icon}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium text-stone-400">{row.label}</p>
+                    <p className="mt-0.5 text-sm font-medium text-stone-800">{row.value}</p>
                   </div>
-                ))}
                 </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* About me */}
+        <div className={`border-t border-stone-100 px-6 py-6 sm:px-8 ${hasAboutMe ? "bg-amber-50/30" : ""}`}>
+          <h2 className={`flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-stone-500 ${isRtl ? "flex-row-reverse" : ""}`}>
+            <FileText className="h-4 w-4 shrink-0 text-amber-500" />
+            {t("profile.aboutMe")}
+          </h2>
+          {hasAboutMe ? (
+            <p className="mt-3 text-[15px] leading-relaxed text-stone-700 whitespace-pre-wrap">{profile.about_me}</p>
+          ) : (
+            <div className="mt-3">
+              <p className="text-sm text-stone-400">{t("profile.aboutMePlaceholder")}</p>
+              <Link href={EDIT_PROFILE_HREF} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-amber-600">
+                <Wand2 className="h-4 w-4" />
+                {t("profile.letAiWriteBioNow")}
+              </Link>
             </div>
           )}
+        </div>
 
-          <div className={`border-t border-zinc-100 px-6 py-5 ${hasAboutMe ? `${themeBgSoft} ${themeBorderL} border-l-4` : ""}`}>
-            <h2 className={`flex items-center gap-2 text-base font-semibold text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}>
-              <FileText className={`h-4 w-4 shrink-0 ${themeIcon}`} />
-              {t("profile.aboutMe")}
-                  </h2>
-            {hasAboutMe ? (
-              <p className="mt-3 text-base leading-relaxed text-zinc-900 whitespace-pre-wrap">{profile.about_me}</p>
-            ) : (
-              <div className="mt-3">
-                <p className="text-sm text-zinc-500">{t("profile.aboutMePlaceholder")}</p>
-                <Link href={EDIT_PROFILE_HREF} className={`mt-3 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white shadow-sm transition ${themeBg}`}>
-                  <Wand2 className="h-4 w-4" />
-                  {t("profile.letAiWriteBioNow")}
-                </Link>
-              </div>
-                    )}
-                  </div>
-
-          <div className="border-t border-zinc-100 px-6 py-5">
-            <h2 className={`flex items-center gap-2 text-base font-semibold text-zinc-900 ${isRtl ? "flex-row-reverse" : ""}`}>
-              <Heart className={`h-4 w-4 shrink-0 ${themeIcon}`} />
-              {t("profile.idealPartner")}
-            </h2>
-            {hasIdealPartner ? (
-              <p className="mt-3 text-base leading-relaxed text-zinc-900 whitespace-pre-wrap">{profile.ideal_partner}</p>
-            ) : (
-              <div className="mt-3">
-                <p className="text-sm text-zinc-500">{t("profile.idealPartnerPlaceholder")}</p>
-                <Link href={EDIT_PROFILE_HREF} className={`mt-3 inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white shadow-sm transition ${themeBg}`}>
-                  <Wand2 className="h-4 w-4" />
-                  {t("profile.letAiWriteBioNow")}
-                </Link>
-              </div>
-            )}
-                    </div>
-
-          <div className={`flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 px-6 py-4 ${isRtl ? "flex-row-reverse" : ""}`}>
-            <div className={`flex flex-wrap items-center gap-3 ${isRtl ? "flex-row-reverse" : ""}`}>
-              <Link href={EDIT_PROFILE_HREF} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-md transition ${themeBg}`}>
-                <Pencil className="h-4 w-4" />
-                {t("profile.editProfile")}
+        {/* Ideal partner */}
+        <div className="border-t border-stone-100 px-6 py-6 sm:px-8">
+          <h2 className={`flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-stone-500 ${isRtl ? "flex-row-reverse" : ""}`}>
+            <Heart className="h-4 w-4 shrink-0 text-amber-500" />
+            {t("profile.idealPartner")}
+          </h2>
+          {hasIdealPartner ? (
+            <p className="mt-3 text-[15px] leading-relaxed text-stone-700 whitespace-pre-wrap">{profile.ideal_partner}</p>
+          ) : (
+            <div className="mt-3">
+              <p className="text-sm text-stone-400">{t("profile.idealPartnerPlaceholder")}</p>
+              <Link href={EDIT_PROFILE_HREF} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-amber-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-amber-600">
+                <Wand2 className="h-4 w-4" />
+                {t("profile.letAiWriteBioNow")}
               </Link>
-                      <button
-                        type="button"
-                onClick={() => setViewAsPublic((v) => !v)}
-                className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium shadow-sm transition ${themeButton}`}
-                      >
-                <Eye className="h-4 w-4" />
-                {t("profile.viewAsOthersSeeMe")}
-                      </button>
-                    </div>
-                      <button
-                        type="button"
-              onClick={async () => {
-                if (!userId) return;
-                const url = `${typeof window !== "undefined" ? window.location.origin : ""}/profile/${userId}`;
-                await navigator.clipboard.writeText(url);
-                setShareToast(true);
-                setTimeout(() => setShareToast(false), 3000);
-              }}
-              disabled={!userId}
-              className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition hover:bg-zinc-100 ${themeAccent}`}
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div className={`flex flex-wrap items-center justify-between gap-3 border-t border-stone-100 bg-stone-50/30 px-6 py-4 sm:px-8 ${isRtl ? "flex-row-reverse" : ""}`}>
+          <div className={`flex flex-wrap items-center gap-3 ${isRtl ? "flex-row-reverse" : ""}`}>
+            <Link href={EDIT_PROFILE_HREF} className="inline-flex items-center gap-2 rounded-xl bg-stone-800 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-stone-700">
+              <Pencil className="h-4 w-4" />
+              {t("profile.editProfile")}
+            </Link>
+            <button
+              type="button"
+              onClick={() => setViewAsPublic((v) => !v)}
+              className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-600 shadow-sm transition hover:bg-stone-50"
             >
-              <Share2 className="h-4 w-4" />
-              {t("profile.shareProfile")}
-                      </button>
-                    </div>
-                  </div>
+              <Eye className="h-4 w-4" />
+              {t("profile.viewAsOthersSeeMe")}
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!userId) return;
+              const url = `${typeof window !== "undefined" ? window.location.origin : ""}/profile/${userId}`;
+              await navigator.clipboard.writeText(url);
+              setShareToast(true);
+              setTimeout(() => setShareToast(false), 3000);
+            }}
+            disabled={!userId}
+            className="inline-flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-medium text-stone-600 transition hover:bg-stone-50"
+          >
+            <Share2 className="h-4 w-4" />
+            {t("profile.shareProfile")}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -34,35 +34,9 @@ const PROFILE_SELECT_MINIMAL = "full_name, gender, email, is_verified";
 const PROFILE_SELECT_FULL =
   "full_name, gender, email, is_verified, phone, phone_verified, nationality, age, marital_status, height_cm, weight_kg, skin_tone, smoking_status, religious_commitment, desire_children, job_title, education_level, country, city, about_me, ideal_partner, photo_urls";
 
-const THEME_ACTIVE_LTR = {
-  male: "bg-sky-100 text-sky-700 border-l-2 border-l-sky-500",
-  female: "bg-pink-100 text-pink-600 border-l-2 border-l-pink-500",
-  neutral: "bg-violet-100 text-violet-700 border-l-2 border-l-violet-500",
-} as const;
-
-const THEME_ACTIVE_RTL = {
-  male: "bg-sky-100 text-sky-700 border-r-2 border-r-sky-500",
-  female: "bg-pink-100 text-pink-600 border-r-2 border-r-pink-500",
-  neutral: "bg-violet-100 text-violet-700 border-r-2 border-r-violet-500",
-} as const;
-
-const SIDEBAR_BORDER_LTR = {
-  male: "border-r-2 border-sky-200",
-  female: "border-r-2 border-pink-200",
-  neutral: "border-r-2 border-violet-200",
-} as const;
-
-const SIDEBAR_BORDER_RTL = {
-  male: "border-l-2 border-sky-200",
-  female: "border-l-2 border-pink-200",
-  neutral: "border-l-2 border-violet-200",
-} as const;
-
-const HOVER_SIDEBAR = {
-  male: "hover:bg-sky-50 hover:text-sky-800",
-  female: "hover:bg-pink-50 hover:text-pink-800",
-  neutral: "hover:bg-violet-50 hover:text-violet-800",
-} as const;
+const ACTIVE_LTR = "bg-amber-50 text-amber-800 border-l-[3px] border-l-amber-400";
+const ACTIVE_RTL = "bg-amber-50 text-amber-800 border-r-[3px] border-r-amber-400";
+const HOVER_CLASS = "hover:bg-stone-100 hover:text-stone-800";
 
 type OnlinePresenceContextValue = {
   onlineUserIds: Set<string>;
@@ -85,8 +59,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   const isRtl = dir === "rtl";
-  const linkActiveClass = isRtl ? THEME_ACTIVE_RTL[theme] : THEME_ACTIVE_LTR[theme];
-  const hoverSidebar = HOVER_SIDEBAR[theme];
+  const linkActiveClass = isRtl ? ACTIVE_RTL : ACTIVE_LTR;
 
   const fetchCompleteness = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -121,7 +94,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
   }, []);
 
-  // Global online presence: any open dashboard tab marks user as online.
   useEffect(() => {
     let active = true;
     let channel: any = null;
@@ -167,40 +139,43 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const sidebarBorder = isRtl ? SIDEBAR_BORDER_RTL[theme] : SIDEBAR_BORDER_LTR[theme];
-
   return (
     <OnlinePresenceContext.Provider value={{ onlineUserIds }}>
-      <div className="min-h-screen bg-[#f1f5f9] font-[family-name:var(--font-cairo)] text-zinc-900">
+      <div className="min-h-screen bg-[#faf9f7] font-[family-name:var(--font-cairo)] text-stone-900">
         <aside
-          className={`fixed inset-y-0 hidden w-[240px] border-zinc-200 bg-white md:block ${locale === "ar" ? "right-0 border-l" : "left-0 border-r"} ${sidebarBorder}`}
+          className={`fixed inset-y-0 z-40 hidden w-[240px] bg-white md:flex md:flex-col ${locale === "ar" ? "right-0 border-l border-stone-200/80" : "left-0 border-r border-stone-200/80"}`}
           aria-label="Dashboard navigation"
         >
-          <div className="h-full overflow-y-auto px-2 py-4">
-            <nav className="flex flex-col gap-1" dir={locale === "ar" ? "rtl" : "ltr"}>
+          <div className="flex h-[60px] shrink-0 items-center border-b border-stone-200/60 px-5">
+            <Link href="/dashboard" className="text-lg font-bold tracking-tight text-stone-800">
+              Olfa
+            </Link>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-3 py-4">
+            <nav className="flex flex-col gap-0.5" dir={locale === "ar" ? "rtl" : "ltr"}>
               {NAV_ITEMS.map((item) => {
                 const isActive =
                   pathname === item.href ||
                   (item.href !== "/dashboard" &&
-                    item.href !== "/profile" &&
+                    item.href !== "/dashboard/profile" &&
                     pathname.startsWith(item.href)) ||
                   (item.href === "/dashboard/profile" &&
                     (pathname === "/dashboard/profile" ||
                       pathname.startsWith("/dashboard/profile/")));
                 const Icon = item.icon;
-                const label =
-                  locale === "ar" ? item.label : item.labelEn;
+                const label = locale === "ar" ? item.label : item.labelEn;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium transition ${
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
                       isActive
                         ? linkActiveClass
-                        : `text-zinc-700 ${hoverSidebar}`
+                        : `text-stone-500 ${HOVER_CLASS}`
                     } ${locale === "ar" ? "flex-row-reverse text-right" : "text-left"}`}
                   >
-                    <Icon className="h-4 w-4 shrink-0" />
+                    <Icon className="h-[18px] w-[18px] shrink-0" />
                     <span className="flex-1" lang={locale === "ar" ? "ar" : "en"}>
                       {label}
                     </span>
@@ -216,13 +191,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium transition ${
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
                       isActive
                         ? linkActiveClass
-                        : `text-zinc-700 ${hoverSidebar}`
+                        : `text-stone-500 ${HOVER_CLASS}`
                     } ${locale === "ar" ? "flex-row-reverse text-right" : "text-left"}`}
                   >
-                    <Icon className="h-4 w-4 shrink-0" />
+                    <Icon className="h-[18px] w-[18px] shrink-0" />
                     <span className="flex-1" lang={locale === "ar" ? "ar" : "en"}>
                       {label}
                     </span>
@@ -231,6 +206,21 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               })()}
             </nav>
           </div>
+
+          {profileComplete !== null && (
+            <div className="shrink-0 border-t border-stone-200/60 px-4 py-3">
+              <div className="flex items-center justify-between text-xs text-stone-500">
+                <span>{locale === "ar" ? "اكتمال الملف" : "Profile"}</span>
+                <span className="font-semibold text-stone-700">{profileComplete}%</span>
+              </div>
+              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
+                <div
+                  className="h-full rounded-full bg-amber-400 transition-all duration-500"
+                  style={{ width: `${profileComplete}%` }}
+                />
+              </div>
+            </div>
+          )}
         </aside>
 
         <div className={`min-w-0 ${locale === "ar" ? "md:mr-[240px]" : "md:ml-[240px]"}`}>
@@ -238,7 +228,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             compact
             className={`${locale === "ar" ? "left-0 right-0 md:right-[240px]" : "left-0 right-0 md:left-[240px]"}`}
           />
-          <main className="mt-[60px] h-[calc(100vh-60px)] overflow-y-auto p-8">
+          <main className="mt-[60px] h-[calc(100vh-60px)] overflow-y-auto p-6 md:p-8">
             {children}
           </main>
         </div>
