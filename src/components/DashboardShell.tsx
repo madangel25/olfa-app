@@ -45,18 +45,6 @@ const THEME_ACTIVE_RTL = {
   neutral: "bg-violet-100 text-violet-700 border-r-2 border-r-violet-500",
 } as const;
 
-const THEME_PROGRESS = {
-  male: "bg-sky-500",
-  female: "bg-pink-500",
-  neutral: "bg-violet-500",
-} as const;
-
-const THEME_PROGRESS_TEXT = {
-  male: "text-sky-700",
-  female: "text-pink-600",
-  neutral: "text-violet-700",
-} as const;
-
 const SIDEBAR_BORDER_LTR = {
   male: "border-r-2 border-sky-200",
   female: "border-r-2 border-pink-200",
@@ -97,8 +85,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   const isRtl = dir === "rtl";
   const linkActiveClass = isRtl ? THEME_ACTIVE_RTL[theme] : THEME_ACTIVE_LTR[theme];
-  const themeProgress = THEME_PROGRESS[theme];
-  const themeProgressText = THEME_PROGRESS_TEXT[theme];
   const hoverSidebar = HOVER_SIDEBAR[theme];
 
   const fetchCompleteness = async () => {
@@ -180,7 +166,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const showProgress = profileComplete !== null && profileComplete < 100;
   const sidebarBorder = isRtl ? SIDEBAR_BORDER_RTL[theme] : SIDEBAR_BORDER_LTR[theme];
 
   return (
@@ -258,41 +243,6 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             locale === "ar" ? "md:pr-64" : "md:pl-64"
           }`}
         >
-          {showProgress && (
-            <div className="mb-4">
-              <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm">
-                <p className="mb-3 text-sm text-zinc-700">
-                  {locale === "ar" ? (
-                    <>
-                      أكمل ملفك الشخصي بنسبة{" "}
-                      <span
-                        className={`font-semibold ${themeProgressText}`}
-                      >
-                        {profileComplete}%
-                      </span>{" "}
-                      ليراك الآخرون بشكل أفضل.
-                    </>
-                  ) : (
-                    <>
-                      Complete your profile by{" "}
-                      <span
-                        className={`font-semibold ${themeProgressText}`}
-                      >
-                        {profileComplete}%
-                      </span>{" "}
-                      so others can see you better.
-                    </>
-                  )}
-                </p>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-100">
-                  <div
-                    className={`h-full rounded-full ${themeProgress} transition-all duration-500`}
-                    style={{ width: `${profileComplete}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
           <div className="w-full">{children}</div>
         </main>
       </div>

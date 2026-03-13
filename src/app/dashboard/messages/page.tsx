@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Check, CheckCheck, MoreVertical, Flag, ImagePlus, Eye, Plus, Mic, Loader2, X } from "lucide-react";
+import { Check, CheckCheck, MoreVertical, Flag, ImagePlus, Eye, Plus, Mic, Loader2, X, Play, Pause, Sparkles, Zap, Gauge } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useOnlinePresence } from "@/components/DashboardShell";
@@ -67,7 +67,6 @@ const MAX_MEDIA_BYTES = 5 * 1024 * 1024; // 5MB
 const MESSAGES_COPY = {
   en: {
     title: "Messages",
-    backToDiscovery: "Discovery",
     loading: "Loading messages...",
     unread: "Unread",
     startChat: "Start the conversation",
@@ -117,10 +116,10 @@ const MESSAGES_COPY = {
     micRequired: "Microphone access is required for voice notes.",
     photoPreviewAlt: "Preview",
     menu: "Menu",
+    insights: "Insights",
   },
   ar: {
     title: "الرسائل",
-    backToDiscovery: "البحث",
     loading: "جاري تحميل الرسائل...",
     unread: "غير مقروء",
     startChat: "ابدأ المحادثة",
@@ -170,6 +169,7 @@ const MESSAGES_COPY = {
     micRequired: "يلزم السماح بالوصول إلى الميكروفون للتسجيل الصوتي.",
     photoPreviewAlt: "معاينة",
     menu: "القائمة",
+    insights: "التحليلات",
   },
 } as const;
 
@@ -177,6 +177,78 @@ function containsBannedWord(text: string, bannedWords: string[]): boolean {
   if (!bannedWords.length) return false;
   const lower = text.toLowerCase();
   return bannedWords.some((w) => lower.includes(w.toLowerCase()));
+}
+
+function formatAudioTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+function AudioMiniPlayer({ src }: { src: string }) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const onTime = () => setCurrentTime(audio.currentTime || 0);
+    const onMeta = () => setDuration(audio.duration || 0);
+    const onEnd = () => setPlaying(false);
+    audio.addEventListener("timeupdate", onTime);
+    audio.addEventListener("loadedmetadata", onMeta);
+    audio.addEventListener("ended", onEnd);
+    return () => {
+      audio.removeEventListener("timeupdate", onTime);
+      audio.removeEventListener("loadedmetadata", onMeta);
+      audio.removeEventListener("ended", onEnd);
+    };
+  }, []);
+
+  const toggle = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) {
+      audio.pause();
+      setPlaying(false);
+    } else {
+      await audio.play();
+      setPlaying(true);
+    }
+  };
+
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  return (
+    <div className="w-[230px] rounded-xl border border-zinc-200 bg-white/80 px-2.5 py-2 shadow-sm backdrop-blur">
+      <audio
+        ref={audioRef}
+        src={src}
+        controlsList="nodownload noplaybackrate"
+        onContextMenu={(e) => e.preventDefault()}
+        className="hidden"
+      />
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => void toggle()}
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-sky-500 text-white hover:bg-sky-600"
+        >
+          {playing ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-200">
+            <div className="h-full rounded-full bg-sky-500 transition-all" style={{ width: `${progress}%` }} />
+          </div>
+          <div className="mt-1 text-[10px] text-zinc-500">
+            {formatAudioTime(currentTime)} / {formatAudioTime(duration || 0)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function MessagesPage() {
@@ -207,8 +279,8 @@ export default function MessagesPage() {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportReason, setReportReason] = useState<string>("harassment");
   const [reportSubmitting, setReportSubmitting] = useState(false);
-  const [viewOnce, setViewOnce] = useState(false);
   const [headerMenuOpen, setHeaderMenuOpen] = useState(false);
+  const [showInsightsPanel, setShowInsightsPanel] = useState(false);
   const [showMediaMenu, setShowMediaMenu] = useState(false);
   const [imagePreview, setImagePreview] = useState<{ file: File; objectUrl: string } | null>(null);
   const [imagePreviewViewOnce, setImagePreviewViewOnce] = useState(false);
@@ -1012,22 +1084,20 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-6rem)] overflow-hidden font-[family-name:var(--font-cairo)]" dir={dir}>
-      <div className="mb-3 flex items-center justify-between">
-        <Link href="/dashboard/discovery" className="text-sm text-sky-600 hover:text-sky-700">
-          ← {copy.backToDiscovery}
-        </Link>
-        <h1 className="text-xl font-semibold text-zinc-900">{copy.title}</h1>
-        <span />
-      </div>
-
-      {error && (
-        <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-          {error}
+    <div className="h-[calc(100vh-6rem)] font-[family-name:var(--font-cairo)]" dir={dir}>
+      <div className={`mx-auto h-full w-full max-w-[1240px] px-4 md:px-8 ${dir === "rtl" ? "md:pr-8" : "md:pl-8"}`}>
+        <div className="mb-3 flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-zinc-900">{copy.title}</h1>
+          <span />
         </div>
-      )}
 
-      <div className="grid h-[calc(100%-2.5rem)] grid-cols-1 overflow-hidden rounded-2xl border border-zinc-200 bg-white md:grid-cols-[320px_1fr]">
+        {error && (
+          <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            {error}
+          </div>
+        )}
+
+        <div className="grid h-[calc(100%-2.5rem)] grid-cols-1 overflow-visible rounded-3xl border border-zinc-200 bg-white shadow-xl md:grid-cols-[320px_1fr]">
         {/* Conversation list */}
         <aside className="overflow-y-auto border-b border-zinc-200 md:border-b-0 md:border-l">
           {(conversations ?? []).map((c) => {
@@ -1082,60 +1152,11 @@ export default function MessagesPage() {
             <p className="p-4 text-sm text-zinc-500">{copy.noConversations}</p>
           )}
 
-          {/* Personality Insights (VIP or blurred) */}
-          {selectedConversation && (
-            <div className="border-t border-zinc-200 p-3">
-              <div
-                className={`rounded-xl border border-zinc-200 bg-gradient-to-br from-sky-50/80 to-pink-50/80 p-3 ${
-                  !myIsVip ? "relative select-none" : ""
-                }`}
-              >
-                {!myIsVip && (
-                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-xl bg-zinc-900/70 backdrop-blur-md">
-                    <p className="px-3 text-center text-sm font-medium text-white">
-                      {copy.vipInsightsLocked}
-                    </p>
-                    <Link
-                      href="/dashboard"
-                      className="mt-2 rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600"
-                    >
-                      {copy.vipUpgrade}
-                    </Link>
-                  </div>
-                )}
-                <div className={!myIsVip ? "blur-[3px]" : ""}>
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                  {copy.personalityInsights}
-                </p>
-                <dl className="mt-2 space-y-1 text-sm">
-                  <div className="flex justify-between gap-2">
-                    <dt className="text-zinc-600">{copy.responseSpeed}</dt>
-                    <dd className="font-medium text-zinc-900">
-                      {personalityInsights.responseSpeedLabel}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt className="text-zinc-600">{copy.engagement}</dt>
-                    <dd className="font-medium text-zinc-900">
-                      {personalityInsights.engagementLabel}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <dt className="text-zinc-600">{copy.seriousnessScore}</dt>
-                    <dd className="font-medium text-zinc-900">
-                      {personalityInsights.score}%
-                    </dd>
-                  </div>
-                </dl>
-                </div>
-              </div>
-            </div>
-          )}
         </aside>
 
         {/* Message thread */}
-        <section className="flex min-h-0 flex-col">
-          <div className="relative border-b border-zinc-200 px-4 py-3">
+        <section className="relative flex min-h-0 flex-col overflow-visible">
+          <div className="relative z-30 border-b border-zinc-200 px-4 py-3">
             {selectedConversation ? (
               <>
                 <div className="flex items-center gap-2">
@@ -1163,6 +1184,14 @@ export default function MessagesPage() {
                   <div className="relative shrink-0">
                     <button
                       type="button"
+                      onClick={() => setShowInsightsPanel((v) => !v)}
+                      className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
+                      aria-label={copy.insights}
+                    >
+                      <Sparkles className="h-5 w-5" />
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setHeaderMenuOpen((o) => !o)}
                       className="rounded-lg p-2 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
                       aria-label={copy.menu}
@@ -1176,7 +1205,7 @@ export default function MessagesPage() {
                           aria-hidden
                           onClick={() => setHeaderMenuOpen(false)}
                         />
-                        <div className="absolute left-0 top-full z-20 mt-1 w-48 rounded-xl border border-zinc-200 bg-white py-1 shadow-lg">
+                        <div className="absolute left-0 top-full z-50 mt-1 w-48 rounded-xl border border-zinc-200 bg-white py-1 shadow-xl">
                           <button
                             type="button"
                             onClick={() => {
@@ -1215,6 +1244,40 @@ export default function MessagesPage() {
             )}
           </div>
 
+          {selectedConversation && showInsightsPanel && (
+            <div className={`absolute top-20 z-40 w-72 rounded-2xl border border-white/50 bg-white/50 p-3 shadow-xl backdrop-blur-md ${dir === "rtl" ? "left-4" : "right-4"}`}>
+              {!myIsVip ? (
+                <div className="space-y-2 text-center">
+                  <p className="text-sm font-medium text-zinc-800">{copy.vipInsightsLocked}</p>
+                  <Link href="/dashboard" className="inline-flex rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600">
+                    {copy.vipUpgrade}
+                  </Link>
+                </div>
+              ) : (
+                <div>
+                  <p className="mb-3 text-sm font-semibold text-zinc-800">{copy.personalityInsights}</p>
+                  <div className="space-y-3">
+                    <div className="rounded-xl bg-white/80 p-2">
+                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-zinc-600"><Zap className="h-3.5 w-3.5 text-sky-600" /> {copy.responseSpeed}</p>
+                      <p className="text-sm font-semibold text-zinc-900">{personalityInsights.responseSpeedLabel}</p>
+                    </div>
+                    <div className="rounded-xl bg-white/80 p-2">
+                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-zinc-600"><Gauge className="h-3.5 w-3.5 text-violet-600" /> {copy.engagement}</p>
+                      <p className="text-sm font-semibold text-zinc-900">{personalityInsights.engagementLabel}</p>
+                    </div>
+                    <div className="rounded-xl bg-white/80 p-2">
+                      <p className="mb-1 text-xs font-medium text-zinc-600">{copy.seriousnessScore}</p>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200">
+                        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${personalityInsights.score}%` }} />
+                      </div>
+                      <p className="mt-1 text-xs font-semibold text-zinc-800">{personalityInsights.score}%</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50 px-3 py-4">
             {!selectedConversationId ? (
               <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center text-zinc-500">
@@ -1244,7 +1307,7 @@ export default function MessagesPage() {
                   return (
                     <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div
-                        className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm border ${
+                        className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm font-medium shadow-sm border ${
                           mine
                             ? "bg-sky-50 border-sky-100 text-zinc-800"
                             : "bg-pink-50 border-pink-100 text-zinc-800"
@@ -1266,11 +1329,7 @@ export default function MessagesPage() {
                                 <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
                               </div>
                             ) : imageUrl ? (
-                              <img
-                                src={imageUrl}
-                                alt=""
-                                className="max-h-64 rounded-lg object-contain"
-                              />
+                              <img src={imageUrl} alt="" className="max-h-64 max-w-[300px] rounded-xl object-contain shadow-sm" />
                             ) : (
                               <span className="text-xs text-zinc-500">{copy.image}</span>
                             )}
@@ -1280,9 +1339,9 @@ export default function MessagesPage() {
                           </div>
                         )}
                         {isAudio && m.attachment_url && (
-                          <div className="min-w-[200px]">
+                          <div className="min-w-[230px]">
                             {audioUrl ? (
-                              <audio controls src={audioUrl} className="max-w-full" />
+                              <AudioMiniPlayer src={audioUrl} />
                             ) : (
                               <div className="flex items-center gap-2 py-2">
                                 <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
@@ -1299,9 +1358,9 @@ export default function MessagesPage() {
                           {mine && (
                             <span className="flex items-center">
                               {m.is_read ? (
-                                <CheckCheck size={14} className="text-blue-500" />
+                                <CheckCheck size={15} className="text-sky-600" />
                               ) : (
-                                <Check size={14} className="text-gray-400" />
+                                <Check size={15} className="text-sky-400" />
                               )}
                             </span>
                           )}
@@ -1360,7 +1419,7 @@ export default function MessagesPage() {
                   {showMediaMenu && (
                     <>
                       <div className="fixed inset-0 z-10" aria-hidden onClick={() => setShowMediaMenu(false)} />
-                      <div className="absolute bottom-full left-0 z-20 mb-1 flex gap-1 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg">
+                      <div className="absolute bottom-full left-0 z-50 mb-1 flex gap-1 rounded-xl border border-zinc-200 bg-white p-1 shadow-lg">
                         <button
                           type="button"
                           onClick={() => { imageInputRef.current?.click(); setShowMediaMenu(false); }}
