@@ -1084,15 +1084,18 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)] w-full overflow-hidden font-[family-name:var(--font-cairo)]" dir={dir}>
-      <div className="relative h-full w-full">
-        {error && (
-          <div className="absolute inset-x-3 top-3 z-50 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            {error}
-          </div>
-        )}
+    <div
+      className="relative h-[calc(100vh-4rem)] w-full overflow-hidden font-[family-name:var(--font-cairo)]"
+      dir={dir}
+      style={{ minHeight: 0 }}
+    >
+      {error && (
+        <div className="absolute left-3 right-3 top-3 z-50 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+          {error}
+        </div>
+      )}
 
-        <div className="grid h-full w-full grid-cols-1 overflow-hidden bg-white md:grid-cols-[320px_1fr]">
+      <div className="grid h-full w-full grid-cols-1 overflow-hidden bg-white md:grid-cols-[320px_1fr]">
         {/* Conversation list */}
         <aside className="overflow-y-auto border-b border-zinc-200 md:border-b-0 md:border-l">
           {(conversations ?? []).map((c) => {
@@ -1150,7 +1153,7 @@ export default function MessagesPage() {
         </aside>
 
         {/* Message thread */}
-        <section className="relative flex min-h-0 flex-col overflow-visible">
+        <section className="relative flex min-h-0 flex-col overflow-hidden">
           <div className="relative z-30 border-b border-zinc-200 px-4 py-3">
             {selectedConversation ? (
               <>
@@ -1468,7 +1471,6 @@ export default function MessagesPage() {
             </div>
           )}
         </section>
-      </div>
       </div>
 
       {/* Image preview modal (before send) */}
