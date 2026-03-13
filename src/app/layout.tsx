@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Cairo } from "next/font/google";
+import { Geist, Geist_Mono, Cairo, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
@@ -20,6 +20,12 @@ const cairo = Cairo({
   subsets: ["latin", "arabic"],
 });
 
+const plusJakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
 export const metadata: Metadata = {
   title: "Olfa – Islamic Marriage Platform",
   description:
@@ -34,7 +40,7 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="neutral" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${cairo.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${cairo.variable} ${plusJakarta.variable} antialiased`}
       >
         <LanguageProvider>
           <ThemeProvider>
@@ -45,4 +51,3 @@ export default function RootLayout({
     </html>
   );
 }
-

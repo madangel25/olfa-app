@@ -14,40 +14,19 @@ export type ThemeVariant = "male" | "female" | "neutral";
 
 type ThemeContextValue = {
   theme: ThemeVariant;
-  /** Primary hex (e.g. #0EA5E9). */
   primaryColor: string;
-  /** Light background hex (e.g. #F0F9FF). */
   bgLight: string;
-  /** Tailwind accent class for links/buttons (e.g. text-sky-600, bg-pink-500). */
   accentClass: string;
-  /** Border/sidebar accent. */
   borderClass: string;
-  /** Hover background. */
   hoverBgClass: string;
 };
 
-const THEMES: Record<ThemeVariant, Omit<ThemeContextValue, "theme">> = {
-  male: {
-    primaryColor: "#0EA5E9",
-    bgLight: "#F0F9FF",
-    accentClass: "text-sky-600",
-    borderClass: "border-sky-200",
-    hoverBgClass: "hover:bg-sky-50",
-  },
-  female: {
-    primaryColor: "#DB2777",
-    bgLight: "#FDF2F8",
-    accentClass: "text-pink-600",
-    borderClass: "border-pink-200",
-    hoverBgClass: "hover:bg-pink-50",
-  },
-  neutral: {
-    primaryColor: "#7C3AED",
-    bgLight: "#FAF5FF",
-    accentClass: "text-violet-600",
-    borderClass: "border-violet-200",
-    hoverBgClass: "hover:bg-violet-50",
-  },
+const UNIFIED_THEME: Omit<ThemeContextValue, "theme"> = {
+  primaryColor: "#F43F5E",
+  bgLight: "#FFF1F2",
+  accentClass: "text-rose-600",
+  borderClass: "border-stone-200",
+  hoverBgClass: "hover:bg-stone-50",
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
@@ -100,7 +79,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const value: ThemeContextValue = {
     theme,
-    ...THEMES[theme],
+    ...UNIFIED_THEME,
   };
 
   return (
@@ -115,7 +94,7 @@ export function useTheme(): ThemeContextValue {
   if (!ctx) {
     return {
       theme: "neutral",
-      ...THEMES.neutral,
+      ...UNIFIED_THEME,
     };
   }
   return ctx;

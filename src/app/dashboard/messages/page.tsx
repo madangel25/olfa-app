@@ -240,7 +240,7 @@ function AudioMiniPlayer({ src }: { src: string }) {
         </button>
         <div className="min-w-0 flex-1">
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-stone-200">
-            <div className="h-full rounded-full bg-amber-400 transition-all" style={{ width: `${progress}%` }} />
+            <div className="h-full rounded-full bg-rose-400 transition-all" style={{ width: `${progress}%` }} />
           </div>
           <div className="mt-1 text-[10px] text-stone-400">
             {formatAudioTime(currentTime)} / {formatAudioTime(duration || 0)}
@@ -1084,8 +1084,8 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="font-[family-name:var(--font-cairo)]" dir={dir}>
-      <div className="h-[calc(100vh-160px)] overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-sm">
+    <div className="font-[family-name:var(--font-jakarta)]" dir={dir}>
+      <div className="h-[calc(100vh-160px)] overflow-hidden rounded-[20px] border border-stone-200 bg-white shadow-[0_1px_3px_rgba(0,0,0,.07),0_1px_2px_rgba(0,0,0,.05)]">
         <div className="flex h-full w-full flex-col">
           {error && (
             <div className="mx-3 mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -1093,9 +1093,9 @@ export default function MessagesPage() {
             </div>
           )}
 
-          <div className="grid min-h-0 flex-1 w-full grid-cols-1 overflow-hidden md:grid-cols-[260px_1fr]">
+          <div className="grid min-h-0 flex-1 w-full grid-cols-1 overflow-hidden md:grid-cols-[240px_1fr]">
         {/* Conversation list */}
-        <aside className="overflow-y-auto border-b border-stone-200/60 bg-stone-50/40 md:border-b-0 md:border-l md:border-l-stone-200/60">
+        <aside className="overflow-y-auto border-b border-stone-100 md:border-b-0 md:border-r md:border-r-stone-100">
           {(conversations ?? []).map((c) => {
             const selected = selectedConversationId === c.id;
             const isPartnerOnline = onlineUserIds.has(c.partner_id) || isOnline(c.partner_last_seen_at);
@@ -1111,7 +1111,7 @@ export default function MessagesPage() {
                     )
                   );
                 }}
-                className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-right transition ${selected ? "bg-amber-50/70" : "hover:bg-stone-100/60"}`}
+                className={`flex w-full items-center gap-2.5 border-b border-stone-50 px-4 py-3.5 text-right transition ${selected ? "bg-rose-50" : "hover:bg-[#FFFAF7]"}`}
               >
                 <div className="relative h-10 w-10 shrink-0">
                   <div className="h-10 w-10 overflow-hidden rounded-full bg-stone-100">
@@ -1134,7 +1134,7 @@ export default function MessagesPage() {
                     <p className="truncate text-xs font-semibold text-stone-800">{c.partner_name}</p>
                     <span className="flex shrink-0 items-center gap-1">
                       {c.hasUnread && (
-                        <span className="h-2 w-2 rounded-full bg-amber-500" title={copy.unread} />
+                        <span className="h-2 w-2 rounded-full bg-rose-500" title={copy.unread} />
                       )}
                       <span className="text-[10px] text-stone-400">{formatTime(c.last_message_at)}</span>
                     </span>
@@ -1158,7 +1158,7 @@ export default function MessagesPage() {
                 <div className="flex items-center gap-2">
                   <Link
                     href={`/profile/${selectedConversation.partner_id}`}
-                    className="flex flex-1 min-w-0 items-center gap-3 no-underline outline-none focus:ring-2 focus:ring-amber-400/40 focus:ring-offset-1 rounded-lg -m-1 p-1"
+                    className="flex flex-1 min-w-0 items-center gap-3 no-underline outline-none focus:ring-2 focus:ring-rose-500/20 focus:ring-offset-1 rounded-lg -m-1 p-1"
                   >
                     <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-stone-100">
                       {selectedConversation.partner_photo ? (
@@ -1249,17 +1249,17 @@ export default function MessagesPage() {
                   <p className="mb-3 text-sm font-semibold text-stone-700">{copy.personalityInsights}</p>
                   <div className="space-y-3">
                     <div className="rounded-xl bg-white/80 p-2">
-                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-stone-500"><Zap className="h-3.5 w-3.5 text-amber-500" /> {copy.responseSpeed}</p>
+                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-stone-500"><Zap className="h-3.5 w-3.5 text-rose-500" /> {copy.responseSpeed}</p>
                       <p className="text-sm font-semibold text-stone-800">{personalityInsights.responseSpeedLabel}</p>
                     </div>
                     <div className="rounded-xl bg-white/80 p-2">
-                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-stone-500"><Gauge className="h-3.5 w-3.5 text-amber-500" /> {copy.engagement}</p>
+                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-stone-500"><Gauge className="h-3.5 w-3.5 text-rose-500" /> {copy.engagement}</p>
                       <p className="text-sm font-semibold text-stone-800">{personalityInsights.engagementLabel}</p>
                     </div>
                     <div className="rounded-xl bg-white/80 p-2">
                       <p className="mb-1 text-xs font-medium text-stone-500">{copy.seriousnessScore}</p>
                       <div className="h-2 w-full overflow-hidden rounded-full bg-stone-200">
-                        <div className="h-full rounded-full bg-amber-400" style={{ width: `${personalityInsights.score}%` }} />
+                        <div className="h-full rounded-full bg-rose-400" style={{ width: `${personalityInsights.score}%` }} />
                       </div>
                       <p className="mt-1 text-xs font-semibold text-stone-700">{personalityInsights.score}%</p>
                     </div>
@@ -1269,7 +1269,7 @@ export default function MessagesPage() {
             </div>
           )}
 
-          <div className="min-h-0 flex-1 overflow-y-auto bg-[#faf9f7] px-3 py-4">
+          <div className="min-h-0 flex-1 overflow-y-auto bg-[#FFFAF7] px-4 py-4">
             {!selectedConversationId ? (
               <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center text-stone-400">
                 <p className="text-sm">{copy.selectConversationToStart}</p>
@@ -1298,10 +1298,10 @@ export default function MessagesPage() {
                   return (
                     <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div
-                        className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm font-medium shadow-sm border ${
+                        className={`max-w-[70%] px-3.5 py-2.5 text-[13px] leading-[1.5] ${
                           mine
-                            ? "bg-amber-50/70 border-amber-200/60 text-stone-800"
-                            : "bg-white border-stone-200/60 text-stone-800"
+                            ? "self-end rounded-[16px_16px_4px_16px] bg-rose-500 text-white"
+                            : "self-start rounded-[16px_16px_16px_4px] border border-stone-200 bg-white text-stone-800"
                         }`}
                       >
                         {isImage && m.attachment_url && (
@@ -1344,14 +1344,14 @@ export default function MessagesPage() {
                         {(!isImage && !isAudio) && (
                           <p className="whitespace-pre-wrap break-words">{m.content}</p>
                         )}
-                        <div className="mt-1 flex items-center gap-1 text-[11px] text-stone-400">
+                        <div className={`mt-1 flex items-center gap-1 text-[10px] ${mine ? "text-white/70" : "text-stone-300"}`}>
                           <span>{formatTime(m.created_at)}</span>
                           {mine && (
                             <span className="flex items-center">
                               {m.is_read ? (
-                                <CheckCheck size={15} className="text-amber-600" />
+                                <CheckCheck size={14} className="text-white/80" />
                               ) : (
-                                <Check size={15} className="text-stone-300" />
+                                <Check size={14} className="text-white/50" />
                               )}
                             </span>
                           )}
@@ -1383,7 +1383,7 @@ export default function MessagesPage() {
                     <button
                       type="button"
                       onClick={sendRecording}
-                      className="rounded-lg bg-stone-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-stone-700"
+                      className="rounded-lg bg-rose-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-600"
                     >
                       {copy.send}
                     </button>
@@ -1444,13 +1444,13 @@ export default function MessagesPage() {
                     }
                   }}
                   placeholder={copy.typeMessage}
-                  className="flex-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 focus:border-amber-400/60 focus:outline-none focus:ring-2 focus:ring-amber-400/20"
+                  className="flex-1 rounded-full border border-stone-200 bg-stone-50 px-3.5 py-2 text-[13px] text-stone-900 focus:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-500/10"
                 />
                 <button
                   type="button"
                   onClick={() => void handleSend()}
                   disabled={!draft.trim() || !!uploadingMedia}
-                  className="rounded-xl bg-stone-800 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50"
+                  className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50"
                 >
                   {uploadingMedia ? <Loader2 className="h-5 w-5 animate-spin" /> : copy.send}
                 </button>
@@ -1480,7 +1480,7 @@ export default function MessagesPage() {
                 type="checkbox"
                 checked={imagePreviewViewOnce}
                 onChange={(e) => setImagePreviewViewOnce(e.target.checked)}
-                className="rounded border-stone-300 text-amber-600"
+                className="rounded border-stone-300 text-rose-600"
               />
               {copy.viewOnceLabel}
             </label>
@@ -1495,7 +1495,7 @@ export default function MessagesPage() {
               <button
                 type="button"
                 onClick={() => void handleSendImage()}
-                className="flex-1 rounded-xl bg-stone-800 px-4 py-2 text-sm font-medium text-white hover:bg-stone-700"
+                className="flex-1 rounded-lg bg-rose-500 px-4 py-2 text-sm font-medium text-white hover:bg-rose-600"
               >
                 {copy.send}
               </button>

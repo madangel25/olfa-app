@@ -98,7 +98,7 @@ function SearchableCountrySelect({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className={`flex w-full min-h-[2.75rem] items-center justify-between gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3 text-left text-stone-800 shadow-sm outline-none transition-all focus:ring-2 focus:ring-amber-400/40 placeholder:text-stone-400 ${!displayValue ? "text-stone-400" : ""}`}
+        className={`flex w-full min-h-[2.75rem] items-center justify-between gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3 text-left text-stone-800 shadow-sm outline-none transition-all focus:ring-2 focus:ring-rose-500/20 placeholder:text-stone-400 ${!displayValue ? "text-stone-400" : ""}`}
       >
         <span className="flex items-center gap-2 truncate">
           {selectedCountry ? (
@@ -685,28 +685,28 @@ export default function ProfilePage() {
 
   const isFemale = false;
   const theme = {
-    accent: "stone",
-    bg: "bg-stone-100",
+    accent: "rose",
+    bg: "bg-rose-50",
     border: "border-stone-200",
-    text: "text-stone-700",
+    text: "text-rose-600",
     textMuted: "text-stone-500",
-    focusRing: "focus:ring-amber-400/40",
+    focusRing: "focus:ring-rose-500/20",
     hoverBorder: "hover:border-stone-300",
     hoverBg: "hover:bg-stone-100",
     hoverText: "hover:text-stone-700",
-    fill: "fill-stone-700",
-    badge: "bg-stone-700",
-    primaryBtn: "bg-stone-800 hover:bg-stone-700 text-white border-0",
+    fill: "fill-rose-600",
+    badge: "bg-rose-600",
+    primaryBtn: "bg-rose-500 hover:bg-rose-600 text-white border-0",
   };
 
-  const cardClass = "rounded-2xl border border-stone-200/80 bg-white p-4 shadow-sm sm:p-6";
+  const cardClass = "rounded-xl border border-stone-200 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,.07)] sm:p-6";
   const inputClass =
-    `min-h-[2.75rem] w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-stone-800 shadow-sm outline-none transition-all ${theme.focusRing} focus:ring-2 placeholder:text-stone-400`;
+    `min-h-[2.75rem] w-full rounded-xl border border-stone-200 bg-white px-4 py-3 text-stone-900 shadow-sm outline-none transition-all ${theme.focusRing} focus:ring-2 placeholder:text-stone-400`;
   const buttonClass =
-    `inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium outline-none transition-all ${theme.focusRing} focus:ring-2 disabled:opacity-60`;
+    `inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium outline-none transition-all ${theme.focusRing} focus:ring-2 disabled:opacity-60`;
 
   return (
-    <div className="font-[family-name:var(--font-cairo)]" dir={dir}>
+    <div className="font-[family-name:var(--font-jakarta)]" dir={dir}>
       {toast && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -721,16 +721,16 @@ export default function ProfilePage() {
           {toast.message}
         </motion.div>
       )}
-      <div className="mx-auto max-w-5xl space-y-6 rounded-2xl border border-stone-200/80 bg-white p-8 shadow-sm">
+      <div className="mx-auto max-w-5xl space-y-6 rounded-[20px] border border-stone-200 bg-white p-8 shadow-[0_1px_3px_rgba(0,0,0,.07)]">
       {/* Page header */}
       <header className={`space-y-2 ${dir === "rtl" ? "text-right" : "text-left"}`}>
-        <h1 className="text-2xl font-semibold text-stone-800">{t("profile.title")}</h1>
-        <p className="text-sm text-stone-400">{t("profile.subtitle")}</p>
+        <h1 className="text-[22px] font-semibold tracking-tight text-stone-900">{t("profile.title")}</h1>
+        <p className="text-[13px] text-stone-500">{t("profile.subtitle")}</p>
       </header>
 
       {/* Stepper */}
       <nav
-        className="flex flex-wrap gap-2 rounded-2xl border border-stone-200/80 bg-white p-2 shadow-sm sm:flex-nowrap"
+        className="flex flex-wrap gap-2 rounded-xl border border-stone-200 bg-white p-2 shadow-sm sm:flex-nowrap"
         aria-label="Profile sections"
       >
         {STEP_ORDER.map(({ id, icon: Icon, key }) => (

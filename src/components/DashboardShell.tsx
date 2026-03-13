@@ -12,7 +12,7 @@ import {
   PROFILE_UPDATED_EVENT,
   type ProfileForCompleteness,
 } from "@/lib/profileCompleteness";
-import { Home, User, MessageCircle, Heart, UserCircle, MapPin, ShieldCheck } from "lucide-react";
+import { Home, User, MessageCircle, Heart, UserCircle, MapPin, ShieldCheck, Settings } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "الرئيسية", labelEn: "Home", icon: Home },
@@ -34,9 +34,9 @@ const PROFILE_SELECT_MINIMAL = "full_name, gender, email, is_verified";
 const PROFILE_SELECT_FULL =
   "full_name, gender, email, is_verified, phone, phone_verified, nationality, age, marital_status, height_cm, weight_kg, skin_tone, smoking_status, religious_commitment, desire_children, job_title, education_level, country, city, about_me, ideal_partner, photo_urls";
 
-const ACTIVE_LTR = "bg-amber-50 text-amber-800 border-l-[3px] border-l-amber-400";
-const ACTIVE_RTL = "bg-amber-50 text-amber-800 border-r-[3px] border-r-amber-400";
-const HOVER_CLASS = "hover:bg-stone-100 hover:text-stone-800";
+const ACTIVE_LTR = "bg-rose-50 text-rose-600 border-l-[3px] border-l-rose-500";
+const ACTIVE_RTL = "bg-rose-50 text-rose-600 border-r-[3px] border-r-rose-500";
+const HOVER_CLASS = "hover:bg-[#FFF3EB] hover:text-stone-700";
 
 type OnlinePresenceContextValue = {
   onlineUserIds: Set<string>;
@@ -139,83 +139,78 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const renderNavItem = (item: typeof NAV_ITEMS[0], isActive: boolean) => {
+    const Icon = item.icon;
+    const label = locale === "ar" ? item.label : item.labelEn;
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={`flex items-center gap-2.5 px-5 py-[10px] text-[13px] font-medium transition-colors ${
+          isActive
+            ? linkActiveClass
+            : `text-stone-500 ${HOVER_CLASS}`
+        } ${locale === "ar" ? "flex-row-reverse text-right" : "text-left"}`}
+      >
+        <Icon className="h-4 w-4 shrink-0 opacity-70" />
+        <span className="flex-1" lang={locale === "ar" ? "ar" : "en"}>
+          {label}
+        </span>
+      </Link>
+    );
+  };
+
   return (
     <OnlinePresenceContext.Provider value={{ onlineUserIds }}>
-      <div className="min-h-screen bg-[#faf9f7] font-[family-name:var(--font-cairo)] text-stone-900">
+      <div className="min-h-screen bg-[#FFFAF7] font-[family-name:var(--font-jakarta)] text-stone-900">
         <aside
-          className={`fixed inset-y-0 z-40 hidden w-[240px] bg-white md:flex md:flex-col ${locale === "ar" ? "right-0 border-l border-stone-200/80" : "left-0 border-r border-stone-200/80"}`}
+          className={`fixed inset-y-0 z-40 hidden w-[220px] flex-col bg-white md:flex ${locale === "ar" ? "right-0 border-l border-stone-200" : "left-0 border-r border-stone-200"}`}
           aria-label="Dashboard navigation"
         >
-          <div className="flex h-[60px] shrink-0 items-center border-b border-stone-200/60 px-5">
-            <Link href="/dashboard" className="text-lg font-bold tracking-tight text-stone-800">
-              Olfa
+          <div className="shrink-0 border-b border-stone-100 px-5 pb-5 pt-5">
+            <Link href="/dashboard" className="text-xl font-semibold tracking-tight text-rose-600" style={{ letterSpacing: "-0.5px" }}>
+              olfa<span className="text-stone-300">.</span>
             </Link>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-3 py-4">
-            <nav className="flex flex-col gap-0.5" dir={locale === "ar" ? "rtl" : "ltr"}>
-              {NAV_ITEMS.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== "/dashboard" &&
-                    item.href !== "/dashboard/profile" &&
-                    pathname.startsWith(item.href)) ||
-                  (item.href === "/dashboard/profile" &&
-                    (pathname === "/dashboard/profile" ||
-                      pathname.startsWith("/dashboard/profile/")));
-                const Icon = item.icon;
-                const label = locale === "ar" ? item.label : item.labelEn;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
-                      isActive
-                        ? linkActiveClass
-                        : `text-stone-500 ${HOVER_CLASS}`
-                    } ${locale === "ar" ? "flex-row-reverse text-right" : "text-left"}`}
-                  >
-                    <Icon className="h-[18px] w-[18px] shrink-0" />
-                    <span className="flex-1" lang={locale === "ar" ? "ar" : "en"}>
-                      {label}
-                    </span>
-                  </Link>
-                );
-              })}
-              {isAdmin && (() => {
-                const item = ADMIN_NAV_ITEM;
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                const Icon = item.icon;
-                const label = locale === "ar" ? item.label : item.labelEn;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
-                      isActive
-                        ? linkActiveClass
-                        : `text-stone-500 ${HOVER_CLASS}`
-                    } ${locale === "ar" ? "flex-row-reverse text-right" : "text-left"}`}
-                  >
-                    <Icon className="h-[18px] w-[18px] shrink-0" />
-                    <span className="flex-1" lang={locale === "ar" ? "ar" : "en"}>
-                      {label}
-                    </span>
-                  </Link>
-                );
-              })()}
-            </nav>
-          </div>
+          <nav className="mt-2 flex flex-1 flex-col gap-[2px]" dir={locale === "ar" ? "rtl" : "ltr"}>
+            {NAV_ITEMS.map((item) => {
+              const isActive =
+                pathname === item.href ||
+                (item.href !== "/dashboard" &&
+                  item.href !== "/dashboard/profile" &&
+                  pathname.startsWith(item.href)) ||
+                (item.href === "/dashboard/profile" &&
+                  (pathname === "/dashboard/profile" ||
+                    pathname.startsWith("/dashboard/profile/")));
+              return renderNavItem(item, isActive);
+            })}
+            {isAdmin && (() => {
+              const item = ADMIN_NAV_ITEM;
+              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              return renderNavItem(item, isActive);
+            })()}
+
+            <div className="mt-auto">
+              <Link
+                href="/settings"
+                className={`flex items-center gap-2.5 px-5 py-[10px] text-[13px] font-medium text-stone-500 transition-colors ${HOVER_CLASS} ${locale === "ar" ? "flex-row-reverse text-right" : "text-left"}`}
+              >
+                <Settings className="h-4 w-4 shrink-0 opacity-70" />
+                <span className="flex-1">{locale === "ar" ? "الإعدادات" : "Settings"}</span>
+              </Link>
+            </div>
+          </nav>
 
           {profileComplete !== null && (
-            <div className="shrink-0 border-t border-stone-200/60 px-4 py-3">
-              <div className="flex items-center justify-between text-xs text-stone-500">
-                <span>{locale === "ar" ? "اكتمال الملف" : "Profile"}</span>
+            <div className="shrink-0 border-t border-stone-100 px-5 py-3">
+              <div className="flex items-center justify-between text-[11px] text-stone-500">
+                <span>{locale === "ar" ? "اكتمال الملف" : "Profile strength"}</span>
                 <span className="font-semibold text-stone-700">{profileComplete}%</span>
               </div>
-              <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-stone-100">
+              <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-stone-100">
                 <div
-                  className="h-full rounded-full bg-amber-400 transition-all duration-500"
+                  className="h-full rounded-full bg-rose-400 transition-all duration-500"
                   style={{ width: `${profileComplete}%` }}
                 />
               </div>
@@ -223,12 +218,12 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           )}
         </aside>
 
-        <div className={`min-w-0 ${locale === "ar" ? "md:mr-[240px]" : "md:ml-[240px]"}`}>
+        <div className={`min-w-0 ${locale === "ar" ? "md:mr-[220px]" : "md:ml-[220px]"}`}>
           <Navbar
             compact
-            className={`${locale === "ar" ? "left-0 right-0 md:right-[240px]" : "left-0 right-0 md:left-[240px]"}`}
+            className={`${locale === "ar" ? "left-0 right-0 md:right-[220px]" : "left-0 right-0 md:left-[220px]"}`}
           />
-          <main className="mt-[60px] h-[calc(100vh-60px)] overflow-y-auto p-6 md:p-8">
+          <main className="mt-[60px] h-[calc(100vh-60px)] overflow-y-auto p-6">
             {children}
           </main>
         </div>
