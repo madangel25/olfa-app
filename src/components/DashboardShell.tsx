@@ -16,7 +16,7 @@ import { Home, User, MessageCircle, Heart, UserCircle, MapPin, ShieldCheck } fro
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "الرئيسية", labelEn: "Home", icon: Home },
-  { href: "/profile", label: "الملف الشخصي", labelEn: "Profile", icon: UserCircle },
+  { href: "/dashboard/profile", label: "الملف الشخصي", labelEn: "Profile", icon: UserCircle },
   { href: "/dashboard/discovery", label: "البحث", labelEn: "Discovery", icon: User },
   { href: "/dashboard/discover-near-me", label: "الأقرب لك", labelEn: "Near Me", icon: MapPin },
   { href: "/dashboard/likes", label: "الإعجابات", labelEn: "Likes", icon: Heart },
@@ -184,9 +184,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   (item.href !== "/dashboard" &&
                     item.href !== "/profile" &&
                     pathname.startsWith(item.href)) ||
-                  (item.href === "/profile" &&
-                    (pathname === "/profile" ||
-                      pathname.startsWith("/profile/")));
+                  (item.href === "/dashboard/profile" &&
+                    (pathname === "/dashboard/profile" ||
+                      pathname.startsWith("/dashboard/profile/")));
                 const Icon = item.icon;
                 const label =
                   locale === "ar" ? item.label : item.labelEn;
@@ -238,7 +238,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             compact
             className={`${locale === "ar" ? "left-0 right-0 md:right-[240px]" : "left-0 right-0 md:left-[240px]"}`}
           />
-          <main className="h-[calc(100vh-60px)] overflow-y-auto p-8 pt-8 mt-[60px]">
+          <main className="mt-[60px] h-[calc(100vh-60px)] overflow-y-auto p-8">
             {children}
           </main>
         </div>

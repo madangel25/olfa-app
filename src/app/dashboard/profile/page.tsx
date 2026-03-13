@@ -723,9 +723,9 @@ export default function ProfilePage() {
       )}
       <div className="mx-auto max-w-5xl space-y-6 rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
       {/* Page header */}
-      <header className={`mb-6 ${dir === "rtl" ? "text-right" : "text-left"}`}>
+      <header className={`space-y-2 ${dir === "rtl" ? "text-right" : "text-left"}`}>
         <h1 className="text-2xl font-semibold text-zinc-900">{t("profile.title")}</h1>
-        <p className="mt-2 text-sm text-zinc-500">{t("profile.subtitle")}</p>
+        <p className="text-sm text-zinc-500">{t("profile.subtitle")}</p>
       </header>
 
       {/* Stepper */}
@@ -1181,7 +1181,7 @@ export default function ProfilePage() {
       </AnimatePresence>
 
       {/* Save actions at bottom only — consistent spacing from last field */}
-      <div className={`mt-8 flex flex-wrap justify-end gap-3 pt-2 ${dir === "rtl" ? "flex-row-reverse" : ""}`}>
+      <div className={`flex flex-wrap justify-end gap-3 ${dir === "rtl" ? "flex-row-reverse" : ""}`}>
         <button
           type="button"
           onClick={handleSave}

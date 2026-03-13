@@ -250,7 +250,7 @@ export function Navbar({ compact = false, className = "" }: NavbarProps) {
                         </div>
                       </div>
                       <Link
-                        href="/profile"
+                        href="/dashboard/profile"
                         className={`mt-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm text-zinc-700 transition ${hoverBgClass} ${
                           isRtl ? "flex-row-reverse text-right" : "text-left"
                         }`}
