@@ -699,16 +699,18 @@ export default function ProfilePage() {
     primaryBtn: isFemale ? "bg-pink-500 hover:bg-pink-600 text-white border-0" : "bg-sky-500 hover:bg-sky-600 text-white border-0",
   };
 
-  const cardClass = "rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-6";
+  const cardClass = "rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6";
   const inputClass =
     `min-h-[2.75rem] w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-zinc-900 shadow-sm outline-none transition-all ${theme.focusRing} focus:ring-2 placeholder:text-zinc-400`;
   const buttonClass =
     `inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-medium outline-none transition-all ${theme.focusRing} focus:ring-2 disabled:opacity-60`;
 
   return (
-    <div className="min-h-full space-y-6 bg-[var(--theme-bg)] pb-8 font-[family-name:var(--font-cairo)]" dir={dir}>
+    <div className="min-h-full bg-[var(--theme-bg)] pb-8 font-[family-name:var(--font-cairo)]" dir={dir}>
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 space-y-6">
       {/* Page header: title and subtitle only — no Save buttons here; only "Save Changes" and "Save & Return" at bottom */}
-      <header className={`mb-8 ${dir === "rtl" ? "text-right" : "text-left"}`}>
+      <header className={`mb-2 ${dir === "rtl" ? "text-right" : "text-left"}`}>
         <h1 className="text-2xl font-semibold text-zinc-900">{t("profile.title")}</h1>
         <p className="mt-2 text-sm text-zinc-500">{t("profile.subtitle")}</p>
       </header>
@@ -730,7 +732,7 @@ export default function ProfilePage() {
 
       {/* Stepper */}
       <nav
-        className="flex flex-wrap gap-2 rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm sm:flex-nowrap"
+        className="flex flex-wrap gap-2 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm sm:flex-nowrap"
         aria-label="Profile sections"
       >
         {STEP_ORDER.map(({ id, icon: Icon, key }) => (
@@ -1200,6 +1202,8 @@ export default function ProfilePage() {
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           {t("profile.saveAndReturn")}
         </button>
+      </div>
+        </div>
       </div>
     </div>
   );
