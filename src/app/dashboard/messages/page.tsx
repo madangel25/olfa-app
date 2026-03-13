@@ -1085,7 +1085,7 @@ export default function MessagesPage() {
 
   return (
     <div
-      className="relative h-[calc(100vh-4rem)] w-full overflow-hidden font-[family-name:var(--font-cairo)]"
+      className="relative h-[calc(100vh-64px)] w-full overflow-hidden bg-white font-[family-name:var(--font-cairo)]"
       dir={dir}
       style={{ minHeight: 0 }}
     >

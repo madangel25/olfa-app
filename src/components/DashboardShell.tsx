@@ -237,17 +237,15 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </aside>
 
-        {/* Main: pt-16 (below navbar). Messages route is edge-to-edge (no padding); others get px-8 py-4. */}
+        {/* Main: pt-16 (navbar height). Messages = edge-to-edge, full height, white bg; others get px-8 py-4. */}
         <main
           className={`min-w-0 w-full flex-1 pt-16 ${
             pathname === "/dashboard/messages"
-              ? locale === "ar"
-                ? "md:pr-64"
-                : "md:pl-64"
+              ? `h-[calc(100vh-4rem)] bg-white ${locale === "ar" ? "md:pr-64" : "md:pl-64"}`
               : `px-8 py-4 ${locale === "ar" ? "md:pr-64" : "md:pl-64"}`
           }`}
         >
-          <div className="w-full h-full">{children}</div>
+          <div className="w-full h-full min-h-0">{children}</div>
         </main>
       </div>
       </div>
