@@ -67,7 +67,7 @@ export function MessageBubble({ message, showReceipt, onReact }: MessageBubblePr
         {showReceipt && isSent && message.receipt && (
           <ReadReceipt
             status={message.receipt}
-            seenAt={message.seenAt}
+            seenAt={message.seenAt ?? undefined}
           />
         )}
       </div>
