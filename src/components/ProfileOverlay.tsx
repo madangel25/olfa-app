@@ -268,13 +268,13 @@ export function ProfileOverlay({
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-black/40 transition-opacity"
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity"
         aria-hidden
         onClick={onClose}
       />
       <div
         ref={scrollRef}
-        className={`fixed top-0 bottom-0 z-50 w-full max-w-lg overflow-y-auto bg-[#FFFAF7] shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed top-0 bottom-0 z-50 w-full overflow-y-auto bg-[#FFFAF7] shadow-2xl transition-transform duration-300 ease-out md:w-[500px] lg:w-[600px] ${
           slideFromRight ? "right-0" : "left-0"
         } ${slideIn ? "translate-x-0" : slideFromRight ? "translate-x-full" : "-translate-x-full"}`}
         role="dialog"
@@ -373,7 +373,7 @@ export function ProfileOverlay({
 
                 {/* Hero */}
                 <div className={`flex gap-4 p-4 ${isRtl ? "flex-row-reverse" : ""}`}>
-                  <div className={`h-28 w-28 shrink-0 overflow-hidden rounded-xl ${themeAvatar} flex items-center justify-center text-4xl font-semibold`}>
+                  <div className={`w-full max-w-[11rem] aspect-square shrink-0 overflow-hidden rounded-xl ${themeAvatar} flex items-center justify-center text-4xl font-semibold`}>
                     {profile.photo_urls[profile.primary_photo_index] ?? profile.photo_urls[0] ? (
                       <img
                         src={profile.photo_urls[profile.primary_photo_index] ?? profile.photo_urls[0]}
@@ -409,11 +409,11 @@ export function ProfileOverlay({
 
                 {/* Strength & Charisma */}
                 <div className="border-t border-stone-100 bg-stone-50/50 px-4 py-3">
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
+                  <div className="grid w-full gap-3 sm:grid-cols-2">
+                    <div className="w-full min-w-0">
                       <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{copy.profileStrength}</p>
-                      <div className="flex items-center gap-2">
-                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-stone-200">
+                      <div className="flex w-full items-center gap-2">
+                        <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-stone-200">
                           <div
                             className={`h-full rounded-full ${themeProgress} transition-all`}
                             style={{ width: `${getProfileStrength(profile)}%` }}
@@ -422,7 +422,7 @@ export function ProfileOverlay({
                         <span className="w-9 shrink-0 text-sm font-medium text-stone-900">{getProfileStrength(profile)}%</span>
                       </div>
                     </div>
-                    <div>
+                    <div className="w-full min-w-0">
                       <p className={`mb-1 text-xs font-semibold uppercase tracking-wide ${themeAccent}`}>{copy.charismaRating}</p>
                       <div className={`flex items-center gap-1.5 ${isRtl ? "flex-row-reverse" : ""}`}>
                         <div className="flex gap-0.5">
