@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Check, CheckCheck, MoreVertical, Flag, ImagePlus, Eye, Plus, Mic, Loader2, X, Play, Pause, Sparkles, Zap, Gauge } from "lucide-react";
+import { Check, CheckCheck, MoreVertical, Flag, ImagePlus, Eye, Plus, Mic, Loader2, X, Play, Pause, Sparkles, Zap, Gauge, Send, EyeOff } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useOnlinePresence } from "@/components/DashboardShell";
@@ -1067,9 +1067,11 @@ export default function MessagesPage() {
       if (!path) continue;
       const isImage = m.message_type === "image";
       const isAudio = m.message_type === "audio";
+      const isViewOnceAlreadyViewed =
+        isImage && m.is_temporary && m.sender_id !== currentUserId && !!m.temporary_viewed_at && !revealedViewOnceUrls[m.id];
       const needUrl =
         isAudio ||
-        (isImage && (m.sender_id === currentUserId || m.temporary_viewed_at || revealedViewOnceUrls[m.id]));
+        (isImage && !isViewOnceAlreadyViewed && (m.sender_id === currentUserId || !m.is_temporary || revealedViewOnceUrls[m.id]));
       if (needUrl && path && !mediaUrls[path]) pathsToFetch.add(path);
     }
     pathsToFetch.forEach((path) => {
@@ -1085,183 +1087,199 @@ export default function MessagesPage() {
 
   return (
     <div className="font-[family-name:var(--font-jakarta)]" dir={dir}>
-      <div className="h-[calc(100vh-160px)] overflow-hidden rounded-[20px] border border-stone-200 bg-white shadow-[0_1px_3px_rgba(0,0,0,.07),0_1px_2px_rgba(0,0,0,.05)]">
-        <div className="flex h-full w-full flex-col">
-          {error && (
-            <div className="mx-3 mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              {error}
+      {error && (
+        <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+          {error}
+          <button type="button" onClick={() => setError(null)} className="float-right text-amber-600 hover:text-amber-800"><X className="h-4 w-4" /></button>
+        </div>
+      )}
+      <div className="h-[calc(100vh-140px)] overflow-hidden rounded-2xl border border-stone-200/80 bg-white shadow-lg">
+        <div className="flex h-full w-full">
+
+          {/* Conversation list sidebar */}
+          <aside className={`flex h-full w-full shrink-0 flex-col overflow-hidden border-stone-200/60 md:w-[300px] lg:w-[340px] ${selectedConversationId ? "hidden md:flex" : "flex"} ${dir === "rtl" ? "md:border-l" : "md:border-r"}`}>
+            <div className="shrink-0 border-b border-stone-100 px-5 py-4">
+              <h2 className="text-base font-bold text-stone-800">{copy.title}</h2>
             </div>
-          )}
-
-          <div className="grid min-h-0 flex-1 w-full grid-cols-1 overflow-hidden md:grid-cols-[240px_1fr]">
-        {/* Conversation list */}
-        <aside className="overflow-y-auto border-b border-stone-100 md:border-b-0 md:border-r md:border-r-stone-100">
-          {(conversations ?? []).map((c) => {
-            const selected = selectedConversationId === c.id;
-            const isPartnerOnline = onlineUserIds.has(c.partner_id) || isOnline(c.partner_last_seen_at);
-            return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => {
-                  setSelectedConversationId(c.id);
-                  setConversations((prev) =>
-                    prev.map((conv) =>
-                      conv.id === c.id ? { ...conv, hasUnread: false } : conv
-                    )
-                  );
-                }}
-                className={`flex w-full items-center gap-2.5 border-b border-stone-50 px-4 py-3.5 text-right transition ${selected ? "bg-rose-50" : "hover:bg-[#FFFAF7]"}`}
-              >
-                <div className="relative h-10 w-10 shrink-0">
-                  <div className="h-10 w-10 overflow-hidden rounded-full bg-stone-100">
-                    {c.partner_photo ? (
-                      <img src={c.partner_photo} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-stone-400">
-                        {(c.partner_name || "?").slice(0, 1)}
-                      </div>
-                    )}
-                  </div>
-                  <span
-                    className={`ml-1 inline-flex h-2.5 w-2.5 rounded-full border border-white ${
-                      isPartnerOnline ? "bg-emerald-500" : "bg-stone-300"
-                    }`}
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-xs font-semibold text-stone-800">{c.partner_name}</p>
-                    <span className="flex shrink-0 items-center gap-1">
-                      {c.hasUnread && (
-                        <span className="h-2 w-2 rounded-full bg-rose-500" title={copy.unread} />
-                      )}
-                      <span className="text-[10px] text-stone-400">{formatTime(c.last_message_at)}</span>
-                    </span>
-                  </div>
-                  <p className="truncate text-[11px] text-stone-500">{c.last_message || copy.startChat}</p>
-                </div>
-              </button>
-            );
-          })}
-          {conversations.length === 0 && (
-            <p className="p-4 text-sm text-stone-400">{copy.noConversations}</p>
-          )}
-
-        </aside>
-
-        {/* Message thread */}
-        <section className="flex min-h-0 flex-col overflow-visible">
-          <div className="relative z-30 border-b border-stone-200/60 px-4 py-3">
-            {selectedConversation ? (
-              <>
-                <div className="flex items-center gap-2">
-                  <Link
-                    href={`/profile/${selectedConversation.partner_id}`}
-                    className="flex flex-1 min-w-0 items-center gap-3 no-underline outline-none focus:ring-2 focus:ring-rose-500/20 focus:ring-offset-1 rounded-lg -m-1 p-1"
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              {(conversations ?? []).map((c) => {
+                const selected = selectedConversationId === c.id;
+                const isPartnerOnline = onlineUserIds.has(c.partner_id) || isOnline(c.partner_last_seen_at);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedConversationId(c.id);
+                      setConversations((prev) =>
+                        prev.map((conv) =>
+                          conv.id === c.id ? { ...conv, hasUnread: false } : conv
+                        )
+                      );
+                    }}
+                    className={`flex w-full items-center gap-3 px-5 py-3 transition ${selected ? "bg-rose-50/70" : "hover:bg-stone-50"}`}
                   >
-                    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-stone-100">
-                      {selectedConversation.partner_photo ? (
-                        <img
-                          src={selectedConversation.partner_photo}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-stone-400">
-                          {(selectedConversation.partner_name || "?").slice(0, 1)}
-                        </div>
-                      )}
+                    <div className="relative shrink-0">
+                      <div className="h-11 w-11 overflow-hidden rounded-full bg-stone-100 ring-2 ring-white">
+                        {c.partner_photo ? (
+                          <img src={c.partner_photo} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-rose-400">
+                            {(c.partner_name || "?").slice(0, 1)}
+                          </div>
+                        )}
+                      </div>
+                      <span
+                        className={`absolute -bottom-0.5 ${dir === "rtl" ? "-left-0.5" : "-right-0.5"} h-3 w-3 rounded-full border-2 border-white ${
+                          isPartnerOnline ? "bg-emerald-500" : "bg-stone-300"
+                        }`}
+                      />
                     </div>
-                    <p className="text-sm font-semibold text-stone-800 truncate">
-                      {selectedConversation.partner_name}
-                    </p>
-                  </Link>
-                  <div className="relative shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setShowInsightsPanel((v) => !v)}
-                      className="rounded-lg p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
-                      aria-label={copy.insights}
-                    >
-                      <Sparkles className="h-5 w-5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setHeaderMenuOpen((o) => !o)}
-                      className="rounded-lg p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
-                      aria-label={copy.menu}
-                    >
-                      <MoreVertical className="h-5 w-5" />
-                    </button>
-                    {headerMenuOpen && (
-                      <>
-                        <div className="mt-1 w-48 rounded-xl border border-stone-200 bg-white py-1 shadow-xl">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setHeaderMenuOpen(false);
-                              setReportModalOpen(true);
-                            }}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-stone-600 hover:bg-red-50 hover:text-red-700"
-                          >
-                            <Flag className="h-4 w-4" />
-                            {copy.reportUser}
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate text-[13px] font-semibold text-stone-800">{c.partner_name}</p>
+                        <span className="flex shrink-0 items-center gap-1.5">
+                          {c.hasUnread && (
+                            <span className="h-2 w-2 rounded-full bg-rose-500" title={copy.unread} />
+                          )}
+                          <span className="text-[10px] text-stone-400">{formatTime(c.last_message_at)}</span>
+                        </span>
+                      </div>
+                      <p className={`mt-0.5 truncate text-xs ${c.hasUnread ? "font-medium text-stone-700" : "text-stone-500"}`}>{c.last_message || copy.startChat}</p>
+                    </div>
+                  </button>
+                );
+              })}
+              {conversations.length === 0 && (
+                <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
+                  <p className="text-sm text-stone-400">{copy.noConversations}</p>
                 </div>
-                {(() => {
-                  const online =
-                    onlineUserIds.has(selectedConversation.partner_id) ||
-                    isOnline(selectedConversation.partner_last_seen_at);
-                  let status: string | null = null;
-                  if (isPartnerTyping) {
-                    status = copy.typingNow;
-                  } else if (online) {
-                    status = copy.onlineNow;
-                  } else if (selectedConversation.partner_last_seen_at) {
-                    status = `${copy.lastSeen} ${formatTime(selectedConversation.partner_last_seen_at)}`;
-                  }
-                  return status ? (
-                    <p className="mt-0.5 text-xs text-stone-400">{status}</p>
-                  ) : null;
-                })()}
-              </>
-            ) : (
-              <p className="text-sm font-semibold text-stone-400">{copy.selectConversation}</p>
-            )}
-          </div>
+              )}
+            </div>
+          </aside>
+
+          {/* Chat thread */}
+          <section className={`flex min-h-0 flex-1 flex-col overflow-hidden ${selectedConversationId ? "flex" : "hidden md:flex"}`}>
+            {/* Chat header */}
+            <div className="relative z-30 shrink-0 border-b border-stone-100 bg-white px-4 py-3">
+              {selectedConversation ? (
+                <>
+                  <div className="flex items-center gap-3">
+                    {/* Back button for mobile */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedConversationId(null)}
+                      className="shrink-0 rounded-lg p-1.5 text-stone-500 hover:bg-stone-100 md:hidden"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                    <Link
+                      href={`/profile/${selectedConversation.partner_id}`}
+                      className="flex min-w-0 flex-1 items-center gap-3 rounded-lg no-underline outline-none transition hover:bg-stone-50 -m-1 p-1"
+                    >
+                      <div className="relative shrink-0">
+                        <div className="h-10 w-10 overflow-hidden rounded-full bg-stone-100">
+                          {selectedConversation.partner_photo ? (
+                            <img src={selectedConversation.partner_photo} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-rose-400">
+                              {(selectedConversation.partner_name || "?").slice(0, 1)}
+                            </div>
+                          )}
+                        </div>
+                        {(() => {
+                          const online = onlineUserIds.has(selectedConversation.partner_id) || isOnline(selectedConversation.partner_last_seen_at);
+                          return online ? (
+                            <span className={`absolute -bottom-0.5 ${dir === "rtl" ? "-left-0.5" : "-right-0.5"} h-3 w-3 rounded-full border-2 border-white bg-emerald-500`} />
+                          ) : null;
+                        })()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-stone-800">{selectedConversation.partner_name}</p>
+                        {(() => {
+                          const online = onlineUserIds.has(selectedConversation.partner_id) || isOnline(selectedConversation.partner_last_seen_at);
+                          if (isPartnerTyping) return <p className="text-xs font-medium text-rose-500">{copy.typingNow}</p>;
+                          if (online) return <p className="text-xs text-emerald-600">{copy.onlineNow}</p>;
+                          if (selectedConversation.partner_last_seen_at) return <p className="text-xs text-stone-400">{copy.lastSeen} {formatTime(selectedConversation.partner_last_seen_at)}</p>;
+                          return null;
+                        })()}
+                      </div>
+                    </Link>
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      <button
+                        type="button"
+                        onClick={() => setShowInsightsPanel((v) => !v)}
+                        className={`rounded-lg p-2 transition ${showInsightsPanel ? "bg-rose-50 text-rose-500" : "text-stone-400 hover:bg-stone-100 hover:text-stone-600"}`}
+                        aria-label={copy.insights}
+                      >
+                        <Sparkles className="h-5 w-5" />
+                      </button>
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setHeaderMenuOpen((o) => !o)}
+                          className="rounded-lg p-2 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600"
+                          aria-label={copy.menu}
+                        >
+                          <MoreVertical className="h-5 w-5" />
+                        </button>
+                        {headerMenuOpen && (
+                          <>
+                            <div className="fixed inset-0 z-20" onClick={() => setHeaderMenuOpen(false)} />
+                            <div className={`absolute top-full z-30 mt-1 w-48 rounded-xl border border-stone-200 bg-white py-1 shadow-xl ${dir === "rtl" ? "left-0" : "right-0"}`}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setHeaderMenuOpen(false);
+                                  setReportModalOpen(true);
+                                }}
+                                className={`flex w-full items-center gap-2 px-3 py-2.5 text-sm text-stone-600 transition hover:bg-red-50 hover:text-red-700 ${dir === "rtl" ? "text-right" : "text-left"}`}
+                              >
+                                <Flag className="h-4 w-4" />
+                                {copy.reportUser}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <p className="py-1 text-sm font-medium text-stone-400">{copy.selectConversation}</p>
+              )}
+            </div>
 
           {selectedConversation && showInsightsPanel && (
-            <div className="border-b border-stone-200/60 bg-stone-50/40 px-4 py-3">
+            <div className="shrink-0 border-b border-stone-100 bg-stone-50/60 px-4 py-3">
               {!myIsVip ? (
-                <div className={`space-y-2 ${dir === "rtl" ? "text-right" : "text-left"}`}>
-                  <p className="text-sm font-medium text-stone-700">{copy.vipInsightsLocked}</p>
-                  <Link href="/dashboard" className="inline-flex rounded-lg bg-amber-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-600">
+                <div className={`flex items-center justify-between gap-3 ${dir === "rtl" ? "flex-row-reverse" : ""}`}>
+                  <p className="text-xs font-medium text-stone-500">{copy.vipInsightsLocked}</p>
+                  <Link href="/dashboard" className="shrink-0 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-600">
                     {copy.vipUpgrade}
                   </Link>
                 </div>
               ) : (
-    <div>
-                  <p className="mb-3 text-sm font-semibold text-stone-700">{copy.personalityInsights}</p>
-                  <div className="space-y-3">
-                    <div className="rounded-xl bg-white/80 p-2">
-                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-stone-500"><Zap className="h-3.5 w-3.5 text-rose-500" /> {copy.responseSpeed}</p>
-                      <p className="text-sm font-semibold text-stone-800">{personalityInsights.responseSpeedLabel}</p>
-                    </div>
-                    <div className="rounded-xl bg-white/80 p-2">
-                      <p className="mb-1 flex items-center gap-1 text-xs font-medium text-stone-500"><Gauge className="h-3.5 w-3.5 text-rose-500" /> {copy.engagement}</p>
-                      <p className="text-sm font-semibold text-stone-800">{personalityInsights.engagementLabel}</p>
-                    </div>
-                    <div className="rounded-xl bg-white/80 p-2">
-                      <p className="mb-1 text-xs font-medium text-stone-500">{copy.seriousnessScore}</p>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-stone-200">
-                        <div className="h-full rounded-full bg-rose-400" style={{ width: `${personalityInsights.score}%` }} />
+                <div>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-stone-500">{copy.personalityInsights}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm">
+                      <Zap className="h-3.5 w-3.5 text-rose-500" />
+                      <div>
+                        <p className="text-[10px] text-stone-400">{copy.responseSpeed}</p>
+                        <p className="text-xs font-semibold text-stone-800">{personalityInsights.responseSpeedLabel}</p>
                       </div>
-                      <p className="mt-1 text-xs font-semibold text-stone-700">{personalityInsights.score}%</p>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm">
+                      <Gauge className="h-3.5 w-3.5 text-rose-500" />
+                      <div>
+                        <p className="text-[10px] text-stone-400">{copy.engagement}</p>
+                        <p className="text-xs font-semibold text-stone-800">{personalityInsights.engagementLabel}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-lg bg-white px-3 py-2 shadow-sm">
+                      <div className="h-6 w-6 shrink-0 rounded-full bg-stone-100 text-center text-[10px] font-bold leading-6 text-rose-600">{personalityInsights.score}%</div>
+                      <p className="text-xs text-stone-500">{copy.seriousnessScore}</p>
                     </div>
                   </div>
                 </div>
@@ -1272,60 +1290,74 @@ export default function MessagesPage() {
           <div className="min-h-0 flex-1 overflow-y-auto bg-[#FFFAF7] px-4 py-4">
             {!selectedConversationId ? (
               <div className="flex h-full min-h-[200px] flex-col items-center justify-center text-center text-stone-400">
+                <div className="h-14 w-14 rounded-2xl bg-stone-100 flex items-center justify-center mb-3">
+                  <Send className="h-6 w-6 text-stone-300" />
+                </div>
                 <p className="text-sm">{copy.selectConversationToStart}</p>
               </div>
             ) : loadingMessages ? (
-              <p className="text-center text-sm text-stone-400">{copy.loading}</p>
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin text-rose-400" />
+              </div>
             ) : messages.length === 0 ? (
-              <p className="text-center text-sm text-stone-400">{copy.noMessages}</p>
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <p className="text-sm text-stone-400">{copy.noMessages}</p>
+              </div>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-y-1.5">
                 {(messages ?? []).map((m) => {
                   const mine = m.sender_id === currentUserId;
                   const isImage = m.message_type === "image";
                   const isAudio = m.message_type === "audio";
                   const viewOnceNotViewed =
                     isImage && m.is_temporary && !mine && !m.temporary_viewed_at && !revealedViewOnceUrls[m.id];
+                  const viewOnceAlreadyViewed =
+                    isImage && m.is_temporary && !mine && !!m.temporary_viewed_at && !revealedViewOnceUrls[m.id];
                   const imageUrl =
-                    isImage && m.attachment_url
+                    isImage && m.attachment_url && !viewOnceAlreadyViewed
                       ? revealedViewOnceUrls[m.id] || (viewOnceNotViewed ? null : mediaUrls[m.attachment_url])
                       : null;
                   const audioUrl = isAudio && m.attachment_url ? mediaUrls[m.attachment_url] : null;
                   const isLoadingMedia =
-                    (isImage && m.attachment_url && !viewOnceNotViewed && !imageUrl) ||
+                    (isImage && m.attachment_url && !viewOnceNotViewed && !viewOnceAlreadyViewed && !imageUrl) ||
                     (isAudio && m.attachment_url && !audioUrl);
 
                   return (
                     <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                       <div
-                        className={`max-w-[70%] px-3.5 py-2.5 text-[13px] leading-[1.5] ${
+                        className={`max-w-[75%] px-3.5 py-2 text-[13.5px] leading-relaxed shadow-sm ${
                           mine
-                            ? "self-end rounded-[16px_16px_4px_16px] bg-rose-500 text-white"
-                            : "self-start rounded-[16px_16px_16px_4px] border border-stone-200 bg-white text-stone-800"
+                            ? "rounded-2xl rounded-br-sm bg-rose-500 text-white"
+                            : "rounded-2xl rounded-bl-sm border border-stone-200/60 bg-white text-stone-800"
                         }`}
                       >
                         {isImage && m.attachment_url && (
-                          <div className="min-w-[120px] min-h-[100px]">
-                            {viewOnceNotViewed ? (
+                          <div className="min-w-[120px]">
+                            {viewOnceAlreadyViewed ? (
+                              <div className="flex items-center gap-2 rounded-lg bg-stone-100/80 px-4 py-3 text-sm text-stone-400">
+                                <Eye className="h-4 w-4" />
+                                {locale === "ar" ? "تم عرض الصورة" : "Photo was viewed"}
+                              </div>
+                            ) : viewOnceNotViewed ? (
                               <button
                                 type="button"
                                 onClick={() => void revealViewOnce(m.id, m.attachment_url!)}
-                                className="flex items-center gap-2 rounded-lg border border-dashed border-stone-300 bg-white/80 px-4 py-3 text-sm text-stone-500 hover:bg-white"
+                                className="flex items-center gap-2 rounded-lg border border-dashed border-stone-300 bg-white/80 px-4 py-3 text-sm text-stone-500 transition hover:bg-white"
                               >
                                 <Eye className="h-4 w-4" />
                                 {copy.tapToView}
                               </button>
                             ) : isLoadingMedia ? (
-                              <div className="flex items-center justify-center py-8">
-                                <Loader2 className="h-8 w-8 animate-spin text-stone-300" />
+                              <div className="flex items-center justify-center py-6">
+                                <Loader2 className="h-6 w-6 animate-spin text-stone-300" />
                               </div>
                             ) : imageUrl ? (
-                              <img src={imageUrl} alt="" className="max-h-64 max-w-[300px] rounded-xl object-contain shadow-sm" />
+                              <img src={imageUrl} alt="" className="max-h-64 max-w-[300px] rounded-xl object-contain" />
                             ) : (
                               <span className="text-xs text-stone-400">{copy.image}</span>
                             )}
-                            {m.is_temporary && (
-                              <p className="mt-1 text-[10px] text-stone-400">{copy.viewOnce}</p>
+                            {m.is_temporary && !viewOnceAlreadyViewed && (
+                              <p className={`mt-1 text-[10px] ${mine ? "text-white/60" : "text-stone-400"}`}>{copy.viewOnce}</p>
                             )}
                           </div>
                         )}
@@ -1344,16 +1376,14 @@ export default function MessagesPage() {
                         {(!isImage && !isAudio) && (
                           <p className="whitespace-pre-wrap break-words">{m.content}</p>
                         )}
-                        <div className={`mt-1 flex items-center gap-1 text-[10px] ${mine ? "text-white/70" : "text-stone-300"}`}>
+                        <div className={`mt-1 flex items-center gap-1 text-[10px] ${mine ? "justify-end text-white/60" : "text-stone-400"}`}>
                           <span>{formatTime(m.created_at)}</span>
                           {mine && (
-                            <span className="flex items-center">
-                              {m.is_read ? (
-                                <CheckCheck size={14} className="text-white/80" />
-                              ) : (
-                                <Check size={14} className="text-white/50" />
-                              )}
-                            </span>
+                            m.is_read ? (
+                              <CheckCheck size={13} className="text-white/80" />
+                            ) : (
+                              <Check size={13} className="text-white/50" />
+                            )
                           )}
                         </div>
                       </div>
@@ -1366,158 +1396,154 @@ export default function MessagesPage() {
           </div>
 
           {selectedConversationId && (
-            <div className="border-t border-stone-200/60 p-3">
-              {recording !== null && (
-                <div className="mb-2 flex items-center justify-between rounded-xl border border-stone-200 bg-stone-50 px-3 py-2">
-                  <span className="text-sm text-stone-600">
-                    {copy.recording} {Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, "0")}
-                  </span>
+            <div className="shrink-0 border-t border-stone-100 bg-white px-3 py-2.5">
+              {recording !== null ? (
+                <div className="flex items-center justify-between rounded-xl bg-rose-50 px-4 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-rose-500" />
+                    <span className="text-sm font-medium text-rose-700">
+                      {Math.floor(recordingSeconds / 60)}:{(recordingSeconds % 60).toString().padStart(2, "0")}
+                    </span>
+                  </div>
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={cancelRecording}
-                      className="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-500 hover:bg-stone-200"
-                    >
+                    <button type="button" onClick={cancelRecording} className="rounded-lg px-3 py-1.5 text-sm font-medium text-stone-500 transition hover:bg-white">
                       {copy.cancel}
                     </button>
-                    <button
-                      type="button"
-                      onClick={sendRecording}
-                      className="rounded-lg bg-rose-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-600"
-                    >
-                      {copy.send}
+                    <button type="button" onClick={sendRecording} className="rounded-lg bg-rose-500 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-rose-600">
+                      <Send className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
-              )}
-              <div className="flex items-center gap-2">
-                <div className="relative shrink-0">
+              ) : (
+                <div className="flex items-center gap-2">
+                  <div className="relative shrink-0">
+                    <input ref={imageInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImageSelect} />
+                    <button
+                      type="button"
+                      onClick={() => setShowMediaMenu((o) => !o)}
+                      className={`rounded-full p-2 transition ${showMediaMenu ? "bg-rose-50 text-rose-500" : "text-stone-400 hover:bg-stone-100 hover:text-stone-600"}`}
+                      aria-label={copy.attach}
+                    >
+                      <Plus className="h-5 w-5" />
+                    </button>
+                    {showMediaMenu && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setShowMediaMenu(false)} />
+                        <div className={`absolute bottom-full z-20 mb-2 flex gap-1 rounded-xl border border-stone-200 bg-white p-1 shadow-lg ${dir === "rtl" ? "right-0" : "left-0"}`}>
+                          <button
+                            type="button"
+                            onClick={() => { imageInputRef.current?.click(); setShowMediaMenu(false); }}
+                            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-stone-600 transition hover:bg-stone-50"
+                          >
+                            <ImagePlus className="h-4 w-4 text-rose-500" />
+                            {copy.photo}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setShowMediaMenu(false); void startRecording(); }}
+                            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-stone-600 transition hover:bg-stone-50"
+                          >
+                            <Mic className="h-4 w-4 text-rose-500" />
+                            {copy.voice}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                   <input
-                    ref={imageInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={handleImageSelect}
+                    value={draft}
+                    onChange={(e) => {
+                      setDraft(e.target.value);
+                      sendTypingStatus(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        void handleSend();
+                      }
+                    }}
+                    placeholder={copy.typeMessage}
+                    className="min-w-0 flex-1 rounded-full border border-stone-200 bg-stone-50/80 px-4 py-2.5 text-[13px] text-stone-900 placeholder:text-stone-400 focus:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-500/10"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowMediaMenu((o) => !o)}
-                    className="rounded-xl p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-600"
-                    aria-label={copy.attach}
+                    onClick={() => void handleSend()}
+                    disabled={!draft.trim() || !!uploadingMedia}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-500 text-white shadow-sm transition hover:bg-rose-600 disabled:opacity-40"
                   >
-                    <Plus className="h-5 w-5" />
+                    {uploadingMedia ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </button>
-                  {showMediaMenu && (
-                    <>
-                      <div className="mt-2 flex gap-1 rounded-xl border border-stone-200 bg-white p-1 shadow-lg">
-                        <button
-                          type="button"
-                          onClick={() => { imageInputRef.current?.click(); setShowMediaMenu(false); }}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-stone-600 hover:bg-stone-50"
-                        >
-                          <ImagePlus className="h-4 w-4" />
-                          {copy.photo}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { setShowMediaMenu(false); void startRecording(); }}
-                          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-stone-600 hover:bg-stone-50"
-                        >
-                          <Mic className="h-4 w-4" />
-                          {copy.voice}
-                        </button>
-                      </div>
-                    </>
-                  )}
                 </div>
-                <input
-                  value={draft}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setDraft(value);
-                    sendTypingStatus(true);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      void handleSend();
-                    }
-                  }}
-                  placeholder={copy.typeMessage}
-                  className="flex-1 rounded-full border border-stone-200 bg-stone-50 px-3.5 py-2 text-[13px] text-stone-900 focus:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-500/10"
-                />
-                <button
-                  type="button"
-                  onClick={() => void handleSend()}
-                  disabled={!draft.trim() || !!uploadingMedia}
-                  className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-rose-500 text-white hover:bg-rose-600 disabled:opacity-50"
-                >
-                  {uploadingMedia ? <Loader2 className="h-5 w-5 animate-spin" /> : copy.send}
-                </button>
-              </div>
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <p className="text-[11px] text-stone-400">
-                  {copy.helperVip}
-                </p>
-              </div>
+              )}
             </div>
           )}
-        </section>
-          </div>
+          </section>
         </div>
       </div>
 
-      {/* Image preview modal (before send) */}
+      {/* Image preview overlay */}
       {imagePreview && (
-        <div className="mt-4 flex items-center justify-center bg-black/5 p-4">
-          <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-4 shadow-xl">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
             <div className="relative aspect-square overflow-hidden rounded-xl bg-stone-50">
               <img src={imagePreview.objectUrl} alt={copy.photoPreviewAlt} className="h-full w-full object-contain" />
+              <button
+                type="button"
+                onClick={() => { URL.revokeObjectURL(imagePreview.objectUrl); setImagePreview(null); }}
+                className="absolute right-2 top-2 rounded-full bg-black/40 p-1.5 text-white backdrop-blur transition hover:bg-black/60"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
-            <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-stone-600">
-              <Eye className="h-4 w-4" />
+            <label className="mt-3 flex cursor-pointer items-center gap-2 rounded-lg bg-stone-50 px-3 py-2.5 text-sm text-stone-600 transition hover:bg-stone-100">
               <input
                 type="checkbox"
                 checked={imagePreviewViewOnce}
                 onChange={(e) => setImagePreviewViewOnce(e.target.checked)}
-                className="rounded border-stone-300 text-rose-600"
+                className="h-4 w-4 rounded border-stone-300 text-rose-600 focus:ring-rose-500"
               />
+              <EyeOff className="h-4 w-4" />
               {copy.viewOnceLabel}
             </label>
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
                 onClick={() => { URL.revokeObjectURL(imagePreview.objectUrl); setImagePreview(null); }}
-                className="flex-1 rounded-xl border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50"
+                className="flex-1 rounded-xl border border-stone-200 py-2.5 text-sm font-medium text-stone-600 transition hover:bg-stone-50"
               >
                 {copy.cancel}
               </button>
               <button
                 type="button"
                 onClick={() => void handleSendImage()}
-                className="flex-1 rounded-lg bg-rose-500 px-4 py-2 text-sm font-medium text-white hover:bg-rose-600"
+                className="flex-1 rounded-xl bg-rose-500 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-600"
               >
-                {copy.send}
+                <span className="flex items-center justify-center gap-1.5"><Send className="h-4 w-4" /> {copy.send}</span>
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Report User modal */}
+      {/* Report User overlay */}
       {reportModalOpen && selectedConversation && (
-        <div className="mt-4 flex items-center justify-center bg-black/5 p-4">
-          <div className="w-full max-w-sm rounded-2xl border border-stone-200 bg-white p-4 shadow-xl">
-            <h3 className="text-lg font-semibold text-stone-800">{copy.reportTitle}</h3>
-            <p className="mt-1 text-sm text-stone-500">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-stone-800">{copy.reportTitle}</h3>
+              <button type="button" onClick={() => setReportModalOpen(false)} className="rounded-lg p-1 text-stone-400 transition hover:bg-stone-100 hover:text-stone-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-stone-500">
               {copy.reportDescriptionPrefix} {selectedConversation.partner_name}? {copy.reportDescriptionSuffix}
             </p>
             <div className="mt-4">
-              <label className="block text-sm font-medium text-stone-600">{copy.reason}</label>
+              <label className="block text-xs font-semibold uppercase tracking-wide text-stone-500">{copy.reason}</label>
               <select
                 value={reportReason}
                 onChange={(e) => setReportReason(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800"
+                className="mt-1.5 w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-sm text-stone-800 focus:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-500/10"
               >
                 {REPORT_REASONS.map((r) => (
                   <option key={r.value} value={r.value}>
@@ -1526,11 +1552,11 @@ export default function MessagesPage() {
                 ))}
               </select>
             </div>
-            <div className="mt-4 flex gap-2">
+            <div className="mt-5 flex gap-2">
               <button
                 type="button"
                 onClick={() => setReportModalOpen(false)}
-                className="flex-1 rounded-xl border border-stone-200 px-4 py-2 text-sm font-medium text-stone-600 hover:bg-stone-50"
+                className="flex-1 rounded-xl border border-stone-200 py-2.5 text-sm font-medium text-stone-600 transition hover:bg-stone-50"
               >
                 {copy.cancel}
               </button>
@@ -1538,14 +1564,14 @@ export default function MessagesPage() {
                 type="button"
                 onClick={() => void handleReportSubmit()}
                 disabled={reportSubmitting}
-                className="flex-1 rounded-xl bg-red-500 px-4 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50"
+                className="flex-1 rounded-xl bg-red-500 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-600 disabled:opacity-50"
               >
-                {reportSubmitting ? copy.submitting : copy.submitReport}
+                {reportSubmitting ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : copy.submitReport}
               </button>
             </div>
           </div>
         </div>
-        )}
+      )}
     </div>
   );
 }
