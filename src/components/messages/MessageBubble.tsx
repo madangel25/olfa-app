@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { Message } from "@/types/messages";
+import { avatarColors } from "@/types/messages";
 import { ReadReceipt } from "./ReadReceipt";
 import { EmojiPicker } from "./EmojiPicker";
 
@@ -27,10 +28,10 @@ export function MessageBubble({ message, showReceipt, onReact }: MessageBubblePr
         <button
           type="button"
           onClick={() => setPickerOpen((o) => !o)}
-          className={`px-4 py-2.5 text-left text-sm transition ${
+          className={`rounded-2xl px-4 py-2.5 text-left text-sm transition ${
             isSent
-              ? "rounded-[16px_4px_16px_16px] bg-[#1a1a1a] text-white hover:opacity-95"
-              : "rounded-[4px_16px_16px_16px] bg-stone-200 text-stone-900 hover:bg-stone-300"
+              ? "rounded-br-md bg-[#1a1a1a] text-white hover:opacity-95"
+              : "rounded-bl-md bg-stone-200 text-stone-900 hover:bg-stone-300"
           }`}
         >
           {message.text}
