@@ -83,7 +83,7 @@ export default function DiscoveryPage() {
   const isRtl = dir === "rtl";
   const loadingText = locale === "ar" ? "جاري التحميل…" : "Loading…";
 
-  const copy = {
+  const pageStrings = {
     newMembers: locale === "ar" ? "الأعضاء الجدد" : "New Members",
     advancedSearch: locale === "ar" ? "بحث متقدم" : "Advanced Search",
     searchPlaceholder: locale === "ar" ? "البحث بالاسم أو المدينة أو المهنة…" : "Search by name, city, or job…",
@@ -110,6 +110,13 @@ export default function DiscoveryPage() {
     ignore: locale === "ar" ? "تجاهل" : "Ignore",
     ignored: locale === "ar" ? "تم التجاهل" : "Ignored",
     visited: locale === "ar" ? "زرت هذا الملف" : "Visited",
+  };
+
+  const overlayStrings: ProfileOverlayCopy = {
+    like: locale === "ar" ? "إعجاب" : "Like",
+    liked: locale === "ar" ? "أُعجبت" : "Liked",
+    ignore: locale === "ar" ? "تجاهل" : "Ignore",
+    ignored: locale === "ar" ? "تم التجاهل" : "Ignored",
     close: locale === "ar" ? "إغلاق" : "Close",
     sendMessage: locale === "ar" ? "إرسال رسالة" : "Send Message",
     profileStrength: t("profile.profileStrength"),
@@ -117,7 +124,7 @@ export default function DiscoveryPage() {
     aboutMe: t("profile.aboutMe"),
     idealPartner: t("profile.idealPartner"),
     years: locale === "ar" ? "سنة" : "y/o",
-  } satisfies ProfileOverlayCopy;
+  };
 
   useEffect(() => {
     const run = async () => {
@@ -268,7 +275,7 @@ export default function DiscoveryPage() {
       }
     } else {
       setLikes((prev) => new Set(prev).add(toUserId));
-      if (card?.they_liked_me) setMatchToast(card.full_name ?? copy.match);
+      if (card?.they_liked_me) setMatchToast(card.full_name ?? pageStrings.match);
       setUsers((prev) =>
         prev.map((u) =>
           u.id === toUserId
@@ -453,10 +460,10 @@ export default function DiscoveryPage() {
         >
           <div className="flex items-center gap-1.5">
             <p className="truncate text-[14px] font-semibold text-stone-900">{u.full_name ?? "—"}</p>
-            {u.age != null && <span className="shrink-0 text-xs text-stone-400">{u.age} {copy.years}</span>}
+            {u.age != null && <span className="shrink-0 text-xs text-stone-400">{u.age} {pageStrings.years}</span>}
             {haveVisited && (
-              <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium text-stone-500" title={copy.visited}>
-                {copy.visited}
+              <span className="shrink-0 rounded bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium text-stone-500" title={pageStrings.visited}>
+                {pageStrings.visited}
               </span>
             )}
           </div>
@@ -469,7 +476,7 @@ export default function DiscoveryPage() {
             {maritalLabel && <span>· {maritalLabel}</span>}
           </div>
           <p className={`mt-0.5 text-[11px] font-medium ${isOnline ? "text-emerald-600" : "text-stone-400"}`}>
-            {isOnline ? copy.online : copy.offline}
+            {isOnline ? pageStrings.online : pageStrings.offline}
           </p>
         </button>
 
@@ -484,8 +491,8 @@ export default function DiscoveryPage() {
                 ? "border-stone-400 bg-stone-200 text-stone-700 hover:bg-stone-300"
                 : "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
             }`}
-            title={iIgnoredThem ? copy.ignored : copy.ignore}
-            aria-label={iIgnoredThem ? copy.ignored : copy.ignore}
+            title={iIgnoredThem ? pageStrings.ignored : pageStrings.ignore}
+            aria-label={iIgnoredThem ? pageStrings.ignored : pageStrings.ignore}
           >
             {ignoringId === u.id ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -502,8 +509,8 @@ export default function DiscoveryPage() {
                 onClick={() => handleLike(u.id)}
                 disabled={likingId === u.id}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-rose-300 bg-rose-100 text-rose-600 transition hover:bg-rose-200 disabled:opacity-50"
-                title={copy.liked}
-                aria-label={copy.liked}
+                title={pageStrings.liked}
+                aria-label={pageStrings.liked}
               >
                 {likingId === u.id ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -517,8 +524,8 @@ export default function DiscoveryPage() {
                 onClick={() => handleLike(u.id)}
                 disabled={likingId === u.id}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-rose-200 bg-rose-50 text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
-                title={copy.like}
-                aria-label={copy.like}
+                title={pageStrings.like}
+                aria-label={pageStrings.like}
               >
                 {likingId === u.id ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -557,7 +564,7 @@ export default function DiscoveryPage() {
           }`}
         >
           <Users className="h-4 w-4" />
-          {copy.newMembers}
+          {pageStrings.newMembers}
         </button>
         <button
           type="button"
@@ -569,7 +576,7 @@ export default function DiscoveryPage() {
           }`}
         >
           <SlidersHorizontal className="h-4 w-4" />
-          {copy.advancedSearch}
+          {pageStrings.advancedSearch}
         </button>
       </div>
 
@@ -583,7 +590,7 @@ export default function DiscoveryPage() {
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={copy.searchPlaceholder}
+              placeholder={pageStrings.searchPlaceholder}
               className={`w-full rounded-xl border border-stone-200 bg-white py-2.5 text-[13px] text-stone-900 placeholder:text-stone-400 focus:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-500/10 ${isRtl ? "pl-4 pr-10" : "pl-10 pr-4"}`}
               dir={isRtl ? "rtl" : "ltr"}
             />
@@ -593,13 +600,13 @@ export default function DiscoveryPage() {
           <div className={`grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-4 ${isRtl ? "text-right" : ""}`}>
             {/* Age range */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold uppercase tracking-[.06em] text-stone-400">{copy.age}</label>
+              <label className="text-[11px] font-semibold uppercase tracking-[.06em] text-stone-400">{pageStrings.age}</label>
               <div className="flex gap-1.5">
                 <input
                   type="number"
                   min={18}
                   max={120}
-                  placeholder={copy.min}
+                  placeholder={pageStrings.min}
                   value={filterAgeMin === "" ? "" : filterAgeMin}
                   onChange={(e) => setFilterAgeMin(e.target.value === "" ? "" : Math.max(18, Math.min(120, Number(e.target.value))))}
                   className="w-full rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-[13px] text-stone-900 focus:border-rose-300 focus:outline-none focus:ring-1 focus:ring-rose-500/10"
@@ -608,7 +615,7 @@ export default function DiscoveryPage() {
                   type="number"
                   min={18}
                   max={120}
-                  placeholder={copy.max}
+                  placeholder={pageStrings.max}
                   value={filterAgeMax === "" ? "" : filterAgeMax}
                   onChange={(e) => setFilterAgeMax(e.target.value === "" ? "" : Math.max(18, Math.min(120, Number(e.target.value))))}
                   className="w-full rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-[13px] text-stone-900 focus:border-rose-300 focus:outline-none focus:ring-1 focus:ring-rose-500/10"
@@ -618,10 +625,10 @@ export default function DiscoveryPage() {
 
             {/* City */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold uppercase tracking-[.06em] text-stone-400">{copy.city}</label>
+              <label className="text-[11px] font-semibold uppercase tracking-[.06em] text-stone-400">{pageStrings.city}</label>
               <input
                 type="text"
-                placeholder={copy.city}
+                placeholder={pageStrings.city}
                 value={filterCity}
                 onChange={(e) => setFilterCity(e.target.value)}
                 className="w-full rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-[13px] text-stone-900 focus:border-rose-300 focus:outline-none focus:ring-1 focus:ring-rose-500/10"
@@ -630,10 +637,10 @@ export default function DiscoveryPage() {
 
             {/* Country */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold uppercase tracking-[.06em] text-stone-400">{copy.country}</label>
+              <label className="text-[11px] font-semibold uppercase tracking-[.06em] text-stone-400">{pageStrings.country}</label>
               <input
                 type="text"
-                placeholder={copy.country}
+                placeholder={pageStrings.country}
                 value={filterCountry}
                 onChange={(e) => setFilterCountry(e.target.value)}
                 className="w-full rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-[13px] text-stone-900 focus:border-rose-300 focus:outline-none focus:ring-1 focus:ring-rose-500/10"
@@ -642,13 +649,13 @@ export default function DiscoveryPage() {
 
             {/* Marital status */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold uppercase tracking-[.06em] text-stone-400">{copy.maritalStatus}</label>
+              <label className="text-[11px] font-semibold uppercase tracking-[.06em] text-stone-400">{pageStrings.maritalStatus}</label>
               <select
                 value={filterMarital}
                 onChange={(e) => setFilterMarital(e.target.value)}
                 className="w-full rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-[13px] text-stone-900 focus:border-rose-300 focus:outline-none focus:ring-1 focus:ring-rose-500/10"
               >
-                <option value="">{copy.all}</option>
+                <option value="">{pageStrings.all}</option>
                 {(["single", "divorced", "widowed"] as const).map((k) => (
                   <option key={k} value={k}>
                     {t(`profile.${MARITAL_KEYS[k]}`)}
@@ -659,10 +666,10 @@ export default function DiscoveryPage() {
 
             {/* Job title */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold uppercase tracking-[.06em] text-stone-400">{copy.jobTitle}</label>
+              <label className="text-[11px] font-semibold uppercase tracking-[.06em] text-stone-400">{pageStrings.jobTitle}</label>
               <input
                 type="text"
-                placeholder={copy.jobTitle}
+                placeholder={pageStrings.jobTitle}
                 value={filterJob}
                 onChange={(e) => setFilterJob(e.target.value)}
                 className="w-full rounded-lg border border-stone-200 bg-white px-2.5 py-2 text-[13px] text-stone-900 focus:border-rose-300 focus:outline-none focus:ring-1 focus:ring-rose-500/10"
@@ -678,7 +685,7 @@ export default function DiscoveryPage() {
                   onChange={(e) => setFilterOnlineOnly(e.target.checked)}
                   className="h-4 w-4 rounded border-stone-300 text-rose-500 focus:ring-rose-500/20"
                 />
-                {copy.onlineOnly}
+                {pageStrings.onlineOnly}
               </label>
             </div>
           </div>
@@ -689,7 +696,7 @@ export default function DiscoveryPage() {
               onClick={clearFilters}
               className="text-xs font-medium text-rose-600 hover:text-rose-700"
             >
-              {copy.clearFilters}
+              {pageStrings.clearFilters}
             </button>
           )}
         </div>
@@ -705,8 +712,8 @@ export default function DiscoveryPage() {
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-stone-100">
             <Search className="h-7 w-7 text-stone-400" />
           </div>
-          <p className="mt-4 text-sm font-medium text-stone-700">{copy.noResults}</p>
-          <p className="mt-1 text-xs text-stone-400">{copy.tryAdjusting}</p>
+          <p className="mt-4 text-sm font-medium text-stone-700">{pageStrings.noResults}</p>
+          <p className="mt-1 text-xs text-stone-400">{pageStrings.tryAdjusting}</p>
         </div>
       )}
 
@@ -726,7 +733,7 @@ export default function DiscoveryPage() {
         isLiked={(id) => likes.has(id)}
         isIgnoredByMe={(id) => ignoredByMe.has(id)}
         theyIgnoredMe={(id) => ignoredMe.has(id)}
-        copy={copy}
+        copy={overlayStrings}
         recordVisit={recordVisit}
       />
     </div>
