@@ -13,6 +13,7 @@ import {
   getWordCount,
   type BehaviorMetrics,
 } from "@/lib/chatBehaviorAnalysis";
+import { ModernMessagesView } from "@/components/messages";
 
 type ConversationItem = {
   id: string;
@@ -787,45 +788,46 @@ export default function MessagesPage() {
     [currentUserId, selectedConversationId]
   );
 
-  const handleSend = async () => {
-    if (!currentUserId || !selectedConversationId || !draft.trim()) return;
-    const text = draft.trim();
-
-    // Clear input immediately
-    setDraft("");
-
+  const handleSendText = async (text: string) => {
+    if (!currentUserId || !selectedConversationId || !text.trim()) return;
+    const trimmed = text.trim();
     try {
-      // Optimistic UI: add the message locally before waiting for Supabase
       const optimisticId = `optimistic-${Date.now()}`;
       const optimisticMessage: ChatMessage = {
         id: optimisticId,
         conversation_id: selectedConversationId,
         sender_id: currentUserId,
-        content: text,
+        content: trimmed,
         created_at: new Date().toISOString(),
         is_read: false,
       };
       setMessages((prev) => [...prev, optimisticMessage]);
-
-      const isFlagged = containsBannedWord(text, bannedWordsRef.current);
+      const isFlagged = containsBannedWord(trimmed, bannedWordsRef.current);
       const { error: sendErr } = await supabase.from("messages").insert({
         conversation_id: selectedConversationId,
         sender_id: currentUserId,
-        content: text,
+        content: trimmed,
         is_read: false,
         is_flagged: isFlagged,
         ...(isFlagged && { flagged_at: new Date().toISOString() }),
       });
       if (sendErr) throw sendErr;
     } catch (e) {
-      // Roll back optimistic message on error
       setMessages((prev) => prev.filter((m) => !m.id.startsWith("optimistic-")));
       setError(e instanceof Error ? e.message : copy.failedSend);
     }
   };
 
-  const handleReportSubmit = async () => {
+  const handleSend = async () => {
+    if (!draft.trim()) return;
+    const text = draft.trim();
+    setDraft("");
+    await handleSendText(text);
+  };
+
+  const handleReportSubmit = async (reasonOverride?: string) => {
     if (!currentUserId || !selectedConversation?.partner_id || !selectedConversationId) return;
+    const reason = reasonOverride ?? reportReason;
     setReportSubmitting(true);
     try {
       const snapshot = messages.slice(-20).map((m) => ({
@@ -838,7 +840,7 @@ export default function MessagesPage() {
         reporter_id: currentUserId,
         reported_user_id: selectedConversation.partner_id,
         conversation_id: selectedConversationId,
-        reason: reportReason,
+        reason,
         message_snapshot: snapshot,
       });
       if (reportErr) throw reportErr;
@@ -1081,6 +1083,47 @@ export default function MessagesPage() {
 
   if (loading) {
     return <LoadingScreen message={copy.loading} theme="sky" />;
+  }
+
+  const useNewMessagesUI = searchParams.get("ui") === "new" && currentUserId;
+
+  if (useNewMessagesUI) {
+    return (
+      <div className="font-[family-name:var(--font-jakarta)] h-[calc(100vh-160px)] overflow-hidden" dir={dir}>
+        <ModernMessagesView
+          conversations={conversations}
+          messages={messages}
+          selectedConversationId={selectedConversationId}
+          currentUserId={currentUserId}
+          isPartnerTyping={isPartnerTyping}
+          personalityInsights={selectedConversationId ? personalityInsights : null}
+          onContactSelect={(id) => {
+            setSelectedConversationId(id);
+            loadMessages(id);
+            setConversations((prev) =>
+              prev.map((c) => (c.id === id ? { ...c, hasUnread: false } : c))
+            );
+          }}
+          onSendMessage={(_conversationId, text) => handleSendText(text)}
+          onReport={(_partnerId, reason) => {
+            if (!selectedConversationId) return;
+            handleReportSubmit(reason);
+          }}
+          onBlock={async (partnerId) => {
+            if (!currentUserId) return;
+            await supabase.from("ignores").insert({ user_id: currentUserId, ignored_user_id: partnerId });
+          }}
+          onMarkConversationRead={(id) => {
+            setConversations((prev) =>
+              prev.map((c) => (c.id === id ? { ...c, hasUnread: false } : c))
+            );
+          }}
+          onMarkAllNotificationsRead={() => {
+            setConversations((prev) => prev.map((c) => ({ ...c, hasUnread: false })));
+          }}
+        />
+      </div>
+    );
   }
 
   return (
