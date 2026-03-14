@@ -248,6 +248,7 @@ export default function DiscoveryPage() {
     setLikingId(toUserId);
 
     if (alreadyLiked) {
+      // Optimistic: remove like from UI immediately
       setLikes((prev) => {
         const next = new Set(prev);
         next.delete(toUserId);
@@ -273,32 +274,45 @@ export default function DiscoveryPage() {
           )
         );
       }
-    } else {
-      setLikes((prev) => new Set(prev).add(toUserId));
-      if (card?.they_liked_me) setMatchToast(card.full_name ?? pageStrings.match);
+      setLikingId(null);
+      return;
+    }
+
+    // Not liked: insert. Ensure we only insert after any previous delete is done (likingId guard above).
+    setLikes((prev) => new Set(prev).add(toUserId));
+    if (card?.they_liked_me) setMatchToast(card.full_name ?? pageStrings.match);
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === toUserId
+          ? { ...u, i_liked: true, is_match: u.they_liked_me }
+          : u
+      )
+    );
+    const { error } = await supabase.from("likes").insert({
+      from_user_id: currentUserId,
+      to_user_id: toUserId,
+    });
+    if (error) {
+      const isUniqueViolation =
+        (error as { code?: string }).code === "23505" ||
+        String((error as { message?: string }).message ?? "").toLowerCase().includes("unique");
+      if (isUniqueViolation) {
+        await supabase
+          .from("likes")
+          .delete()
+          .eq("from_user_id", currentUserId)
+          .eq("to_user_id", toUserId);
+      }
+      setLikes((prev) => {
+        const next = new Set(prev);
+        next.delete(toUserId);
+        return next;
+      });
       setUsers((prev) =>
         prev.map((u) =>
-          u.id === toUserId
-            ? { ...u, i_liked: true, is_match: u.they_liked_me }
-            : u
+          u.id === toUserId ? { ...u, i_liked: false, is_match: false } : u
         )
       );
-      const { error } = await supabase.from("likes").insert({
-        from_user_id: currentUserId,
-        to_user_id: toUserId,
-      });
-      if (error) {
-        setLikes((prev) => {
-          const next = new Set(prev);
-          next.delete(toUserId);
-          return next;
-        });
-        setUsers((prev) =>
-          prev.map((u) =>
-            u.id === toUserId ? { ...u, i_liked: false, is_match: false } : u
-          )
-        );
-      }
     }
     setLikingId(null);
   };

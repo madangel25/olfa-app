@@ -163,6 +163,7 @@ export function ProfileOverlay({
   const [profile, setProfile] = useState<ProfileOverlayData | null>(null);
   const [loading, setLoading] = useState(false);
   const [slideIn, setSlideIn] = useState(false);
+  const [optimisticLiked, setOptimisticLiked] = useState<boolean | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -231,6 +232,16 @@ export function ProfileOverlay({
     run();
   }, [isOpen, profileId, currentUserId, recordVisit]);
 
+  useEffect(() => {
+    setOptimisticLiked(null);
+  }, [profileId]);
+
+  useEffect(() => {
+    if (likingId !== profileId && optimisticLiked !== null) {
+      setOptimisticLiked(null);
+    }
+  }, [likingId, profileId, optimisticLiked]);
+
   if (!isOpen) return null;
 
   const isRtl = dir === "rtl";
@@ -251,7 +262,8 @@ export function ProfileOverlay({
   const hasIgnoredMe = profileId ? theyIgnoredMe(profileId) : false;
   const isIgnored = iIgnoredThem || hasIgnoredMe;
   const canCommunicate = !sameGender && !isIgnored && profileId !== currentUserId;
-  const liked = profileId ? isLiked(profileId) : false;
+  const likedFromParent = profileId ? isLiked(profileId) : false;
+  const liked = optimisticLiked !== null ? optimisticLiked : likedFromParent;
 
   return (
     <>
@@ -316,7 +328,10 @@ export function ProfileOverlay({
                     (liked ? (
                       <button
                         type="button"
-                        onClick={() => onLike(profileId)}
+                        onClick={() => {
+                          setOptimisticLiked(false);
+                          onLike(profileId);
+                        }}
                         disabled={likingId === profileId}
                         className="inline-flex h-10 items-center gap-2 rounded-lg border border-rose-300 bg-rose-100 px-3 text-sm font-medium text-rose-600 transition hover:bg-rose-200 disabled:opacity-50"
                       >
@@ -330,7 +345,10 @@ export function ProfileOverlay({
                     ) : (
                       <button
                         type="button"
-                        onClick={() => onLike(profileId)}
+                        onClick={() => {
+                          setOptimisticLiked(true);
+                          onLike(profileId);
+                        }}
                         disabled={likingId === profileId}
                         className="inline-flex h-10 items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 text-sm font-medium text-rose-600 transition hover:bg-rose-100 disabled:opacity-50"
                       >
