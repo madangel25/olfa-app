@@ -100,7 +100,7 @@ export function ModernMessagesView({
     notifications,
     messagesByContactId,
     activeContactId: selectedConversationId,
-    isTypingByContactId,
+    isTypingByContactId: isTypingByConversationId,
     personalityByContactId,
     onContactSelect,
     onSendMessage,
