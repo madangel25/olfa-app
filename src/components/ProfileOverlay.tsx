@@ -248,8 +248,8 @@ export function ProfileOverlay({
 
   const sameGender = currentUserGender != null && profile?.gender != null && currentUserGender === profile.gender;
   const iIgnoredThem = profileId ? isIgnoredByMe(profileId) : false;
-  const theyIgnoredMe = profileId ? theyIgnoredMe(profileId) : false;
-  const isIgnored = iIgnoredThem || theyIgnoredMe;
+  const hasIgnoredMe = profileId ? theyIgnoredMe(profileId) : false;
+  const isIgnored = iIgnoredThem || hasIgnoredMe;
   const canCommunicate = !sameGender && !isIgnored && profileId !== currentUserId;
   const liked = profileId ? isLiked(profileId) : false;
 
