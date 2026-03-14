@@ -81,9 +81,9 @@ export default function DiscoveryPage() {
   const [filterOnlineOnly, setFilterOnlineOnly] = useState(false);
 
   const isRtl = dir === "rtl";
+  const loadingText = locale === "ar" ? "جاري التحميل…" : "Loading…";
 
   const copy = {
-    loading: locale === "ar" ? "جاري التحميل…" : "Loading…",
     newMembers: locale === "ar" ? "الأعضاء الجدد" : "New Members",
     advancedSearch: locale === "ar" ? "بحث متقدم" : "Advanced Search",
     searchPlaceholder: locale === "ar" ? "البحث بالاسم أو المدينة أو المهنة…" : "Search by name, city, or job…",
@@ -533,7 +533,7 @@ export default function DiscoveryPage() {
   };
 
   if (loading) {
-    return <LoadingScreen message={copy.loading} theme="sky" />;
+    return <LoadingScreen message={loadingText} theme="sky" />;
   }
 
   return (
