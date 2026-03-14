@@ -25,6 +25,7 @@ import {
   User,
   Share2,
   UserMinus,
+  Undo2,
   Loader2,
 } from "lucide-react";
 
@@ -385,30 +386,46 @@ export default function PublicProfilePage() {
           {/* Share Profile & Ignore at top of card */}
           <div className={`flex items-center justify-end gap-2 border-b border-zinc-100 px-6 py-3 ${isRtl ? "flex-row-reverse" : ""}`}>
             {profileUserId !== currentUserId && (
-              iIgnoredThem ? (
-                <span className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-medium text-zinc-500">
-                  {locale === "ar" ? "تم التجاهل" : "Ignored"}
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  disabled={ignoringId}
-                  onClick={async () => {
-                    if (!profileUserId || !currentUserId || ignoringId) return;
-                    setIgnoringId(true);
+              <button
+                type="button"
+                disabled={ignoringId}
+                onClick={async () => {
+                  if (!profileUserId || !currentUserId || ignoringId) return;
+                  const alreadyIgnored = iIgnoredThem;
+                  setIgnoringId(true);
+                  if (alreadyIgnored) {
+                    setIIgnoredThem(false);
+                    const { error } = await supabase
+                      .from("ignores")
+                      .delete()
+                      .eq("user_id", currentUserId)
+                      .eq("ignored_user_id", profileUserId);
+                    if (error) setIIgnoredThem(true);
+                  } else {
+                    setIIgnoredThem(true);
                     const { error } = await supabase.from("ignores").insert({
                       user_id: currentUserId,
                       ignored_user_id: profileUserId,
                     });
-                    if (!error) setIIgnoredThem(true);
-                    setIgnoringId(false);
-                  }}
-                  className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-transparent px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-50 disabled:opacity-50"
-                >
-                  {ignoringId ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserMinus className="h-4 w-4" />}
-                  {locale === "ar" ? "تجاهل" : "Ignore"}
-                </button>
-              )
+                    if (error) setIIgnoredThem(false);
+                  }
+                  setIgnoringId(false);
+                }}
+                className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition disabled:opacity-50 ${
+                  iIgnoredThem
+                    ? "border-stone-400 bg-stone-200 text-stone-700 hover:bg-stone-300"
+                    : "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
+                }`}
+              >
+                {ignoringId ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : iIgnoredThem ? (
+                  <Undo2 className="h-4 w-4" />
+                ) : (
+                  <UserMinus className="h-4 w-4" />
+                )}
+                {iIgnoredThem ? (locale === "ar" ? "تم التجاهل" : "Ignored") : (locale === "ar" ? "تجاهل" : "Ignore")}
+              </button>
             )}
             <button
               type="button"

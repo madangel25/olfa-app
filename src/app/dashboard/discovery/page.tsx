@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { useOnlinePresence } from "@/components/DashboardShell";
+import { ProfileOverlay, type ProfileOverlayCopy } from "@/components/ProfileOverlay";
 import {
   Search,
   Heart,
@@ -15,6 +16,7 @@ import {
   SlidersHorizontal,
   Loader2,
   UserMinus,
+  Undo2,
 } from "lucide-react";
 
 type UserCard = {
@@ -67,6 +69,7 @@ export default function DiscoveryPage() {
   const [ignoringId, setIgnoringId] = useState<string | null>(null);
   const [matchToast, setMatchToast] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("new");
+  const [overlayProfileId, setOverlayProfileId] = useState<string | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterAgeMin, setFilterAgeMin] = useState<number | "">("");
@@ -107,7 +110,14 @@ export default function DiscoveryPage() {
     ignore: locale === "ar" ? "تجاهل" : "Ignore",
     ignored: locale === "ar" ? "تم التجاهل" : "Ignored",
     visited: locale === "ar" ? "زرت هذا الملف" : "Visited",
-  };
+    close: locale === "ar" ? "إغلاق" : "Close",
+    sendMessage: locale === "ar" ? "إرسال رسالة" : "Send Message",
+    profileStrength: t("profile.profileStrength"),
+    charismaRating: t("profile.charismaRating"),
+    aboutMe: t("profile.aboutMe"),
+    idealPartner: t("profile.idealPartner"),
+    years: locale === "ar" ? "سنة" : "y/o",
+  } satisfies ProfileOverlayCopy;
 
   useEffect(() => {
     const run = async () => {
@@ -225,15 +235,39 @@ export default function DiscoveryPage() {
   }, [router]);
 
   const handleLike = async (toUserId: string) => {
-    if (!currentUserId) return;
+    if (!currentUserId || likingId) return;
+    const card = users.find((u) => u.id === toUserId);
+    const alreadyLiked = likes.has(toUserId);
     setLikingId(toUserId);
-    const { error } = await supabase.from("likes").insert({
-      from_user_id: currentUserId,
-      to_user_id: toUserId,
-    });
-    if (!error) {
+
+    if (alreadyLiked) {
+      setLikes((prev) => {
+        const next = new Set(prev);
+        next.delete(toUserId);
+        return next;
+      });
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === toUserId ? { ...u, i_liked: false, is_match: false } : u
+        )
+      );
+      const { error } = await supabase
+        .from("likes")
+        .delete()
+        .eq("from_user_id", currentUserId)
+        .eq("to_user_id", toUserId);
+      if (error) {
+        setLikes((prev) => new Set(prev).add(toUserId));
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === toUserId
+              ? { ...u, i_liked: true, is_match: card?.they_liked_me ?? false }
+              : u
+          )
+        );
+      }
+    } else {
       setLikes((prev) => new Set(prev).add(toUserId));
-      const card = users.find((u) => u.id === toUserId);
       if (card?.they_liked_me) setMatchToast(card.full_name ?? copy.match);
       setUsers((prev) =>
         prev.map((u) =>
@@ -242,22 +276,73 @@ export default function DiscoveryPage() {
             : u
         )
       );
+      const { error } = await supabase.from("likes").insert({
+        from_user_id: currentUserId,
+        to_user_id: toUserId,
+      });
+      if (error) {
+        setLikes((prev) => {
+          const next = new Set(prev);
+          next.delete(toUserId);
+          return next;
+        });
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === toUserId ? { ...u, i_liked: false, is_match: false } : u
+          )
+        );
+      }
     }
     setLikingId(null);
   };
 
   const handleIgnore = async (targetUserId: string) => {
     if (!currentUserId || ignoringId) return;
+    const alreadyIgnored = ignoredByMe.has(targetUserId);
     setIgnoringId(targetUserId);
-    const { error } = await supabase.from("ignores").insert({
-      user_id: currentUserId,
-      ignored_user_id: targetUserId,
-    });
-    if (!error) {
+
+    if (alreadyIgnored) {
+      setIgnoredByMe((prev) => {
+        const next = new Set(prev);
+        next.delete(targetUserId);
+        return next;
+      });
+      const { error } = await supabase
+        .from("ignores")
+        .delete()
+        .eq("user_id", currentUserId)
+        .eq("ignored_user_id", targetUserId);
+      if (error) {
+        setIgnoredByMe((prev) => new Set(prev).add(targetUserId));
+      }
+    } else {
       setIgnoredByMe((prev) => new Set(prev).add(targetUserId));
+      const { error } = await supabase.from("ignores").insert({
+        user_id: currentUserId,
+        ignored_user_id: targetUserId,
+      });
+      if (error) {
+        setIgnoredByMe((prev) => {
+          const next = new Set(prev);
+          next.delete(targetUserId);
+          return next;
+        });
+      }
     }
     setIgnoringId(null);
   };
+
+  const recordVisit = useCallback(
+    async (visitedId: string) => {
+      if (!currentUserId || visitedId === currentUserId) return;
+      setVisitedIds((prev) => new Set(prev).add(visitedId));
+      await supabase.from("profile_visits").insert({
+        visitor_id: currentUserId,
+        visited_id: visitedId,
+      });
+    },
+    [currentUserId]
+  );
 
   const newMembers = useMemo(() => {
     return [...users].sort((a, b) => {
@@ -340,7 +425,11 @@ export default function DiscoveryPage() {
         className={`flex items-center gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,.05)] transition hover:shadow-md ${isIgnored ? "opacity-60 grayscale" : ""}`}
       >
         {/* Avatar */}
-        <Link href={`/profile/${u.id}`} className="relative shrink-0">
+        <button
+          type="button"
+          onClick={() => setOverlayProfileId(u.id)}
+          className="relative shrink-0 text-left"
+        >
           <div className="h-14 w-14 overflow-hidden rounded-xl bg-stone-100">
             {primaryPhoto ? (
               <img src={primaryPhoto} alt="" className={`h-full w-full object-cover ${blurPhoto ? "blur-md" : ""}`} />
@@ -354,10 +443,14 @@ export default function DiscoveryPage() {
             className={`absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white ${isOnline ? "bg-emerald-500" : "bg-stone-300"}`}
             aria-hidden
           />
-        </Link>
+        </button>
 
         {/* Info */}
-        <Link href={`/profile/${u.id}`} className={`min-w-0 flex-1 ${isRtl ? "text-right" : "text-left"}`}>
+        <button
+          type="button"
+          onClick={() => setOverlayProfileId(u.id)}
+          className={`min-w-0 flex-1 ${isRtl ? "text-right" : "text-left"}`}
+        >
           <div className="flex items-center gap-1.5">
             <p className="truncate text-[14px] font-semibold text-stone-900">{u.full_name ?? "—"}</p>
             {u.age != null && <span className="shrink-0 text-xs text-stone-400">{u.age} {copy.years}</span>}
@@ -378,35 +471,46 @@ export default function DiscoveryPage() {
           <p className={`mt-0.5 text-[11px] font-medium ${isOnline ? "text-emerald-600" : "text-stone-400"}`}>
             {isOnline ? copy.online : copy.offline}
           </p>
-        </Link>
+        </button>
 
-        {/* Action: Ignore (ghost) or Ignored label */}
+        {/* Action: Ignore (rose + UserMinus / gray + Undo) + Like (outline / filled heart) */}
         <div className="flex shrink-0 items-center gap-1.5">
-          {iIgnoredThem ? (
-            <span className="rounded-lg border border-stone-200 bg-stone-50 px-2.5 py-2 text-[11px] font-medium text-stone-500">
-              {copy.ignored}
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={() => handleIgnore(u.id)}
-              disabled={ignoringId === u.id}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-transparent text-stone-500 transition hover:bg-stone-50 hover:text-stone-700 disabled:opacity-50"
-              title={copy.ignore}
-              aria-label={copy.ignore}
-            >
-              {ignoringId === u.id ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <UserMinus className="h-4 w-4" />
-              )}
-            </button>
-          )}
-          {canCommunicate && (
-            u.i_liked ? (
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-stone-50 text-stone-500" title={copy.liked}>
-                <Heart className="h-4 w-4 fill-current" />
-              </span>
+          <button
+            type="button"
+            onClick={() => handleIgnore(u.id)}
+            disabled={ignoringId === u.id}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition disabled:opacity-50 ${
+              iIgnoredThem
+                ? "border-stone-400 bg-stone-200 text-stone-700 hover:bg-stone-300"
+                : "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
+            }`}
+            title={iIgnoredThem ? copy.ignored : copy.ignore}
+            aria-label={iIgnoredThem ? copy.ignored : copy.ignore}
+          >
+            {ignoringId === u.id ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : iIgnoredThem ? (
+              <Undo2 className="h-4 w-4" />
+            ) : (
+              <UserMinus className="h-4 w-4" />
+            )}
+          </button>
+          {canCommunicate &&
+            (u.i_liked ? (
+              <button
+                type="button"
+                onClick={() => handleLike(u.id)}
+                disabled={likingId === u.id}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-rose-300 bg-rose-100 text-rose-600 transition hover:bg-rose-200 disabled:opacity-50"
+                title={copy.liked}
+                aria-label={copy.liked}
+              >
+                {likingId === u.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Heart className="h-4 w-4 fill-current" />
+                )}
+              </button>
             ) : (
               <button
                 type="button"
@@ -422,8 +526,7 @@ export default function DiscoveryPage() {
                   <Heart className="h-4 w-4" />
                 )}
               </button>
-            )
-          )}
+            ))}
         </div>
       </div>
     );
@@ -606,6 +709,26 @@ export default function DiscoveryPage() {
           <p className="mt-1 text-xs text-stone-400">{copy.tryAdjusting}</p>
         </div>
       )}
+
+      <ProfileOverlay
+        profileId={overlayProfileId}
+        isOpen={!!overlayProfileId}
+        onClose={() => setOverlayProfileId(null)}
+        dir={dir}
+        locale={locale}
+        t={t}
+        currentUserId={currentUserId}
+        currentUserGender={currentUserGender}
+        onLike={handleLike}
+        onIgnore={handleIgnore}
+        likingId={likingId}
+        ignoringId={ignoringId}
+        isLiked={(id) => likes.has(id)}
+        isIgnoredByMe={(id) => ignoredByMe.has(id)}
+        theyIgnoredMe={(id) => ignoredMe.has(id)}
+        copy={copy}
+        recordVisit={recordVisit}
+      />
     </div>
   );
 }
