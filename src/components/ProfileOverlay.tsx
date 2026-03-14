@@ -266,22 +266,25 @@ export function ProfileOverlay({
   const liked = optimisticLiked !== null ? optimisticLiked : likedFromParent;
 
   return (
-    <>
+    <div className="fixed inset-0 z-[100] h-screen w-full" aria-hidden>
+      {/* Full-screen backdrop: covers navbar and discovery, dark blur */}
       <div
-        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 h-full w-full bg-black/20 backdrop-blur-sm transition-opacity"
         aria-hidden
         onClick={onClose}
       />
+      {/* White profile panel: own header, starts from top-0 */}
       <div
         ref={scrollRef}
-        className={`fixed top-0 bottom-0 z-50 w-full overflow-y-auto bg-[#FFFAF7] shadow-2xl transition-transform duration-300 ease-out md:w-[500px] lg:w-[600px] ${
+        className={`fixed top-0 z-10 h-screen w-full overflow-y-auto bg-[#FFFAF7] shadow-2xl transition-transform duration-300 ease-out md:w-[500px] lg:w-[600px] ${
           slideFromRight ? "right-0" : "left-0"
         } ${slideIn ? "translate-x-0" : slideFromRight ? "translate-x-full" : "-translate-x-full"}`}
         role="dialog"
         aria-modal="true"
         aria-label="Profile"
       >
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-stone-200 bg-[#FFFAF7] px-4 py-3">
+        {/* Overlay header: self-contained, no conflict with dashboard header */}
+        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center justify-between border-b border-stone-200 bg-[#FFFAF7] px-4">
           <span className="text-sm font-medium text-stone-500">{profile?.full_name ?? "—"}</span>
           <button
             type="button"
@@ -291,7 +294,7 @@ export function ProfileOverlay({
           >
             <X className="h-5 w-5" />
           </button>
-        </div>
+        </header>
 
         <div className="px-4 pb-12 pt-4" dir={dir}>
           {loading && (
@@ -506,6 +509,6 @@ export function ProfileOverlay({
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
