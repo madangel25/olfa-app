@@ -57,7 +57,7 @@ export function ContactItem({ contact, isActive, onClick }: ContactItemProps) {
           {contact.isTyping ? "typing…" : contact.lastMessage}
         </p>
       </div>
-      {contact.unreadCount > 0 && (
+      {(contact.unreadCount ?? 0) > 0 && (
         <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#1a1a1a] px-1.5 text-[10px] font-medium text-white">
           {contact.unreadCount}
         </span>
